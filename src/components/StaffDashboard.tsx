@@ -13,7 +13,8 @@ import {
   ShieldAlert,
   PartyPopper,
   Eraser,
-  Printer
+  Printer,
+  ChevronDown
 } from 'lucide-react';
 import type { Schedule, DynamicForm, Submission } from '../types';
 import { translations } from '../i18n';
@@ -35,27 +36,32 @@ const StaffDashboard: React.FC = () => {
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  const handlePrintHandover = () => {
-    window.print();
-  };
-
   if (activeSchedule) {
     const form = forms.find(f => f.id === activeSchedule.formId);
     if (!form) return <div>Form not found</div>;
 
-    return <FormRenderer form={form} schedule={activeSchedule} onCancel={() => setActiveSchedule(null)} onSubmit={handleFinishSubmission} />;
+    return (
+      <div className="fixed inset-0 z-[60] bg-white overflow-hidden flex flex-col animate-in slide-in-from-bottom-full duration-300">
+         <FormRenderer 
+          form={form} 
+          schedule={activeSchedule} 
+          onCancel={() => setActiveSchedule(null)} 
+          onSubmit={handleFinishSubmission} 
+         />
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 print:p-0">
+    <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
       {showSuccess && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#00468B]/95 backdrop-blur-md animate-in fade-in duration-300">
            <div className="text-center text-white space-y-6 animate-in zoom-in-95 duration-500 delay-100">
               <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto shadow-2xl">
                  <PartyPopper size={48} className="text-blue-100" />
               </div>
-              <h2 className="text-4xl font-black">Report Certified!</h2>
-              <p className="text-blue-100 font-bold opacity-80 uppercase tracking-widest">Compliance data successfully recorded in clinical log.</p>
+              <h2 className="text-4xl font-black">Success!</h2>
+              <p className="text-blue-100 font-bold opacity-80 uppercase tracking-widest px-8">Report Certified & Synchronized.</p>
               <div className="pt-8">
                  <CheckCircle2 size={64} className="mx-auto text-green-400 animate-bounce" />
               </div>
@@ -63,56 +69,87 @@ const StaffDashboard: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-[#00468B] rounded-3xl p-10 text-white shadow-xl relative overflow-hidden print:hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Hello, {currentUser?.name.split(' ')[0]}</h1>
-            <p className="text-blue-100 font-medium">Ready to perform medical inspections. Select a protocol below to begin.</p>
-          </div>
-          <button 
-            onClick={handlePrintHandover}
-            className="bg-white/10 hover:bg-white/20 border border-white/20 px-6 py-3 rounded-2xl flex items-center space-x-3 transition-all font-bold text-sm"
-          >
-            <Printer size={18} />
-            <span>{t.printHandover}</span>
-          </button>
+      {/* Hero Section */}
+      <div className="bg-white rounded-3xl p-8 md:p-10 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden relative group">
+        <div className="relative z-10 space-y-2">
+          <h1 className="text-2xl md:text-3xl font-black text-gray-800 tracking-tight">Protocol Selection</h1>
+          <p className="text-gray-500 font-medium">Ready to perform medical inspections. Select a system to audit.</p>
         </div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-20 -mt-20"></div>
+        <div className="absolute top-0 right-0 p-10 opacity-5 -mr-10 -mt-10 group-hover:scale-110 transition-transform duration-700">
+           <FileText size={160} />
+        </div>
       </div>
 
-      <div className="hidden print:block border-b-4 border-[#00468B] pb-8 mb-10">
-         <h1 className="text-2xl font-black text-[#00468B] uppercase tracking-widest">{t.shiftHandover}</h1>
-         <div className="grid grid-cols-2 gap-8 mt-6">
-            <div>
-               <p className="text-[10px] font-black text-gray-400 uppercase">Clinician</p>
-               <p className="font-bold text-lg">{currentUser?.name}</p>
-            </div>
-            <div>
-               <p className="text-[10px] font-black text-gray-400 uppercase">Operational Date</p>
-               <p className="font-bold text-lg">{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-            </div>
-         </div>
-      </div>
-
-      <div className="space-y-8 print:hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
-          <h3 className="text-sm font-black text-[#00468B] uppercase tracking-[0.2em] flex items-center">
-            <FileText size={16} className="mr-2" />
-            {t.formProtocol} Library
+      {/* Task Queue Section */}
+      {mySchedules.length > 0 && (
+        <div className="space-y-6">
+          <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] px-2 flex items-center">
+            <Clock size={14} className="mr-2" />
+            Priority Queue ({mySchedules.filter(s => s.status === 'Pending').length})
           </h3>
-          <div className="relative flex-1 max-w-md">
-             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+          <div className="flex overflow-x-auto gap-4 px-2 pb-4 snap-x hide-scrollbar">
+            {mySchedules.map(s => {
+              const form = forms.find(f => f.id === s.formId);
+              const isCompleted = s.status === 'Completed';
+              return (
+                <div 
+                  key={s.id} 
+                  className={`min-w-[280px] md:min-w-[320px] snap-start p-6 rounded-3xl border-2 transition-all flex flex-col justify-between ${
+                    isCompleted 
+                      ? 'bg-gray-50 border-gray-100 opacity-60' 
+                      : 'bg-white border-[#00468B]/10 shadow-lg shadow-blue-900/5'
+                  }`}
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                       <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${
+                         s.shift === 'Morning' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
+                       }`}>{s.shift}</span>
+                       {isCompleted && <CheckCircle2 className="text-green-500" size={16} />}
+                    </div>
+                    <h4 className="font-bold text-gray-800 text-lg leading-tight line-clamp-2">{form?.title}</h4>
+                  </div>
+                  
+                  <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
+                    <div className="flex items-center text-xs text-gray-400 font-bold">
+                       <TrendingUpIcon className="mr-1" /> {s.location || 'N/A'}
+                    </div>
+                    {!isCompleted && (
+                      <button 
+                        onClick={() => setActiveSchedule(s)}
+                        className="bg-[#00468B] text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all"
+                      >
+                        Audit Now
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Main Grid: All Forms */}
+      <div className="space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2 border-b border-gray-100 pb-6">
+          <div>
+            <h3 className="text-xl font-black text-gray-800 tracking-tight">Machine Registry</h3>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Direct Access to all 28 Protocols</p>
+          </div>
+          <div className="relative flex-1 max-w-md w-full">
+             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
              <input 
               type="text" 
-              placeholder="Quick search protocol..."
+              placeholder="Filter machines or protocols..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white border-2 border-gray-50 rounded-xl pl-12 pr-4 py-2.5 text-xs font-bold focus:border-blue-500 outline-none transition-all"
+              className="w-full bg-gray-50 border-2 border-gray-50 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold focus:border-[#00468B] focus:bg-white outline-none transition-all"
              />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
           {forms.filter(f => f.title.toLowerCase().includes(searchTerm.toLowerCase())).map(f => (
             <button 
               key={f.id}
@@ -129,66 +166,32 @@ const StaffDashboard: React.FC = () => {
                 };
                 setActiveSchedule(manualSchedule);
               }}
-              className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group text-left flex flex-col h-full"
+              className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group text-left flex items-center space-x-5 h-full relative overflow-hidden"
             >
-              <div className="w-12 h-12 rounded-xl bg-gray-50 text-gray-400 group-hover:bg-blue-50 group-hover:text-[#00468B] flex items-center justify-center mb-4 transition-colors">
-                <FileText size={24} />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/50 rounded-bl-[100px] -mr-8 -mt-8 group-hover:scale-125 transition-transform duration-500"></div>
+              
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#00468B] group-hover:bg-[#00468B] group-hover:text-white flex items-center justify-center shrink-0 transition-all duration-300 relative z-10">
+                <FileText size={28} />
               </div>
-              <h4 className="font-bold text-gray-700 text-xs leading-relaxed group-hover:text-[#00468B] transition-colors mb-2 flex-1">{f.title}</h4>
-              <div className="flex items-center text-[9px] font-black text-gray-300 uppercase tracking-tighter">
-                <span>{f.questions.length} Points</span>
-                <ChevronRight size={10} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              
+              <div className="relative z-10 flex-1 min-w-0">
+                <h4 className="font-bold text-gray-800 text-sm leading-snug group-hover:text-[#00468B] transition-colors mb-1 truncate pr-4">{f.title}</h4>
+                <div className="flex items-center space-x-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                   <span>{f.questions.length} Audit Points</span>
+                   <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all" />
+                </div>
               </div>
             </button>
           ))}
         </div>
       </div>
-
-      {mySchedules.length > 0 && (
-        <div className="space-y-6 pt-12 border-t border-gray-100">
-          <h3 className="text-sm font-black text-[#00468B] uppercase tracking-[0.2em] px-2 flex items-center print:text-black">
-            <Clock size={16} className="mr-2 print:hidden" />
-            {t.upcomingAssignments}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {mySchedules.map(s => {
-              const form = forms.find(f => f.id === s.formId);
-              const isCompleted = s.status === 'Completed';
-              return (
-                <div key={s.id} className={`p-6 border flex items-center justify-between transition-all ${
-                  isCompleted 
-                    ? 'bg-white border-gray-100 rounded-2xl hover:shadow-md' 
-                    : 'bg-white border-blue-100 rounded-2xl shadow-sm border-2'
-                } print:border-gray-200 print:shadow-none print:rounded-none`}>
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isCompleted ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-[#00468B]'}`}>
-                      {isCompleted ? <CheckCircle2 size={24} /> : <ClipboardCheck size={24} />}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-800 text-sm line-clamp-1">{form?.title}</h4>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{s.shift} Shift | {s.location || 'N/A'}</p>
-                    </div>
-                  </div>
-                  {!isCompleted && (
-                    <button 
-                      onClick={() => setActiveSchedule(s)}
-                      className="text-[10px] font-black uppercase tracking-widest text-[#00468B] bg-blue-50 px-4 py-2 rounded-lg hover:bg-[#00468B] hover:text-white transition-all print:hidden"
-                    >
-                      {t.startTask}
-                    </button>
-                  )}
-                  {isCompleted && (
-                    <span className="text-[10px] font-black text-green-600 bg-green-50 px-2 py-1 rounded uppercase tracking-tighter hidden print:inline-block">Handed Over</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+
+const TrendingUpIcon = ({ className }: { className?: string }) => (
+  <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+);
 
 interface FormRendererProps {
   form: DynamicForm;
@@ -281,179 +284,196 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
   };
 
   return (
-    <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-300 mb-20">
-      <div className="bg-[#00468B] p-10 text-white relative">
-        <div className="relative z-10">
-          <button onClick={onCancel} className="text-blue-200 hover:text-white mb-6 flex items-center text-sm font-bold transition-colors">
-            <ChevronLeft size={18} /> {t.backToDashboard}
+    <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
+      {/* Fixed App Bar */}
+      <div className="bg-[#00468B] p-6 text-white shrink-0 shadow-lg z-20 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <button onClick={onCancel} className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
+            <ChevronLeft size={24} />
           </button>
-          <h2 className="text-3xl font-bold">{form.title}</h2>
-          <p className="text-blue-100 font-medium mt-2">{form.description}</p>
+          <div className="min-w-0">
+             <h2 className="text-lg font-bold leading-tight truncate pr-4">{form.title}</h2>
+             <p className="text-[10px] font-medium text-blue-100/70 truncate">{schedule.location || 'Clinical Area'}</p>
+          </div>
         </div>
-        <div className="absolute top-0 right-0 p-10 opacity-10">
-           <ShieldCheck size={120} />
+        <div className="w-10 h-10 rounded-full bg-blue-400/20 flex items-center justify-center shrink-0">
+           <ShieldCheck size={20} className="text-blue-100" />
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-10 space-y-10">
-        {form.questions.map(q => (
-          <div key={q.id} className="space-y-4 group">
-            <label className="block text-sm font-black text-[#00468B] uppercase tracking-wider group-focus-within:text-blue-600 transition-colors">
-              {q.label} {q.required && <span className="text-red-500">*</span>}
-            </label>
-            
-            {q.type === 'date' && (
-              <input 
-                type="date" 
-                required={q.required}
-                className="w-full border-2 border-gray-50 rounded-2xl p-4 focus:border-blue-500 focus:bg-white bg-gray-50 outline-none transition-all font-medium"
-                onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
-              />
-            )}
-
-            {q.type === 'select' && (
-              <select 
-                required={q.required}
-                className="w-full border-2 border-gray-50 rounded-2xl p-4 focus:border-blue-500 focus:bg-white bg-gray-50 outline-none transition-all font-medium"
-                onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
-              >
-                <option value="">Select an option...</option>
-                {q.options?.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            )}
-
-            {q.type === 'text' && (
-              <input 
-                type="text" 
-                required={q.required}
-                placeholder="Type your response..."
-                className="w-full border-2 border-gray-50 rounded-2xl p-4 focus:border-blue-500 focus:bg-white bg-gray-50 outline-none transition-all font-medium"
-                onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
-              />
-            )}
-
-            {q.type === 'number' && (
-              <input 
-                type="number" 
-                required={q.required}
-                placeholder="0.00"
-                className="w-full border-2 border-gray-50 rounded-2xl p-4 focus:border-blue-500 focus:bg-white bg-gray-50 outline-none transition-all font-medium"
-                onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
-              />
-            )}
-
-            {q.type === 'yesno' && (
-              <div className="grid grid-cols-2 gap-4">
-                {['Pass', 'Fail'].map(opt => (
-                  <label key={opt} className={`flex items-center justify-center p-4 rounded-2xl border-2 cursor-pointer transition-all font-bold ${
-                    formData[q.id] === opt 
-                      ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' 
-                      : 'bg-gray-50 border-gray-50 text-gray-500 hover:border-gray-200'
-                  }`}>
-                    <input 
-                      type="radio" 
-                      name={q.id} 
-                      value={opt}
-                      required={q.required}
-                      className="hidden"
-                      onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
-                    />
-                    <span>{opt}</span>
-                  </label>
-                ))}
+      <div className="flex-1 overflow-y-auto">
+        <form onSubmit={handleSubmit} id="compliance-form" className="p-6 md:p-10 space-y-12 pb-32">
+          {form.questions.map((q, idx) => (
+            <div key={q.id} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: `${idx * 50}ms` }}>
+              <div className="flex items-start space-x-3">
+                 <span className="w-6 h-6 rounded-lg bg-blue-50 text-[#00468B] flex items-center justify-center text-[10px] font-black shrink-0 mt-1">{idx + 1}</span>
+                 <label className="block text-sm font-black text-gray-800 tracking-tight leading-relaxed">
+                   {q.label} {q.required && <span className="text-red-500">*</span>}
+                 </label>
               </div>
-            )}
+              
+              <div className="pl-9">
+                {q.type === 'date' && (
+                  <input 
+                    type="date" 
+                    required={q.required}
+                    className="w-full border-2 border-gray-100 rounded-2xl p-4 focus:border-[#00468B] focus:bg-white bg-white shadow-sm outline-none transition-all font-bold text-gray-700"
+                    onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
+                  />
+                )}
 
-            {q.type === 'composite' && (
-              <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-50 space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  {['Normal', 'Alert'].map(opt => (
-                    <label key={opt} className={`flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all font-bold ${
-                      formData[q.id] === opt 
-                        ? (opt === 'Normal' ? 'bg-green-50 border-green-500 text-green-700' : 'bg-red-50 border-red-500 text-red-700')
-                        : 'bg-white border-white text-gray-500 hover:border-gray-100 shadow-sm'
-                    }`}>
-                      <input 
-                        type="radio" 
-                        name={q.id} 
-                        value={opt}
-                        required={q.required}
-                        className="hidden"
-                        onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
-                      />
-                      <span>{opt}</span>
-                    </label>
-                  ))}
-                </div>
-                {q.config?.withPhoto && (
-                  <div className="pt-2">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{t.clinicalEvidence}</p>
-                    <button 
-                      type="button"
-                      onClick={() => setPhotos([...photos, 'mock-photo-url'])}
-                      className="flex items-center space-x-3 bg-white border-2 border-dashed border-gray-200 p-5 rounded-2xl text-gray-400 hover:text-blue-500 hover:border-blue-200 transition-all w-full justify-center group/btn"
+                {q.type === 'select' && (
+                  <div className="relative">
+                    <select 
+                      required={q.required}
+                      className="w-full border-2 border-gray-100 rounded-2xl p-4 appearance-none focus:border-[#00468B] focus:bg-white bg-white shadow-sm outline-none transition-all font-bold text-gray-700"
+                      onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
                     >
-                      <Camera size={24} className="group-hover/btn:scale-110 transition-transform" />
-                      <span className="font-bold">{photos.length > 0 ? `${photos.length} Photo(s) Attached` : 'Capture Clinical Evidence'}</span>
-                    </button>
+                      <option value="">Select option...</option>
+                      {q.options?.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" />
+                  </div>
+                )}
+
+                {q.type === 'text' && (
+                  <input 
+                    type="text" 
+                    required={q.required}
+                    placeholder="Enter observation..."
+                    className="w-full border-2 border-gray-100 rounded-2xl p-4 focus:border-[#00468B] focus:bg-white bg-white shadow-sm outline-none transition-all font-bold text-gray-700"
+                    onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
+                  />
+                )}
+
+                {q.type === 'number' && (
+                  <input 
+                    type="number" 
+                    required={q.required}
+                    placeholder="0.00"
+                    className="w-full border-2 border-gray-100 rounded-2xl p-4 focus:border-[#00468B] focus:bg-white bg-white shadow-sm outline-none transition-all font-bold text-gray-700"
+                    onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
+                  />
+                )}
+
+                {q.type === 'yesno' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    {['Pass', 'Fail'].map(opt => (
+                      <label key={opt} className={`flex items-center justify-center p-5 rounded-2xl border-2 cursor-pointer transition-all font-black text-xs uppercase tracking-widest ${
+                        formData[q.id] === opt 
+                          ? (opt === 'Pass' ? 'bg-green-50 border-green-500 text-green-700 shadow-md' : 'bg-red-50 border-red-500 text-red-700 shadow-md')
+                          : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200 shadow-sm'
+                      }`}>
+                        <input 
+                          type="radio" 
+                          name={q.id} 
+                          value={opt}
+                          required={q.required}
+                          className="hidden"
+                          onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {q.type === 'composite' && (
+                  <div className="bg-white p-6 rounded-3xl border-2 border-gray-100 shadow-sm space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      {['Normal', 'Alert'].map(opt => (
+                        <label key={opt} className={`flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all font-black text-xs uppercase tracking-widest ${
+                          formData[q.id] === opt 
+                            ? (opt === 'Normal' ? 'bg-green-50 border-green-500 text-green-700 shadow-md' : 'bg-red-50 border-red-500 text-red-700 shadow-md')
+                            : 'bg-gray-50 border-gray-50 text-gray-400 hover:border-gray-100'
+                        }`}>
+                          <input 
+                            type="radio" 
+                            name={q.id} 
+                            value={opt}
+                            required={q.required}
+                            className="hidden"
+                            onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
+                          />
+                          <span>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {q.config?.withPhoto && (
+                      <div className="pt-2">
+                        <button 
+                          type="button"
+                          onClick={() => setPhotos([...photos, 'mock-photo-url'])}
+                          className="flex flex-col items-center justify-center bg-gray-50 border-2 border-dashed border-gray-200 p-8 rounded-2xl text-gray-400 hover:text-[#00468B] hover:border-[#00468B] hover:bg-blue-50 transition-all w-full group/btn"
+                        >
+                          <Camera size={32} className="group-hover/btn:scale-110 transition-transform mb-2" />
+                          <span className="font-bold text-xs uppercase tracking-widest">{photos.length > 0 ? `${photos.length} Photo(s) Attached` : 'Attach Photo Proof'}</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+            </div>
+          ))}
+
+          {/* Signature Pad Overhaul */}
+          <div className="space-y-6 pt-10 border-t border-gray-100 animate-in fade-in duration-1000">
+             <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black text-[#00468B] uppercase tracking-widest flex items-center">
+                   <ShieldAlert size={16} className="mr-2" />
+                   {t.digitalSignature}
+                </h4>
+                <button 
+                  type="button" 
+                  onClick={clearSignature}
+                  className="text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors flex items-center uppercase tracking-widest bg-gray-100 px-3 py-1 rounded-full"
+                >
+                  <Eraser size={12} className="mr-1" />
+                  {t.clearSignature}
+                </button>
+             </div>
+             
+             <div className="relative bg-white rounded-[32px] border-2 border-[#00468B]/10 overflow-hidden h-48 shadow-inner group/sig">
+                <canvas 
+                  ref={canvasRef}
+                  className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
+                ></canvas>
+                {!hasSigned && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-gray-300">
+                     <Edit3Icon className="mb-2 opacity-50" />
+                     <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t.signToConfirm}</p>
+                  </div>
+                )}
+             </div>
           </div>
-        ))}
+        </form>
+      </div>
 
-        <div className="space-y-6">
-           <div className="flex items-center justify-between">
-              <h4 className="text-xs font-black text-[#00468B] uppercase tracking-widest flex items-center">
-                 <ShieldAlert size={16} className="mr-2" />
-                 {t.digitalSignature}
-              </h4>
-              <button 
-                type="button" 
-                onClick={clearSignature}
-                className="text-[10px] font-bold text-gray-400 hover:text-red-500 transition-colors flex items-center"
-              >
-                <Eraser size={12} className="mr-1" />
-                {t.clearSignature}
-              </button>
-           </div>
-           
-           <div className="relative bg-gray-50 rounded-3xl border-2 border-gray-100 overflow-hidden h-40 group/sig">
-              <canvas 
-                ref={canvasRef}
-                className="absolute inset-0 w-full h-full cursor-crosshair"
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseLeave={stopDrawing}
-                onTouchStart={startDrawing}
-                onTouchMove={draw}
-                onTouchEnd={stopDrawing}
-              ></canvas>
-              {!hasSigned && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-300">
-                   <p className="text-xs font-bold uppercase tracking-widest">{t.signToConfirm}</p>
-                </div>
-              )}
-           </div>
-        </div>
-
-        <div className="flex gap-4 pt-8 border-t border-gray-100">
+      {/* Sticky Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] z-20 flex gap-4">
           <button 
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="flex-1 px-8 py-4 border-2 border-gray-100 rounded-2xl text-gray-500 font-bold hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex-1 px-8 py-4 border-2 border-gray-100 rounded-2xl text-gray-500 font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 text-sm uppercase tracking-widest"
           >
             Cancel
           </button>
           <button 
             type="submit"
+            form="compliance-form"
             disabled={isSubmitting || !hasSigned}
-            className="flex-[2] px-8 py-4 bg-[#00468B] text-white rounded-2xl font-black hover:bg-[#003569] transition-all shadow-xl shadow-blue-900/10 active:scale-95 flex items-center justify-center space-x-2 disabled:opacity-50"
+            className="flex-[2] px-8 py-4 bg-[#00468B] text-white rounded-2xl font-black hover:bg-[#003569] transition-all shadow-xl shadow-blue-900/20 active:scale-95 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm uppercase tracking-widest"
           >
             {isSubmitting ? (
               <span className="flex items-center"><Clock size={20} className="animate-spin mr-2" /> {t.processing}</span>
@@ -461,10 +481,13 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
               <span>{t.confirmSubmit}</span>
             )}
           </button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 };
+
+const Edit3Icon = ({ className }: { className?: string }) => (
+  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+);
 
 export default StaffDashboard;
