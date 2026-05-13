@@ -20,7 +20,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('xray_currentUser');
-    return saved ? JSON.parse(saved) : users[1];
+    return saved ? JSON.parse(saved) : null;
   });
   
   const [forms, setForms] = useState<DynamicForm[]>(() => {
@@ -75,6 +75,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('xray_alerts', JSON.stringify(alerts));
   }, [users, currentUser, forms, schedules, submissions, announcements, settings, alerts]);
 
+  // Line Notify Utility
+  const sendLineNotify = async (token: string, message: string) => {
+    if (!token) return;
+    try {
+      console.log(`[LINE NOTIFY] Sending to token ${token.substring(0, 4)}...: ${message}`);
+      // In a real production app, this would be a proxy call due to CORS
+      /* 
+      await fetch('https://notify-api.line.me/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Bearer ${token}` },
+        body: `message=${encodeURIComponent(message)}`
+      });
+      */
+    } catch (e) { console.error(e); }
+  };
+
   const addUser = (user: User) => setUsers([...users, user]);
   const updateUser = (user: User) => setUsers(users.map(u => u.id === user.id ? user : u));
   const deleteUser = (id: string) => setUsers(users.filter(u => u.id !== id));
@@ -93,13 +109,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const deleteSchedule = (id: string) => setSchedules(schedules.filter(s => s.id !== id));
 
-  const submitForm = (submission: Submission) => {
-    setSubmissions([...submissions, submission]);
-    setSchedules(schedules.map(s => s.id === submission.scheduleId ? { ...s, status: 'Completed' } : s));
-  };
-
-  const addAnnouncement = (text: string) => setAnnouncements([text, ...announcements].slice(0, 5));
-
   const addAlert = (alert: Omit<Alert, 'id' | 'isRead' | 'timestamp'>) => {
     const newAlert: Alert = {
       ...alert,
@@ -107,8 +116,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       timestamp: new Date().toISOString(),
       isRead: false
     };
-    setAlerts([newAlert, ...alerts].slice(0, 50));
+    setAlerts(prev => [newAlert, ...prev].slice(0, 50));
+
+    // Send Line Notification to Supervisor if configured
+    if (settings.supervisorLineToken) {
+       sendLineNotify(settings.supervisorLineToken, newAlert.message);
+    }
   };
+
+  const submitForm = (submission: Submission) => {
+    setSubmissions(prev => [...prev, submission]);
+    setSchedules(prev => prev.map(s => s.id === submission.scheduleId ? { ...s, status: 'Completed' } : s));
+
+    // Auto-alert logic for clinical failures
+    const hasCritical = Object.values(submission.data).some(v => v === 'Fail' || v === 'Alert');
+    if (hasCritical) {
+      const staff = users.find(u => u.id === submission.staffId);
+      const form = forms.find(f => f.id === submission.formId);
+      addAlert({
+        type: 'Critical Failure',
+        message: `CRITICAL: Failure reported by ${staff?.name} in ${form?.title}. Urgent inspection required.`,
+        staffId: submission.staffId,
+        formId: submission.formId
+      });
+    }
+  };
+
+  const addAnnouncement = (text: string) => setAnnouncements([text, ...announcements].slice(0, 5));
 
   const markAlertAsRead = (id: string) => {
     setAlerts(alerts.map(a => a.id === id ? { ...a, isRead: true } : a));

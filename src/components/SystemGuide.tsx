@@ -1,5 +1,4 @@
 import React from 'react';
-import { useApp } from '../AppContext';
 import { BookOpen, ShieldCheck, Zap, ArrowRight, Layout } from 'lucide-react';
 
 const SystemGuide: React.FC = () => {

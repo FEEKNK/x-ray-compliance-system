@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../AppContext';
 import { 
   ClipboardCheck, 
@@ -80,7 +80,20 @@ const StaffDashboard: React.FC = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-20 -mt-20"></div>
       </div>
 
-      {/* Primary Section: Protocol Library (Grid) as requested */}
+      <div className="hidden print:block border-b-4 border-[#00468B] pb-8 mb-10">
+         <h1 className="text-2xl font-black text-[#00468B] uppercase tracking-widest">{t.shiftHandover}</h1>
+         <div className="grid grid-cols-2 gap-8 mt-6">
+            <div>
+               <p className="text-[10px] font-black text-gray-400 uppercase">Clinician</p>
+               <p className="font-bold text-lg">{currentUser?.name}</p>
+            </div>
+            <div>
+               <p className="text-[10px] font-black text-gray-400 uppercase">Operational Date</p>
+               <p className="font-bold text-lg">{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+            </div>
+         </div>
+      </div>
+
       <div className="space-y-8 print:hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
           <h3 className="text-sm font-black text-[#00468B] uppercase tracking-[0.2em] flex items-center">
@@ -131,7 +144,6 @@ const StaffDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Secondary Section: Assigned Duties */}
       {mySchedules.length > 0 && (
         <div className="space-y-6 pt-12 border-t border-gray-100">
           <h3 className="text-sm font-black text-[#00468B] uppercase tracking-[0.2em] px-2 flex items-center print:text-black">
@@ -194,6 +206,50 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasSigned, setHasSigned] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.strokeStyle = '#00468B';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+      }
+    }
+  }, []);
+
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDrawing(true);
+    setHasSigned(true);
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (ctx && canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const x = ('touches' in e) ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+      const y = ('touches' in e) ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (ctx && canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const x = ('touches' in e) ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+      const y = ('touches' in e) ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+  };
+
+  const stopDrawing = () => setIsDrawing(false);
 
   const clearSignature = () => {
     const canvas = canvasRef.current;
@@ -202,10 +258,6 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
       ctx?.clearRect(0, 0, canvas.width, canvas.height);
       setHasSigned(false);
     }
-  };
-
-  const handleCanvasAction = () => {
-     setHasSigned(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -373,8 +425,13 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
               <canvas 
                 ref={canvasRef}
                 className="absolute inset-0 w-full h-full cursor-crosshair"
-                onMouseDown={handleCanvasAction}
-                onTouchStart={handleCanvasAction}
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
               ></canvas>
               {!hasSigned && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-300">
