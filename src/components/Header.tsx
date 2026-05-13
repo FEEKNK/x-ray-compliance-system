@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
-import { Bell, Languages, Clock } from 'lucide-react';
+import { Clock, User as UserIcon } from 'lucide-react';
 import { translations } from '../i18n';
+import logo from '../assets/logo.svg';
 
 const Header: React.FC = () => {
   const { currentUser, users, setCurrentUser, language, setLanguage, settings } = useApp();
@@ -23,52 +24,60 @@ const Header: React.FC = () => {
   const currentShift = getActiveShift();
 
   return (
-    <header className="bg-white border-b border-gray-100 h-20 flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
-      <div className="flex items-center space-x-6">
-        <div className="flex flex-col">
-           <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{settings.hospitalName}</h2>
-           <h3 className="text-sm font-bold text-[#00468B]">
+    <header className="bg-white border-b border-gray-100 h-16 md:h-20 flex items-center justify-between px-4 md:px-8 shrink-0 shadow-sm z-30 sticky top-0">
+      <div className="flex items-center space-x-3 md:space-x-6">
+        {/* Logo for Mobile - Always Visible */}
+        <div className="md:hidden flex items-center shrink-0">
+           <img src={logo} alt="Logo" className="h-10 w-auto" />
+        </div>
+
+        {/* Branding - Hidden on small mobile, condensed on desktop */}
+        <div className="hidden sm:flex flex-col">
+           <h2 className="text-[10px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1 truncate max-w-[120px] md:max-w-none">
+            {settings.hospitalName}
+           </h2>
+           <h3 className="text-xs md:text-sm font-bold text-[#00468B]">
              {currentUser?.role === 'ADMIN' ? t.dashboard : t.myDutyCard}
            </h3>
         </div>
         
-        <span className="h-8 w-px bg-gray-100"></span>
+        <span className="hidden sm:block h-8 w-px bg-gray-100"></span>
         
-        <div className="flex items-center space-x-4">
+        {/* Real-time Status */}
+        <div className="flex items-center space-x-2 md:space-x-4">
            <div className="flex flex-col">
-              <div className="flex items-center text-xs font-black text-gray-700">
-                <Clock size={12} className="mr-1.5 text-[#00468B]" />
-                {time.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              <div className="flex items-center text-[10px] md:text-xs font-black text-gray-700">
+                <Clock size={12} className="mr-1 text-[#00468B] shrink-0" />
+                {time.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
               </div>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Current Station Time</p>
            </div>
            
-           <div className={`px-3 py-1 rounded-lg border flex items-center space-x-2 ${
+           <div className={`px-2 md:px-3 py-1 rounded-lg border flex items-center space-x-1.5 ${
              currentShift === 'Morning' ? 'bg-orange-50 border-orange-100 text-orange-600' :
              currentShift === 'Afternoon' ? 'bg-blue-50 border-blue-100 text-blue-600' : 'bg-indigo-50 border-indigo-100 text-indigo-600'
            }`}>
-              <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+              <div className={`w-1 h-1 md:w-1.5 md:h-1.5 rounded-full animate-pulse ${
                 currentShift === 'Morning' ? 'bg-orange-400' : 
                 currentShift === 'Afternoon' ? 'bg-blue-400' : 'bg-indigo-400'
               }`}></div>
-              <span className="text-[10px] font-black uppercase tracking-widest">{currentShift} Rotation</span>
+              <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">{currentShift.charAt(0)}</span>
            </div>
         </div>
       </div>
 
-      <div className="flex items-center space-x-6">
+      <div className="flex items-center space-x-2 md:space-x-6">
         <button 
           onClick={() => setLanguage(language === 'TH' ? 'EN' : 'TH')}
-          className="flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-full px-4 py-1.5 hover:bg-gray-100 transition-all group"
+          className="p-2 md:px-4 md:py-1.5 bg-gray-50 border border-gray-200 rounded-full hover:bg-gray-100 transition-all text-[#00468B] font-bold text-xs"
         >
-          <Languages size={16} className="text-gray-400 group-hover:text-[#00468B]" />
-          <span className="text-xs font-bold text-[#00468B]">{language}</span>
+          {language}
         </button>
 
-        <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full px-3 py-1 space-x-2">
-          <span className="text-[10px] font-bold text-gray-400 uppercase">{t.switchMode}</span>
+        {/* User Switcher - Condensed for Mobile */}
+        <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full px-2 py-1 md:px-3">
+          <UserIcon size={14} className="text-gray-400 mr-1 md:mr-2 shrink-0" />
           <select 
-            className="text-xs bg-transparent border-none focus:ring-0 cursor-pointer font-bold text-[#00468B]"
+            className="text-[10px] md:text-xs bg-transparent border-none focus:ring-0 cursor-pointer font-bold text-[#00468B] max-w-[80px] md:max-w-none"
             value={currentUser?.id}
             onChange={(e) => {
               const user = users.find(u => u.id === e.target.value);
@@ -76,17 +85,12 @@ const Header: React.FC = () => {
             }}
           >
             {users.map(u => (
-              <option key={u.id} value={u.id}>{u.role === 'ADMIN' ? '🛡️ Admin' : '🧑‍⚕️ ' + u.name}</option>
+              <option key={u.id} value={u.id}>{u.name.split(' ')[0]}</option>
             ))}
           </select>
         </div>
         
-        <button className="relative text-gray-400 hover:text-[#00468B] transition-colors p-2 rounded-full hover:bg-gray-50">
-          <Bell size={20} />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-        </button>
-        
-        <div className="flex items-center space-x-3 pl-6 border-l border-gray-100">
+        <div className="hidden md:flex items-center space-x-3 pl-6 border-l border-gray-100">
           <div className="text-right">
             <p className="text-xs font-bold text-[#00468B] leading-none mb-1">{currentUser?.name}</p>
             <p className="text-[10px] text-gray-400 font-medium leading-none">{currentUser?.department}</p>
