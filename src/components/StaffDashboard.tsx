@@ -19,7 +19,6 @@ import { translations } from '../i18n';
 
 const StaffDashboard: React.FC = () => {
   const { currentUser, getStaffSchedule, forms, submitForm, language } = useApp();
-  const t = translations[language];
   const today = new Date().toISOString().split('T')[0];
   const mySchedules = currentUser ? getStaffSchedule(currentUser.id, today) : [];
   
