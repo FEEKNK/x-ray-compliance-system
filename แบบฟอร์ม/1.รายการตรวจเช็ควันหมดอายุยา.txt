@@ -1,0 +1,39 @@
+รายการตรวจเช็ควันหมดอายุยา
+FM-NUR-077.1
+เมื่อคุณส่งฟอร์มนี้ จะไม่มีการรวบรวมรายละเอียดของคุณ โดยอัตโนมัติ เช่น ชื่อและที่อยู่อีเมล เว้นแต่ว่าคุณจะให้ไว้ด้วยตนเอง
+1.วันที่ Check list
+โปรดใส่วันที่ (d/M/yyyy)
+
+2.ชื่อ-สกุล
+ใส่คำตอบ
+3.NSS 5 ml. (20)
+โปรดใส่วันที่ (d/M/yyyy)
+
+4.NSS 100 ml. (For IV drip) **SOFT BAG** (5)
+โปรดใส่วันที่ (d/M/yyyy)
+รายการตรวจเช็ควันหมดอายุยา
+Anaphylatic Box
+4 รายการ
+5.DEXA 4 mg/ml. INJ (HAD) (2)
+โปรดใส่วันที่ (d/M/yyyy)
+
+6.CHLORPHENIRAMINE 10 MG/ML. INJ (1)
+โปรดใส่วันที่ (d/M/yyyy)
+
+7.ADRENALINE 1 mg/ml INJ (HAD) (1)
+โปรดใส่วันที่ (d/M/yyyy)
+
+8.NSS 5 ml (1)
+โปรดใส่วันที่ (d/M/yyyy)
+9.DEXA 4 mg/ml. INJ (HAD) (2)
+โปรดใส่วันที่ (d/M/yyyy)
+
+10.CHLORPHENIRAMINE 10 MG/ML. INJ (1)
+โปรดใส่วันที่ (d/M/yyyy)
+
+11.ADRENALINE 1 mg/ml INJ (HAD) (1)
+โปรดใส่วันที่ (d/M/yyyy)
+
+12.NSS 5 ml (1)
+โปรดใส่วันที่ (d/M/yyyy)
+

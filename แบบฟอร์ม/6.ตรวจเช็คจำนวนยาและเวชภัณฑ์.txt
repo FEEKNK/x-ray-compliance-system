@@ -1,0 +1,177 @@
+ตรวจเช็คจำนวนยาและเวชภัณฑ์
+F/M-XRA-006.1 REV.7
+เมื่อคุณส่งฟอร์มนี้ จะไม่มีการรวบรวมรายละเอียดของคุณ โดยอัตโนมัติ เช่น ชื่อและที่อยู่อีเมล เว้นแต่ว่าคุณจะให้ไว้ด้วยตนเอง
+1.วันที่ Check list 
+โปรดใส่วันที่ (d/M/yyyy)
+
+2.ชื่อ-สกุล
+ใส่คำตอบ
+3.Anaphylactic box (2)
+
+ครบ
+
+อื่นๆ
+4.Normal saline 100 ml (5)
+
+ครบ
+
+อื่นๆ
+5.Coiled tube 60 " (20)
+
+ครบ
+
+อื่นๆ
+6.Y-Connector (20)
+
+ครบ
+
+อื่นๆ
+7.Syring 200 ml (40)
+
+ครบ
+
+อื่นๆ
+8.Syring 20 ml (15)
+
+ครบ
+
+อื่นๆ
+9.Syring 10 ml (3)
+
+ครบ
+
+อื่นๆ
+10.Syring 5 ml (3)
+
+ครบ
+
+อื่นๆ
+11.Syring Errigate (1)
+
+ครบ
+
+อื่นๆ
+12.Syringe prefill Saline Nss (5)
+
+ครบ
+
+อื่นๆ
+13.Three way stopcock (3)
+
+ครบ
+
+อื่นๆ
+14.Needle no.25 (3)
+
+ครบ
+
+อื่นๆ
+15.Needle no.18 (5)
+
+ครบ
+
+อื่นๆ
+16.IV Catheteter No.20 (5)
+
+ครบ
+
+อื่นๆ
+17.Tegaderm(S) (5)
+
+ครบ
+
+อื่นๆ
+18.Normal saline 5 ml (20)
+
+ครบ
+
+อื่นๆ
+19.Alcohol Sheet (10)
+
+ครบ
+
+อื่นๆ
+20.FingerTip (1)
+
+ครบ
+
+อื่นๆ
+21.Gauze pads (1)
+
+ครบ
+
+อื่นๆ
+22.สายออกซิเจน (1)
+
+ครบ
+
+อื่นๆ
+23.Ultrasound gel (4)
+
+ครบ
+
+อื่นๆ
+24.Sterile glove no.6.5 (2)
+
+ครบ
+
+อื่นๆ
+25.Sterile glove no.7.5 (1)
+
+ครบ
+
+อื่นๆ
+26.Foley cath 2 Ways no.20 (4)
+
+ครบ
+
+อื่นๆ
+27.Foley cath 2 Ways no.8 (1)
+
+ครบ
+
+อื่นๆ
+28.Feeding tube (1)
+
+ครบ
+
+อื่นๆ
+29.Cotton ball (2)
+
+ครบ
+
+อื่นๆ
+30.Cotton sterile 0.35 Gm (3)
+
+ครบ
+
+อื่นๆ
+31.Lubrigel (4)
+
+ครบ
+
+อื่นๆ
+32.Enema Set (4)
+
+ครบ
+
+อื่นๆ
+33.Pampers Adult Size (4)
+
+ครบ
+
+อื่นๆ
+34.Barium Sulfate (2)
+
+ครบ
+
+อื่นๆ
+35.Red dot (30)
+
+ครบ
+
+อื่นๆ
+
+
+
+อื่นๆ=ให้ระบุเอง

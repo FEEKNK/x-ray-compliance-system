@@ -1,0 +1,545 @@
+{
+  "users": [
+    { "id": "1", "employeeId": "E001", "name": "Admin User", "department": "Management", "email": "admin@xray.com", "role": "ADMIN" },
+    { "id": "2", "employeeId": "E002", "name": "Somchai K.", "department": "X-Ray Dept", "email": "somchai@xray.com", "role": "STAFF", "lineToken": "token_somchai" },
+    { "id": "3", "employeeId": "E003", "name": "Wichai S.", "department": "X-Ray Dept", "email": "wichai@xray.com", "role": "STAFF", "lineToken": "token_wichai" }
+  ],
+  "forms": [
+    {
+      "id": "f20",
+      "title": "ตรวจเช็คประจำวันเครื่อง X-RAY GENERAL Model JUMONG E",
+      "description": "/M-XRA-018.1 Rev.4",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3_1", "label": "CONTROL: Power ON / OFF", "type": "yesno", "required": true },
+        { "id": "q3_2", "label": "CONTROL: Anatomical Program", "type": "yesno", "required": true },
+        { "id": "q3_3", "label": "CONTROL: Radiographic Exposure Setting", "type": "yesno", "required": true },
+        { "id": "q4_1", "label": "HAND SWITCH: สายไฟ Hand Switch", "type": "yesno", "required": true },
+        { "id": "q4_2", "label": "HAND SWITCH: ปุ่มกด Switch", "type": "yesno", "required": true },
+        { "id": "q5_1", "label": "TUBE: เลื่อนขึ้น / ลง (Vertical)", "type": "yesno", "required": true },
+        { "id": "q5_2", "label": "TUBE: Switch light field lamp", "type": "yesno", "required": true },
+        { "id": "q5_3", "label": "TUBE: Collimator light field lamp", "type": "yesno", "required": true },
+        { "id": "q6_1", "label": "BUCKY STAND: ที่ปรับระดับเลื่อน ขึ้น/ลง", "type": "yesno", "required": true },
+        { "id": "q6_2", "label": "BUCKY STAND: Detector", "type": "yesno", "required": true },
+        { "id": "q7_1", "label": "อื่นๆ: ทำความสะอาด เครื่อง", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f2",
+      "title": "ตรวจเช็คประจำวันเครื่อง BEDSIDE MONITOR",
+      "description": "F/M-BSI-122.1 Rev.2",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3", "label": "สวิทช์เปิด-ปิดเครื่อง", "type": "yesno", "required": true },
+        { "id": "q4", "label": "ปลั๊กไฟ AC,สายไฟ AC", "type": "yesno", "required": true },
+        { "id": "q5", "label": "เสียง Alarm", "type": "yesno", "required": true },
+        { "id": "q6", "label": "การเลือก Main Menu ต่างๆ", "type": "yesno", "required": true },
+        { "id": "q7", "label": "New Case Setup (กรณีเครื่องว่าง)", "type": "yesno", "required": true },
+        { "id": "q8", "label": "Alarm Control", "type": "yesno", "required": true },
+        { "id": "q9", "label": "View Other Patients", "type": "yesno", "required": true },
+        { "id": "q10", "label": "Patient Data (กรณีมีผู้ป่วย)", "type": "yesno", "required": true },
+        { "id": "q11", "label": "Monitor Setup", "type": "yesno", "required": true },
+        { "id": "q12", "label": "Cable.Lead EKG", "type": "yesno", "required": true },
+        { "id": "q13", "label": "Spo2 Senser", "type": "yesno", "required": true },
+        { "id": "q14", "label": "Arm Cuff", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f7",
+      "title": "EMERGENCY CART CHECKLIST FORM",
+      "description": "F/M-NUR-009.1 Rev.8",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ผู้ตรวจ (RN)", "type": "text", "required": true },
+        { "id": "q3", "label": "เวร", "type": "select", "options": ["เช้า", "บ่าย", "ดึก"], "required": true },
+        { "id": "q4", "label": "กล่องยาฉุกเฉิน (ระบุ NO.)", "type": "text", "required": true },
+        { "id": "q5", "label": "Set laryngoscope", "type": "yesno", "required": true },
+        { "id": "q6", "label": "Mobile Suction (เฉพาะ OPD Med, Opd Surg, Dental)", "type": "text", "required": false },
+        { "id": "q7_0", "label": "Blade (พร้อมใช้) No.0", "type": "yesno", "required": true },
+        { "id": "q7_1", "label": "Blade (พร้อมใช้) No.1", "type": "yesno", "required": true },
+        { "id": "q7_2", "label": "Blade (พร้อมใช้) No.2", "type": "yesno", "required": true },
+        { "id": "q7_3", "label": "Blade (พร้อมใช้) No.3", "type": "yesno", "required": true },
+        { "id": "q7_4", "label": "Blade (พร้อมใช้) No.4", "type": "yesno", "required": true },
+        { "id": "q8", "label": "LOCK No.", "type": "text", "required": true },
+        { "id": "q9", "label": "กระบอก Suction (ด้านข้างรถ)", "type": "yesno", "required": true },
+        { "id": "q10", "label": "ถัง Oxygen + เกย์ (แรงดันไม่น้อยกว่า 700 PSI)", "type": "text", "required": true },
+        { "id": "q11", "label": "กระบานรองหลัง", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f1",
+      "title": "รายการตรวจเช็ควันหมดอายุยา",
+      "description": "FM-NUR-077.1",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3", "label": "NSS 5 ml. (20)", "type": "date", "required": true },
+        { "id": "q4", "label": "NSS 100 ml. (For IV drip) **SOFT BAG** (5)", "type": "date", "required": true },
+        { "id": "q5", "label": "Anaphylatic Box: DEXA 4 mg/ml. INJ (HAD) (2)", "type": "date", "required": true },
+        { "id": "q6", "label": "Anaphylatic Box: CHLORPHENIRAMINE 10 MG/ML. INJ (1)", "type": "date", "required": true },
+        { "id": "q7", "label": "Anaphylatic Box: ADRENALINE 1 mg/ml INJ (HAD) (1)", "type": "date", "required": true },
+        { "id": "q8", "label": "Anaphylatic Box: NSS 5 ml (1)", "type": "date", "required": true }
+      ]
+    },
+    {
+      "id": "f3",
+      "title": "ตรวจเช็คประจำวันเครื่อง C-ARM Model BV ENDURA",
+      "description": "F/M-XRA-013.1 REV.4",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3", "label": "1. Power ON / OFF ของ Control", "type": "yesno", "required": true },
+        { "id": "q4", "label": "2. Technique Selector", "type": "yesno", "required": true },
+        { "id": "q5", "label": "3. Radiographic Exposure Setting", "type": "yesno", "required": true },
+        { "id": "q6", "label": "4. Anatomical Program", "type": "yesno", "required": true },
+        { "id": "q7", "label": "5. Hand Switch", "type": "yesno", "required": true },
+        { "id": "q8", "label": "6. การหมุน,เลื่อน Tube แนวต่างๆ", "type": "yesno", "required": true },
+        { "id": "q9", "label": "7. Drive Control Unit", "type": "yesno", "required": true },
+        { "id": "q10", "label": "8. Power ON / OFF ของ Monitor", "type": "yesno", "required": true },
+        { "id": "q11", "label": "9. ปุ่มปรับความขาว - ดำ ของภาพ", "type": "yesno", "required": true },
+        { "id": "q12", "label": "10. Image Monitor", "type": "yesno", "required": true },
+        { "id": "q13", "label": "11. การต่อสายจาก Monitor เข้ากับ Control", "type": "yesno", "required": true },
+        { "id": "q14", "label": "12. ทำความสะอาดเครื่อง", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f4",
+      "title": "ตรวจเช็คประจำวันเครื่อง CT-SCAN Model INGENUITY ELITE",
+      "description": "F/M-XRA-014.1 REV.5",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3", "label": "1. เปิดเครื่อง CT WARM / FAST CALIBRATE", "type": "yesno", "required": true },
+        { "id": "q4", "label": "2. เปิดเครื่อง WORK STATION", "type": "yesno", "required": true },
+        { "id": "q5", "label": "3. เปิดเครื่อง INJECTOR / เช็ค SYRINGE INJECTOR", "type": "yesno", "required": true },
+        { "id": "q6", "label": "4. GANTRY และเตียง", "type": "yesno", "required": true },
+        { "id": "q7", "label": "5. ระบบการทำงานของเคริ่อง Monitor", "type": "yesno", "required": true },
+        { "id": "q8", "label": "6. HEAD REST,FOOT REST", "type": "yesno", "required": true },
+        { "id": "q9", "label": "7. กล้องวงจรปิด", "type": "yesno", "required": true },
+        { "id": "q10", "label": "8. เสื้อตะกั่ว, COLLAR", "type": "yesno", "required": true },
+        { "id": "q11", "label": "9. เสาน้ำเกลือ, OVERBED", "type": "yesno", "required": true },
+        { "id": "q12", "label": "10. ทำความสะอาดเครื่อง, CONTROL", "type": "yesno", "required": true },
+        { "id": "q13", "label": "11. เช็คอุณหภูมิห้อง / ความชื้น", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f5",
+      "title": "ตรวจเช็คประจำวันเครื่อง FLUOROSCOPY Model KXO-32XC",
+      "description": "F/M-XRA-015.1 REV.4",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-นามสกุล", "type": "text", "required": true },
+        { "id": "q3_1", "label": "CONTROL: Switch Breaker", "type": "yesno", "required": true },
+        { "id": "q3_2", "label": "CONTROL: Switch ON/OFF", "type": "yesno", "required": true },
+        { "id": "q3_3", "label": "CONTROL: Local Control", "type": "yesno", "required": true },
+        { "id": "q3_4", "label": "CONTROL: Remote Control", "type": "yesno", "required": true },
+        { "id": "q3_5", "label": "CONTROL: Radiographinc Exposure Setting", "type": "yesno", "required": true },
+        { "id": "q3_6", "label": "CONTROL: Anatomical Program", "type": "yesno", "required": true },
+        { "id": "q3_7", "label": "CONTROL: Image Monitor", "type": "yesno", "required": true },
+        { "id": "q3_8", "label": "CONTROL: ปุ่มปรับความขาว - ดำ ของภาพ", "type": "yesno", "required": true },
+        { "id": "q4_1", "label": "HAND SWITCH: สายไฟ Hand Switch", "type": "yesno", "required": true },
+        { "id": "q4_2", "label": "HAND SWITCH: ปุ่มกด Switch", "type": "yesno", "required": true },
+        { "id": "q5_1", "label": "TUBE: เลื่อนซ้าย / ขวา (Longitudinal)", "type": "yesno", "required": true },
+        { "id": "q5_2", "label": "TUBE: Switch light field lamp", "type": "yesno", "required": true },
+        { "id": "q5_3", "label": "TUBE: Collimator light field lamp", "type": "yesno", "required": true },
+        { "id": "q6_1", "label": "TABLE: เลื่อนซ้าย/ขวา (Longitudinal)", "type": "yesno", "required": true },
+        { "id": "q6_2", "label": "TABLE: เลื่อนนอก / ใน (Lateral)", "type": "yesno", "required": true },
+        { "id": "q6_3", "label": "TABLE: ระบบการทำงาน ของ Foot Switch", "type": "yesno", "required": true },
+        { "id": "q7_1", "label": "อื่นๆ: เครื่องแปลง สัญญาณ", "type": "yesno", "required": true },
+        { "id": "q7_2", "label": "อื่นๆ: Hand Grip, Foot Rest", "type": "yesno", "required": true },
+        { "id": "q7_3", "label": "อื่นๆ: เสื้อตะกั่ว, Collar", "type": "yesno", "required": true },
+        { "id": "q7_4", "label": "อื่นๆ: Overbed", "type": "yesno", "required": true },
+        { "id": "q7_5", "label": "อื่นๆ: Foot Step", "type": "yesno", "required": true },
+        { "id": "q7_6", "label": "อื่นๆ: ทำความสะอาด เครื่อง", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f6",
+      "title": "ตรวจเช็คจำนวนยาและเวชภัณฑ์",
+      "description": "F/M-XRA-006.1 REV.7",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3", "label": "Anaphylactic box (2)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q4", "label": "Normal saline 100 ml (5)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q5", "label": "Coiled tube 60 \" (20)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q6", "label": "Y-Connector (20)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q7", "label": "Syring 200 ml (40)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q18", "label": "Normal saline 5 ml (20)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q23", "label": "Ultrasound gel (4)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "other_note", "label": "อื่นๆ (โปรดระบุ)", "type": "text", "required": false }
+      ]
+    },
+    {
+      "id": "f8",
+      "title": "ตารางวัด DOSE GEN 1",
+      "description": "Radiation Dose Measurement for GEN 1 Machine",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3_kvp", "label": "Hand: kVp", "type": "number", "required": true },
+        { "id": "q3_ma", "label": "Hand: mA", "type": "number", "required": true },
+        { "id": "q3_mas", "label": "Hand: mAs", "type": "number", "required": true },
+        { "id": "q3_ugy", "label": "Hand: uGy", "type": "number", "required": true },
+        { "id": "q4_kvp", "label": "Chest: kVp", "type": "number", "required": true },
+        { "id": "q4_ma", "label": "Chest: mA", "type": "number", "required": true },
+        { "id": "q4_mas", "label": "Chest: mAs", "type": "number", "required": true },
+        { "id": "q4_ugy", "label": "Chest: uGy", "type": "number", "required": true }
+      ]
+    },
+    {
+      "id": "f9",
+      "title": "ตารางวัด DOSE GEN 2",
+      "description": "Radiation Dose Measurement for GEN 2 Machine",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3_kvp", "label": "Hand: kVp", "type": "number", "required": true },
+        { "id": "q3_ma", "label": "Hand: mA", "type": "number", "required": true },
+        { "id": "q3_mas", "label": "Hand: mAs", "type": "number", "required": true },
+        { "id": "q3_ugy", "label": "Hand: uGy", "type": "number", "required": true },
+        { "id": "q4_kvp", "label": "Chest: kVp", "type": "number", "required": true },
+        { "id": "q4_ma", "label": "Chest: mA", "type": "number", "required": true },
+        { "id": "q4_mas", "label": "Chest: mAs", "type": "number", "required": true },
+        { "id": "q4_ugy", "label": "Chest: uGy", "type": "number", "required": true }
+      ]
+    },
+    {
+      "id": "f10",
+      "title": "ใบตรวจเช็คจำนวนยาและเวชภัณฑ์ Core Needle Breast Biopsy",
+      "description": "F/M-XRA-028.1 Rev.0",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3", "label": "Bard Max-core Disp. Biopsy (5)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q4", "label": "Mission Biopsy (Kit) 18Gx16Cm (5)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q5", "label": "Breast Achieve Needle Biop 14G x 11cm COA (5)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q6", "label": "Wire Localization Accura 20G x 7.5 cm (5)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q7", "label": "Set dressing (ใหญ่) (3)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q8", "label": "Aperture Sterile size L (100x100) (5)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "other_note", "label": "อื่นๆ (โปรดระบุ)", "type": "text", "required": false }
+      ]
+    },
+    {
+      "id": "f11",
+      "title": "ตารางตรวจเช็คอุณหภูมิความชื้นสัมพัทธ์ห้อง เวชภัณฑ์",
+      "description": "Environmental Monitoring for Medical Supplies Room",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "ประจำ วัน/เดือน/ปี", "type": "date", "required": true },
+        { "id": "q2", "label": "เวร", "type": "select", "options": ["บ่าย", "ดึก"], "required": true },
+        { "id": "q3", "label": "อุณหภูมิที่ตรวจเช็ค", "type": "number", "required": true },
+        { "id": "q4", "label": "ระดับอุณหภูมิอยู่ในระดับใด (°C)", "type": "select", "options": ["14-18", "18-24", "24-28"], "required": true }
+      ]
+    },
+    {
+      "id": "f12",
+      "title": "ตารางตรวจเช็คอุณหภูมิความชื้นสัมพัทธ์ห้อง CT SCAN แผนก Imaging",
+      "description": "Environmental Monitoring for CT SCAN Room",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "ประจำ วัน/เดือน/ปี", "type": "date", "required": true },
+        { "id": "q2", "label": "เวร", "type": "select", "options": ["บ่าย", "ดึก"], "required": true },
+        { "id": "q3", "label": "อุณหภูมิที่ตรวจเช็ค", "type": "number", "required": true },
+        { "id": "q4", "label": "ระดับอุณหภูมิอยู่ในระดับใด (°C)", "type": "select", "options": ["14-18", "18-24", "24-28"], "required": true },
+        { "id": "q5", "label": "ความชื้นที่ตรวจเช็ค", "type": "number", "required": true },
+        { "id": "q6", "label": "ความชื้นที่ตรวจเช็คอยู่ในระดับใด (%RH)", "type": "select", "options": ["34-45", "45-65", "65-75"], "required": true },
+        { "id": "q7", "label": "ชื่อ-นามสกุล ผู้บันทึก", "type": "text", "required": true }
+      ]
+    },
+    {
+      "id": "f13",
+      "title": "ตารางตรวจเช็คอุณหภูมิความชื้นสัมพัทธ์ห้อง Gen.2",
+      "description": "Environmental Monitoring for GEN 2 Room",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "ประจำ วัน/เดือน/ปี", "type": "date", "required": true },
+        { "id": "q2", "label": "เวร", "type": "select", "options": ["บ่าย", "ดึก"], "required": true },
+        { "id": "q3", "label": "อุณหภูมิที่ตรวจเช็ค", "type": "number", "required": true },
+        { "id": "q4", "label": "ระดับอุณหภูมิอยู่ในระดับใด (°C)", "type": "select", "options": ["14-18", "18-24", "24-28"], "required": true },
+        { "id": "q5", "label": "ความชื้นที่ตรวจเช็ค", "type": "number", "required": true },
+        { "id": "q6", "label": "ความชื้นที่ตรวจเช็คอยู่ในระดับใด (%RH)", "type": "select", "options": ["34-45", "45-65", "65-75"], "required": true },
+        { "id": "q7", "label": "ชื่อ-นามสกุล ผู้บันทึก", "type": "text", "required": true }
+      ]
+    },
+    {
+      "id": "f14",
+      "title": "ตรวจเช็คอุปกรณ์ช่วยชีวิต (บ่าย)",
+      "description": "Checklist for life-saving equipment (Afternoon Shift)",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล ผู้ตรวจ", "type": "text", "required": true },
+        { "id": "q3_1", "label": "Ambubag + mask เด็ก (1 ชุด) และ ผู้ใหญ่ (1 ชุด)", "type": "yesno", "required": true },
+        { "id": "q3_2", "label": "Set O2 (หัวเกย์, sterile water, สาย O2)", "type": "yesno", "required": true },
+        { "id": "q3_3", "label": "Set Suction (หัวเกย์, กระบอก Suction, สาย Suction No 6,12)", "type": "yesno", "required": true },
+        { "id": "q3_4", "label": "Connector (3 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_5", "label": "Stethoscope (1 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_6", "label": "Oral airway เบอร์ 2, 3, 4, 5 (อย่างละ 1 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_7", "label": "Mask เด็ก (1 ชิ้น) และ ผู้ใหญ่ (1 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_8", "label": "Nasal Cannula (2 ชิ้น)", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f15",
+      "title": "ตารางตรวจเช็คอุณหภูมิความชื้นสัมพัทธ์ห้อง Gen.1",
+      "description": "Environmental Monitoring for GEN 1 Room",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "ประจำ วัน/เดือน/ปี", "type": "date", "required": true },
+        { "id": "q2", "label": "เวร", "type": "select", "options": ["บ่าย", "ดึก"], "required": true },
+        { "id": "q3", "label": "อุณหภูมิที่ตรวจเช็ค", "type": "number", "required": true },
+        { "id": "q4", "label": "ระดับอุณหภูมิอยู่ในระดับใด (°C)", "type": "select", "options": ["14-18", "18-24", "24-28"], "required": true },
+        { "id": "q6", "label": "ความชื้นที่ตรวจเช็คอยู่ในระดับใด (%RH)", "type": "select", "options": ["34-45", "45-65", "65-75"], "required": true },
+        { "id": "q7", "label": "ชื่อ-นามสกุล ผู้บันทึกการตรวจเช็ค", "type": "text", "required": true }
+      ]
+    },
+    {
+      "id": "f16",
+      "title": "ตารางตรวจเช็คอุณหภูมิความชื้นสัมพัทธ์ห้อง MAMMOGRAM",
+      "description": "Environmental Monitoring for MAMMOGRAM Room",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "ประจำ วัน/เดือน/ปี", "type": "date", "required": true },
+        { "id": "q2", "label": "เวร", "type": "select", "options": ["บ่าย", "ดึก"], "required": true },
+        { "id": "q3", "label": "อุณหภูมิที่ตรวจเช็ค", "type": "number", "required": true },
+        { "id": "q4", "label": "ระดับอุณหภูมิอยู่ในระดับใด (°C)", "type": "select", "options": ["14-18", "18-24", "24-28"], "required": true },
+        { "id": "q5", "label": "ความชื้นที่ตรวจเช็ค", "type": "number", "required": true },
+        { "id": "q6", "label": "ความชื้นที่ตรวจเช็คอยู่ในระดับใด (%RH)", "type": "select", "options": ["34-45", "45-65", "65-75"], "required": true },
+        { "id": "q7", "label": "ชื่อ-นามสกุล ผู้บันทึกการตรวจเช็ค", "type": "text", "required": true }
+      ]
+    },
+    {
+      "id": "f17",
+      "title": "ตรวจเช็คอุปกรณ์ช่วยชีวิต (เช้า)",
+      "description": "Checklist for life-saving equipment (Morning Shift)",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล ผู้ตรวจ", "type": "text", "required": true },
+        { "id": "q3_1", "label": "Ambubag + mask เด็ก (1 ชุด) และ ผู้ใหญ่ (1 ชุด)", "type": "yesno", "required": true },
+        { "id": "q3_2", "label": "Set O2 (หัวเกย์, sterile water, สาย O2)", "type": "yesno", "required": true },
+        { "id": "q3_3", "label": "Set Suction (หัวเกย์, กระบอก Suction, สาย Suction No 6,12)", "type": "yesno", "required": true },
+        { "id": "q3_4", "label": "Connector (3 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_5", "label": "Stethoscope (1 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_6", "label": "Oral airway เบอร์ 2, 3, 4, 5 (อย่างละ 1 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_7", "label": "Mask เด็ก (1 ชิ้น) และ ผู้ใหญ่ (1 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_8", "label": "Nasal Cannula (2 ชิ้น)", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f18",
+      "title": "ตรวจเช็คอุปกรณ์ช่วยชีวิต (ดึก)",
+      "description": "Checklist for life-saving equipment (Night Shift)",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล ผู้ตรวจ", "type": "text", "required": true },
+        { "id": "q3_1", "label": "Ambubag + mask เด็ก (1 ชุด) และ ผู้ใหญ่ (1 ชุด)", "type": "yesno", "required": true },
+        { "id": "q3_2", "label": "Set O2 (หัวเกย์, sterile water, สาย O2)", "type": "yesno", "required": true },
+        { "id": "q3_3", "label": "Set Suction (หัวเกย์, กระบอก Suction, สาย Suction No 6,12)", "type": "yesno", "required": true },
+        { "id": "q3_4", "label": "Connector (3 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_5", "label": "Stethoscope (1 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_6", "label": "Oral airway เบอร์ 2, 3, 4, 5 (อย่างละ 1 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_7", "label": "Mask เด็ก (1 ชิ้น) และ ผู้ใหญ่ (1 ชิ้น)", "type": "yesno", "required": true },
+        { "id": "q3_8", "label": "Nasal Cannula (2 ชิ้น)", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f19",
+      "title": "ตรวจเช็คแรงดัน ระบบก๊าซทางการแพทย์ ออกซิเจน Zone Imaging",
+      "description": "F/M-BSI-103.1 Rev.2",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3", "label": "เวลา", "type": "select", "options": ["08:00-00:00", "16:00-00:00"], "required": true },
+        { "id": "q4", "label": "แรงดัน (Static) (3.5-4.1)", "type": "number", "required": true },
+        { "id": "q5", "label": "Test Zone Alarm", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f21",
+      "title": "ตรวจเช็คสำหรับเคาน์เตอร์",
+      "description": "F/M-XRA-006.1 REV.7",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3", "label": "CD (30)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q4", "label": "DVD (20)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q5", "label": "ซองใส่ CD , DVD (50)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "q28", "label": "Alcohol Hand Gel (2)", "type": "select", "options": ["ครบ", "อื่นๆ"], "required": true },
+        { "id": "other_note", "label": "อื่นๆ (โปรดระบุ)", "type": "text", "required": false }
+      ]
+    },
+    {
+      "id": "f22",
+      "title": "ตรวจเช็คประจำวันเครื่อง ULTRASOUND Model Aplio 550a",
+      "description": "F/M-BSI-133.1 REV.2",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3", "label": "สวิตช์ ON/OFF", "type": "yesno", "required": true },
+        { "id": "q4", "label": "เครื่องสำรองไฟ (UPS)", "type": "yesno", "required": true },
+        { "id": "q5", "label": "ปุ่ม Control Panel, Monitor", "type": "yesno", "required": true },
+        { "id": "q6", "label": "Probes and Cable Hanger", "type": "yesno", "required": true },
+        { "id": "q7", "label": "Ultrasound Paper, Gel", "type": "yesno", "required": true },
+        { "id": "q8", "label": "ทำความสะอาดเครื่อง, Probes", "type": "yesno", "required": true },
+        { "id": "q9", "label": "อุปกรณ์ต่างๆ", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f23",
+      "title": "ตรวจเช็คประจำวันเครื่อง X-RAY GENERAL 1 Model JUMONG M",
+      "description": "F/M-XRA-016.1 REV.4",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3_1", "label": "CONTROL: Power ON / OFF", "type": "yesno", "required": true },
+        { "id": "q3_2", "label": "CONTROL: Anatomical Program", "type": "yesno", "required": true },
+        { "id": "q4_1", "label": "HAND SWITCH: สายไฟ Hand Switch", "type": "yesno", "required": true },
+        { "id": "q4_2", "label": "HAND SWITCH: ปุ่มกด Switch", "type": "yesno", "required": true },
+        { "id": "q5_1", "label": "TUBE: เลื่อนขึ้น / ลง (Vertical)", "type": "yesno", "required": true },
+        { "id": "q5_2", "label": "TUBE: เลื่อนซ้าย / ขวา (Longitudinal)", "type": "yesno", "required": true },
+        { "id": "q5_3", "label": "TUBE: ALL FREE / Switch light field lamp", "type": "yesno", "required": true },
+        { "id": "q6_1", "label": "BUCKY TABLE: เลื่อนขึ้น / ลง (Vertical)", "type": "yesno", "required": true },
+        { "id": "q6_2", "label": "BUCKY TABLE: Detector", "type": "yesno", "required": true },
+        { "id": "q7_1", "label": "BUCKY STAND: ที่ปรับระดับเลื่อน ขึ้น / ลง", "type": "yesno", "required": true },
+        { "id": "q7_2", "label": "BUCKY STAND: Detector", "type": "yesno", "required": true },
+        { "id": "q8_1", "label": "อื่นๆ: ทำความสะอาด เครื่อง", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f24",
+      "title": "ตรวจเช็คแรงดัน ระบบก๊าซทางการแพทย์ ระบบสูญญากาศ Zone Imaging",
+      "description": "FM-BSI-103.1 Rev.2",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3", "label": "เวลา", "type": "select", "options": ["บ่าย", "ดึก"], "required": true },
+        { "id": "q4", "label": "แรงดัน (Static) (-650 ถึง -450)", "type": "number", "required": true }
+      ]
+    },
+    {
+      "id": "f25",
+      "title": "ตรวจเช็คประจำวันเครื่อง X-RAY PORTABLE Model SM 20 HF-B",
+      "description": "F/M-XRA-020.1 Rev.4",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3_1", "label": "CONTROL: Power ON / OFF", "type": "yesno", "required": true },
+        { "id": "q4_1", "label": "HAND SWITCH: สายไฟ Hand Switch", "type": "yesno", "required": true },
+        { "id": "q5_1", "label": "TUBE: เลื่อนขึ้น / ลง / Switch light field lamp", "type": "yesno", "required": true },
+        { "id": "q6_1", "label": "Drive Control Unit: ระบบเบรค / เดินหน้า-ถอยหลัง", "type": "yesno", "required": true },
+        { "id": "q7_1", "label": "แบตเตอรี่: Power Supply Cable / ระดับแบตเตอรี่", "type": "yesno", "required": true },
+        { "id": "q8_1", "label": "อื่นๆ: Tablet / ทำความสะอาด เครื่อง", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f26",
+      "title": "ตรวจเช็คประจำวันเครื่อง MAMMOGRAM Model SELENIA DIMENSIONS 3000(2D)",
+      "description": "F/M-XRA-026.1 REV 2",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3_1", "label": "CONTROL: Power ON / OFF", "type": "yesno", "required": true },
+        { "id": "q4_1", "label": "HAND SWITCH: ปุ่มกด Switch", "type": "yesno", "required": true },
+        { "id": "q5_1", "label": "TUBE: เลื่อนขึ้น / ลง / C-Arm Push Buttons", "type": "yesno", "required": true },
+        { "id": "q6_1", "label": "DETECTOR: Test Phantom", "type": "yesno", "required": true },
+        { "id": "q7_1", "label": "FOOT SWITCH: ระบบการทำงาน ของ Foot Switch", "type": "yesno", "required": true },
+        { "id": "q8_1", "label": "ACCESSORIES: Compression Plate / Face Shield", "type": "yesno", "required": true },
+        { "id": "q9_1", "label": "อื่นๆ: อุณหภูมิ/ความชื้น / ทำความสะอาด เครื่อง", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f27",
+      "title": "ตรวจเช็คประจำวันเครื่อง X-RAY GENERAL 2 Model AERODR C 80",
+      "description": "F/M-XRA-001.1 REV.2",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3_1", "label": "CONTROL: Power ON / OFF", "type": "yesno", "required": true },
+        { "id": "q3_2", "label": "CONTROL: Anatomical Program", "type": "yesno", "required": true },
+        { "id": "q4_1", "label": "HAND SWITCH: สายไฟ Hand Switch", "type": "yesno", "required": true },
+        { "id": "q4_2", "label": "HAND SWITCH: ปุ่มกด Switch", "type": "yesno", "required": true },
+        { "id": "q5_1", "label": "TUBE: เลื่อนขึ้น / ลง (Vertical)", "type": "yesno", "required": true },
+        { "id": "q5_2", "label": "TUBE: ALL FREE / Switch light field lamp", "type": "yesno", "required": true },
+        { "id": "q6_1", "label": "BUCKY TABLE: เลื่อนขึ้น / ลง (Vertical)", "type": "yesno", "required": true },
+        { "id": "q6_2", "label": "BUCKY TABLE: Detector", "type": "yesno", "required": true },
+        { "id": "q7_1", "label": "BUCKY STAND: ที่ปรับระดับเลื่อน ขึ้น / ลง", "type": "yesno", "required": true },
+        { "id": "q7_2", "label": "BUCKY STAND: Detector", "type": "yesno", "required": true },
+        { "id": "q8_1", "label": "อื่นๆ: ทำความสะอาด เครื่อง", "type": "yesno", "required": true }
+      ]
+    },
+    {
+      "id": "f28",
+      "title": "ตรวจเช็คประจำวันเครื่อง ULTRASOUND Model Aplio 500a",
+      "description": "F/M-BSI-133.1 REV.2",
+      "isActive": true,
+      "createdAt": "2026-05-12T00:00:00.000Z",
+      "questions": [
+        { "id": "q1", "label": "วันที่ Check list", "type": "date", "required": true },
+        { "id": "q2", "label": "ชื่อ-สกุล", "type": "text", "required": true },
+        { "id": "q3", "label": "สวิตช์ ON/OFF", "type": "yesno", "required": true },
+        { "id": "q4", "label": "เครื่องสำรองไฟ (UPS)", "type": "yesno", "required": true },
+        { "id": "q5", "label": "ปุ่ม Control Panel, Monitor", "type": "yesno", "required": true },
+        { "id": "q6", "label": "Probes and Cable Hanger", "type": "yesno", "required": true },
+        { "id": "q7", "label": "Ultrasound Paper, Gel", "type": "yesno", "required": true },
+        { "id": "q8", "label": "ทำความสะอาดเครื่อง, Probes", "type": "yesno", "required": true },
+        { "id": "q9", "label": "อุปกรณ์ต่างๆ", "type": "yesno", "required": true }
+      ]
+    }
+  ],
+  "schedules": [
+    { "id": "s1", "date": "2026-05-12", "shift": "Morning", "staffId": "2", "formId": "f20", "supervisorId": "1", "status": "Pending" },
+    { "id": "s2", "date": "2026-05-12", "shift": "Morning", "staffId": "2", "formId": "f2", "supervisorId": "1", "status": "Pending" }
+  ],
+  "submissions": []
+}

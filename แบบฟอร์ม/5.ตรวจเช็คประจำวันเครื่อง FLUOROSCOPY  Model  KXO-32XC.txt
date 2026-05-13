@@ -1,0 +1,8 @@
+ตรวจเช็คประจำวันเครื่อง FLUOROSCOPY Model KXO-32XC   F/M-XRA-015.1 REV.4 เมื่อคุณส่งฟอร์มนี้ จะไม่มีการรวบรวมรายละเอียดของคุณ โดยอัตโนมัติ เช่น ชื่อและที่อยู่อีเมล เว้นแต่ว่าคุณจะให้ไว้ด้วยตนเอง   
+1. วันที่ Check list   โปรดใส่วันที่ (d/M/yyyy)   
+2. ชื่อ-นามสกุล   ใส่คำตอบ   
+3. 1. CONTROL (มีตัวเลือกให้ตอบ yes หรือ no )  Swithch Breaker   Swithch ON/OFF   Local Control   Remote Control   Radiographinc Exposure Setting   Anatomical Program   Image Monitor   ปุ่มปรับความขาว - ดำ ของภาพ   
+4. 2. HAND SWITCH (มีตัวเลือกให้ตอบ yes หรือ no )  สายไฟ Hand Switch   ปุ่มกด Switch   
+5. 3. TUBE (มีตัวเลือกให้ตอบ yes หรือ no )  เลื่อนซ้าย / ขวา (Longitudinal)   Switch light field lamp   Collimator light field lamp   
+6. 4. TABLE (มีตัวเลือกให้ตอบ yes หรือ no )  เลื่อนซ้าย/ขวา (Longitudinal)   เลื่อนนอก / ใน (Lateral)   ระบบการทำงาน ของ Foot Switch   
+7. 5. อื่นๆ (มีตัวเลือกให้ตอบ yes หรือ no )  เครื่องแปลง สัญญาณ   Hand Grip, Foot Rest   เสื้อตะกั่ว, Collar   Overbed   Foot Step   ทำความสะอาด เครื่อง   
