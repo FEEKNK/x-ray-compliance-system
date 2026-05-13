@@ -18,7 +18,7 @@ import type { Schedule, DynamicForm, Submission } from '../types';
 import { translations } from '../i18n';
 
 const StaffDashboard: React.FC = () => {
-  const { currentUser, getStaffSchedule, forms, submitForm, language } = useApp();
+  const { currentUser, getStaffSchedule, forms, submitForm } = useApp();
   const today = new Date().toISOString().split('T')[0];
   const mySchedules = currentUser ? getStaffSchedule(currentUser.id, today) : [];
   
