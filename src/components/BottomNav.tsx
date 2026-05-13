@@ -15,7 +15,7 @@ interface BottomNavProps {
 }
 
 const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, role }) => {
-  const { language, setCurrentUser } = useApp();
+  const { language } = useApp();
   const t = translations[language];
 
   const adminItems = [

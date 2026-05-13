@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../AppContext';
 import { 
-  ClipboardCheck, 
   Clock, 
   Camera, 
   CheckCircle2, 
@@ -13,7 +12,6 @@ import {
   ShieldAlert,
   PartyPopper,
   Eraser,
-  Printer,
   ChevronDown
 } from 'lucide-react';
 import type { Schedule, DynamicForm, Submission } from '../types';
