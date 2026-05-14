@@ -8,7 +8,8 @@ import {
   Users,
   Settings as SettingsIcon,
   BookOpen,
-  LogOut
+  LogOut,
+  TrendingUp
 } from 'lucide-react';
 import logo from '../assets/logo.svg';
 import type { Role } from '../types';
@@ -26,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
 
   const adminItems = [
     { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard },
+    { id: 'monthly', label: 'Monthly Audit', icon: TrendingUp },
     { id: 'forms', label: t.formBuilder, icon: FileEdit },
     { id: 'schedule', label: t.scheduling, icon: Calendar },
     { id: 'logs', label: t.masterLogs, icon: ClipboardList },

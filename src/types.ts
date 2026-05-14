@@ -29,6 +29,8 @@ export interface DynamicForm {
   questions: QuestionBlock[];
   isActive: boolean;
   createdAt: string;
+  shifts?: Shift[];
+  department?: 'MRI' | 'X-RAY';
 }
 
 export type Shift = 'Morning' | 'Afternoon' | 'Night';

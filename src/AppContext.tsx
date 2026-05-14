@@ -54,7 +54,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [settings, setSettings] = useState<SystemSettings>(() => {
     const saved = localStorage.getItem('xray_settings');
     return saved ? JSON.parse(saved) : {
-      hospitalName: "Metropolitan Imaging Center",
+      hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
       supervisorEmail: "supervisor@hospital.com",
       shifts: {
         Morning: "08:00 - 16:00",
@@ -128,14 +128,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSubmissions(prev => [...prev, submission]);
     setSchedules(prev => prev.map(s => s.id === submission.scheduleId ? { ...s, status: 'Completed' } : s));
 
+    const staff = users.find(u => u.id === submission.staffId);
+    const form = forms.find(f => f.id === submission.formId);
+
     // Auto-alert logic for clinical failures
     const hasCritical = Object.values(submission.data).some(v => v === 'Fail' || v === 'Alert');
     if (hasCritical) {
-      const staff = users.find(u => u.id === submission.staffId);
-      const form = forms.find(f => f.id === submission.formId);
       addAlert({
         type: 'Critical Failure',
         message: `CRITICAL: Failure reported by ${staff?.name} in ${form?.title}. Urgent inspection required.`,
+        staffId: submission.staffId,
+        formId: submission.formId
+      });
+    }
+
+    // Environmental Alerts (Temp: 18-24, Humidity: 45-65)
+    const temp = parseFloat(submission.data['q3']); // Standard ID for temp in these forms
+    const humidity = parseFloat(submission.data['q5'] || submission.data['q6']); // Standard IDs for humidity
+    
+    let envAlert = '';
+    if (!isNaN(temp) && (temp < 18 || temp > 24)) {
+      envAlert += `อุณหภูมิ (${temp}°C) ไม่อยู่ในเกณฑ์ 18-24°C. `;
+    }
+    if (!isNaN(humidity) && (humidity < 45 || humidity > 65)) {
+      envAlert += `ความชื้น (${humidity}%RH) ไม่อยู่ในเกณฑ์ 45-65%RH. `;
+    }
+
+    if (envAlert) {
+      addAlert({
+        type: 'Critical Failure',
+        message: `⚠️ ALERT [${form?.title}]: ${envAlert} กรุณาปรับอุณหภูมิ/ความชื้น และตรวจเช็คใหม่ใน 1 ชม. หากยังไม่ปกติให้แจ้งช่างทันที`,
         staffId: submission.staffId,
         formId: submission.formId
       });

@@ -13,6 +13,7 @@ import Settings from './components/Settings';
 import SystemGuide from './components/SystemGuide';
 import LandingPage from './components/LandingPage';
 import BottomNav from './components/BottomNav';
+import MonthlyDashboard from './components/MonthlyDashboard';
 import { LogOut, UserCircle } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -35,6 +36,7 @@ const AppContent: React.FC = () => {
           {currentUser.role === 'ADMIN' ? (
             <>
               {activeTab === 'dashboard' && <AdminDashboard />}
+              {activeTab === 'monthly' && <MonthlyDashboard />}
               {activeTab === 'forms' && <FormBuilder />}
               {activeTab === 'schedule' && <Scheduler />}
               {activeTab === 'logs' && <MasterLogs />}

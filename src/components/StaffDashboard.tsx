@@ -25,6 +25,8 @@ const StaffDashboard: React.FC = () => {
   const [activeSchedule, setActiveSchedule] = useState<Schedule | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<Shift | 'All'>('Morning');
+  const [selectedDept, setSelectedDept] = useState<'MRI' | 'X-RAY'>('X-RAY');
 
   const handleFinishSubmission = (data: Submission) => {
     submitForm(data);
@@ -32,6 +34,13 @@ const StaffDashboard: React.FC = () => {
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
   };
+
+  const filteredForms = forms.filter(f => {
+    const matchesSearch = f.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesShift = selectedShift === 'All' || (f.shifts && f.shifts.includes(selectedShift as Shift));
+    const matchesDept = f.department === selectedDept;
+    return matchesSearch && matchesShift && matchesDept;
+  });
 
   if (activeSchedule) {
     const form = forms.find(f => f.id === activeSchedule.formId);
@@ -130,9 +139,52 @@ const StaffDashboard: React.FC = () => {
       {/* Main Grid: All Forms */}
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2 border-b border-gray-100 pb-6">
-          <div>
-            <h3 className="text-xl font-black text-gray-800 tracking-tight">Machine Registry</h3>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Direct Access to all 28 Protocols</p>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-xl font-black text-gray-800 tracking-tight">{t.machineRegistry}</h3>
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">{t.directAccessProtocols}</p>
+            </div>
+            
+            {/* Department Selector */}
+            <div className="flex gap-2">
+              {(['X-RAY', 'MRI'] as const).map((dept) => (
+                <button
+                  key={dept}
+                  onClick={() => setSelectedDept(dept)}
+                  className={`px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
+                    selectedDept === dept
+                      ? 'bg-[#00468B] text-white shadow-xl shadow-blue-900/20'
+                      : 'bg-white border-2 border-gray-100 text-gray-400 hover:border-gray-200'
+                  }`}
+                >
+                  {dept}
+                </button>
+              ))}
+            </div>
+
+            {/* Shift Selector */}
+            <div className="flex flex-wrap gap-2">
+              {['Morning', 'Afternoon', 'Night', 'All'].map((shift) => (
+                <button
+                  key={shift}
+                  onClick={() => setSelectedShift(shift as any)}
+                  className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-center min-w-[100px] ${
+                    selectedShift === shift
+                      ? 'bg-[#00468B] text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                  }`}
+                >
+                  <div className="text-[10px] mb-0.5">
+                    {shift === 'Morning' ? t.morning : shift === 'Afternoon' ? t.afternoon : shift === 'Night' ? t.night : t.all}
+                  </div>
+                  {shift !== 'All' && (
+                    <div className={`text-[8px] opacity-70 ${selectedShift === shift ? 'text-blue-100' : 'text-gray-400'}`}>
+                      {shift === 'Morning' ? '08:00-16:00' : shift === 'Afternoon' ? '16:00-00:00' : '00:00-08:00'}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="relative flex-1 max-w-md w-full">
              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
@@ -147,14 +199,14 @@ const StaffDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
-          {forms.filter(f => f.title.toLowerCase().includes(searchTerm.toLowerCase())).map(f => (
+          {filteredForms.map(f => (
             <button 
               key={f.id}
               onClick={() => {
                 const manualSchedule: Schedule = {
                   id: `manual-${Math.random().toString(36).substr(2, 9)}`,
                   date: today,
-                  shift: 'Morning',
+                  shift: selectedShift === 'All' ? 'Morning' : (selectedShift as Shift),
                   staffId: currentUser?.id || '',
                   formId: f.id,
                   location: 'Ad-hoc Check',
@@ -203,66 +255,9 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [photos, setPhotos] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [hasSigned, setHasSigned] = useState(false);
-  const [isDrawing, setIsDrawing] = useState(false);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.strokeStyle = '#00468B';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-      }
-    }
-  }, []);
-
-  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-    setIsDrawing(true);
-    setHasSigned(true);
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (ctx && canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const x = ('touches' in e) ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-      const y = ('touches' in e) ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    }
-  };
-
-  const draw = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawing) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (ctx && canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const x = ('touches' in e) ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-      const y = ('touches' in e) ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    }
-  };
-
-  const stopDrawing = () => setIsDrawing(false);
-
-  const clearSignature = () => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      ctx?.clearRect(0, 0, canvas.width, canvas.height);
-      setHasSigned(false);
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hasSigned) return alert(t.signToConfirm);
     setIsSubmitting(true);
     
     setTimeout(() => {
@@ -416,43 +411,6 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
             </div>
           ))}
 
-          {/* Signature Pad Overhaul */}
-          <div className="space-y-6 pt-10 border-t border-gray-100 animate-in fade-in duration-1000">
-             <div className="flex items-center justify-between">
-                <h4 className="text-xs font-black text-[#00468B] uppercase tracking-widest flex items-center">
-                   <ShieldAlert size={16} className="mr-2" />
-                   {t.digitalSignature}
-                </h4>
-                <button 
-                  type="button" 
-                  onClick={clearSignature}
-                  className="text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors flex items-center uppercase tracking-widest bg-gray-100 px-3 py-1 rounded-full"
-                >
-                  <Eraser size={12} className="mr-1" />
-                  {t.clearSignature}
-                </button>
-             </div>
-             
-             <div className="relative bg-white rounded-[32px] border-2 border-[#00468B]/10 overflow-hidden h-48 shadow-inner group/sig">
-                <canvas 
-                  ref={canvasRef}
-                  className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
-                  onMouseDown={startDrawing}
-                  onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
-                  onTouchStart={startDrawing}
-                  onTouchMove={draw}
-                  onTouchEnd={stopDrawing}
-                ></canvas>
-                {!hasSigned && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-gray-300">
-                     <Edit3Icon className="mb-2 opacity-50" />
-                     <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t.signToConfirm}</p>
-                  </div>
-                )}
-             </div>
-          </div>
         </form>
       </div>
 
@@ -469,7 +427,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
           <button 
             type="submit"
             form="compliance-form"
-            disabled={isSubmitting || !hasSigned}
+            disabled={isSubmitting}
             className="flex-[2] px-8 py-4 bg-[#00468B] text-white rounded-2xl font-black hover:bg-[#003569] transition-all shadow-xl shadow-blue-900/20 active:scale-95 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm uppercase tracking-widest"
           >
             {isSubmitting ? (
