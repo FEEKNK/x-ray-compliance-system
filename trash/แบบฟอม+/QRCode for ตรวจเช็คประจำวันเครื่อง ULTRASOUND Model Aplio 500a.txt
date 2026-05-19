@@ -1,0 +1,42 @@
+--- Page 1 ---
+ตรวจเช็คประจำวันเครื่อง ULTRASOUND Model Aplio 500a
+F/M-BSI-133.1 REV.2
+When you submit this form, it will not automatically collect your details like name and email address unless you provide it yourself.
+1.
+วันที่ Check list 
+
+2.
+ชื่อ-สกุล
+3.
+สวิตช์ ON/OFF
+yes
+no
+4.
+เครื่องสำรองไฟ (UPS)
+yes
+no
+5.
+ปุ่ม Control Panel, Monitor
+yes
+no
+6.
+Probes and Cable Hanger
+yes
+no
+7.
+Ultrasound Paper, Gel
+yes
+no
+8.
+ทำความสะอาดเครื่อง, Probes
+yes
+no
+9.
+อุปกรณ์ต่างๆ
+yes
+no
+Submit
+Never give out your password.Report abuse
+This content is created by the owner of the form. The data you submit will be sent to the form owner. Microsoft is not responsible for the privacy or security practices of its customers, including those of this form owner. Never give out your password.
+Microsoft Forms | AI-Powered surveys, quizzes and pollsCreate my own form
+The owner of this form has not provided a privacy statement as to how they will use your response data. Do not provide personal or sensitive information. | Consumer Health Privacy | Terms of use

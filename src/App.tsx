@@ -1,19 +1,19 @@
 import React from 'react';
 import { AppProvider, useApp } from './AppContext';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
-import AdminDashboard from './components/AdminDashboard';
-import StaffDashboard from './components/StaffDashboard';
-import FormBuilder from './components/FormBuilder';
-import Scheduler from './components/Scheduler';
-import MasterLogs from './components/MasterLogs';
-import UserManagement from './components/UserManagement';
-import StaffHistory from './components/StaffHistory';
-import Settings from './components/Settings';
-import SystemGuide from './components/SystemGuide';
-import LandingPage from './components/LandingPage';
-import BottomNav from './components/BottomNav';
-import MonthlyDashboard from './components/MonthlyDashboard';
+import Sidebar from './components/layout/Sidebar';
+import Header from './components/layout/Header';
+import AdminDashboard from './components/admin/AdminDashboard';
+import StaffDashboard from './components/staff/StaffDashboard';
+import FormBuilder from './components/admin/FormBuilder';
+import Scheduler from './components/admin/Scheduler';
+import MasterLogs from './components/admin/MasterLogs';
+import UserManagement from './components/admin/UserManagement';
+import StaffHistory from './components/staff/StaffHistory';
+import Settings from './components/shared/Settings';
+import SystemGuide from './components/shared/SystemGuide';
+import LandingPage from './components/shared/LandingPage';
+import BottomNav from './components/layout/BottomNav';
+import MonthlyDashboard from './components/admin/MonthlyDashboard';
 import { LogOut, UserCircle } from 'lucide-react';
 
 const AppContent: React.FC = () => {

@@ -1,0 +1,62 @@
+--- Page 1 ---
+ตรวจเช็คประจำวันเครื่อง   C-ARM Model  BV  ENDURA
+F/M-XRA-013.1 REV.4
+When you submit this form, it will not automatically collect your details like name and email address unless you provide it yourself.
+1.
+วันที่ Check list 
+
+2.
+ชื่อ-สกุล
+3.
+1. Power ON / OFF ของ Control 
+yes
+no
+4.
+ 2. Technique Selector
+yes
+no
+5.
+3. Radiographic Exposure Setting
+yes
+no
+6.
+ 4. Anatomical Program
+yes
+no
+7.
+ 5. Hand Switch
+yes
+no
+8.
+6. การหมุน,เลื่อน Tube แนวต่างๆ
+yes
+no
+9.
+7. Drive Control Unit
+yes
+no
+10.
+8. Power ON / OFF ของ Monitor
+yes
+no
+11.
+ 9. ปุ่มปรับความขาว - ดำ ของภาพ
+yes
+no
+12.
+ 10. Image Monitor
+yes
+no
+13.
+11. การต่อสายจาก Monitor เข้ากับ Control
+yes
+no
+14.
+ 12.  ทำความสะอาดเครื่อง
+yes
+no
+Submit
+Never give out your password.Report abuse
+This content is created by the owner of the form. The data you submit will be sent to the form owner. Microsoft is not responsible for the privacy or security practices of its customers, including those of this form owner. Never give out your password.
+Microsoft Forms | AI-Powered surveys, quizzes and pollsCreate my own form
+The owner of this form has not provided a privacy statement as to how they will use your response data. Do not provide personal or sensitive information. | Consumer Health Privacy | Terms of use

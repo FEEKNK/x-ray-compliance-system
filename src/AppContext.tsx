@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import type { User, DynamicForm, Schedule, Submission, SystemSettings, AppContextType, Alert } from './types';
+import type { User, DynamicForm, Schedule, Submission, SystemSettings, AppContextType, Alert, Shift } from './types';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -75,39 +75,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('xray_alerts', JSON.stringify(alerts));
   }, [users, currentUser, forms, schedules, submissions, announcements, settings, alerts]);
 
-  // Line Notify Utility
-  const sendLineNotify = async (token: string, message: string) => {
-    if (!token) return;
-    try {
-      console.log(`[LINE NOTIFY] Sending to token ${token.substring(0, 4)}...: ${message}`);
-      // In a real production app, this would be a proxy call due to CORS
-      /* 
-      await fetch('https://notify-api.line.me/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Bearer ${token}` },
-        body: `message=${encodeURIComponent(message)}`
-      });
-      */
-    } catch (e) { console.error(e); }
-  };
+  const addUser = (user: User) => setUsers(prev => [...prev, user]);
+  const updateUser = (user: User) => setUsers(prev => prev.map(u => u.id === user.id ? user : u));
+  const deleteUser = (id: string) => setUsers(prev => prev.filter(u => u.id !== id));
 
-  const addUser = (user: User) => setUsers([...users, user]);
-  const updateUser = (user: User) => setUsers(users.map(u => u.id === user.id ? user : u));
-  const deleteUser = (id: string) => setUsers(users.filter(u => u.id !== id));
-
-  const addForm = (form: DynamicForm) => setForms([...forms, form]);
-  const updateForm = (form: DynamicForm) => setForms(forms.map(f => f.id === form.id ? form : f));
-  const deleteForm = (id: string) => setForms(forms.filter(f => f.id !== id));
+  const addForm = (form: DynamicForm) => setForms(prev => [...prev, form]);
+  const updateForm = (form: DynamicForm) => setForms(prev => prev.map(f => f.id === form.id ? form : f));
+  const deleteForm = (id: string) => setForms(prev => prev.filter(f => f.id !== id));
 
   const addSchedule = (schedule: Schedule | Schedule[]) => {
     if (Array.isArray(schedule)) {
-      setSchedules([...schedules, ...schedule]);
+      setSchedules(prev => [...prev, ...schedule]);
     } else {
-      setSchedules([...schedules, schedule]);
+      setSchedules(prev => [...prev, schedule]);
     }
   };
   
-  const deleteSchedule = (id: string) => setSchedules(schedules.filter(s => s.id !== id));
+  const deleteSchedule = (id: string) => setSchedules(prev => prev.filter(s => s.id !== id));
+  const bulkDeleteSchedules = (ids: string[]) => setSchedules(prev => prev.filter(s => !ids.includes(s.id)));
 
   const addAlert = (alert: Omit<Alert, 'id' | 'isRead' | 'timestamp'>) => {
     const newAlert: Alert = {
@@ -117,11 +102,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isRead: false
     };
     setAlerts(prev => [newAlert, ...prev].slice(0, 50));
-
-    // Send Line Notification to Supervisor if configured
-    if (settings.supervisorLineToken) {
-       sendLineNotify(settings.supervisorLineToken, newAlert.message);
-    }
   };
 
   const submitForm = (submission: Submission) => {
@@ -143,8 +123,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     // Environmental Alerts (Temp: 18-24, Humidity: 45-65)
-    const temp = parseFloat(submission.data['q3']); // Standard ID for temp in these forms
-    const humidity = parseFloat(submission.data['q5'] || submission.data['q6']); // Standard IDs for humidity
+    const temp = parseFloat(String(submission.data['q3'])); // Standard ID for temp in these forms
+    const humidity = parseFloat(String(submission.data['q5'] || submission.data['q6'])); // Standard IDs for humidity
     
     let envAlert = '';
     if (!isNaN(temp) && (temp < 18 || temp > 24)) {
@@ -172,6 +152,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateSettings = (newSettings: SystemSettings) => setSettings(newSettings);
 
+  // Automated Alert Check (1 hour delay)
+  React.useEffect(() => {
+    const checkOverdue = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      const dateStr = now.toISOString().split('T')[0];
+      
+      // Determine current shift based on standard definitions with 1 hour delay
+      let currentShift: Shift | null = null;
+      
+      if (hour >= 9 && hour < 16) {
+        currentShift = 'Morning';
+      } else if (hour >= 17 && hour < 24) {
+        currentShift = 'Afternoon';
+      } else if (hour >= 1 && hour < 8) {
+        currentShift = 'Night';
+      }
+
+      if (currentShift) {
+        const overdue = schedules.filter(s => 
+          s.date === dateStr && 
+          s.shift === currentShift && 
+          s.status === 'Pending'
+        );
+
+        overdue.forEach(s => {
+          // Check if alert already exists for this schedule on this day
+          const exists = alerts.some(a => a.id.startsWith(`missed_${s.id}`));
+          
+          if (!exists) {
+            const staff = users.find(u => u.id === s.staffId);
+            const form = forms.find(f => f.id === s.formId);
+            
+            const newAlert: Alert = {
+              id: `missed_${s.id}_${Date.now()}`,
+              type: 'Missed Task',
+              message: `⚠️ แจ้งเตือน: ${staff?.name} ยังไม่ได้ทำ ${form?.title} (เกิน 1 ชม. ของเวร${currentShift === 'Morning' ? 'เช้า' : currentShift === 'Afternoon' ? 'บ่าย' : 'ดึก'})`,
+              timestamp: new Date().toISOString(),
+              isRead: false,
+              staffId: s.staffId,
+              formId: s.formId
+            };
+            
+            setAlerts(prev => [newAlert, ...prev].slice(0, 50));
+          }
+        });
+      }
+    };
+
+    const interval = setInterval(checkOverdue, 60000 * 10); // Check every 10 mins
+    checkOverdue();
+    return () => clearInterval(interval);
+  }, [schedules, alerts, users, forms]);
+
   const resetDatabase = () => {
     localStorage.clear();
     window.location.reload();
@@ -187,8 +221,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return schedules.filter(s => s.staffId === staffId && s.date === date);
   };
 
-  const getCompletionRate = (date: string) => {
-    const dailySchedules = schedules.filter(s => s.date === date);
+  const getCompletionRate = (date: string, department?: 'MRI' | 'X-RAY') => {
+    let dailySchedules = schedules.filter(s => s.date === date);
+    
+    if (department) {
+      dailySchedules = dailySchedules.filter(s => {
+        const form = forms.find(f => f.id === s.formId);
+        return form?.department === department;
+      });
+    }
+
     if (dailySchedules.length === 0) return 0;
     const completed = dailySchedules.filter(s => s.status === 'Completed').length;
     return (completed / dailySchedules.length) * 100;
@@ -198,7 +240,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{
       currentUser, setCurrentUser, users, addUser, updateUser, deleteUser,
       forms, addForm, updateForm, deleteForm, 
-      schedules, addSchedule, deleteSchedule, 
+      schedules, addSchedule, deleteSchedule, bulkDeleteSchedules,
       submissions, submitForm, getStaffSchedule, getCompletionRate,
       announcements, addAnnouncement,
       alerts, addAlert, markAlertAsRead,
@@ -210,6 +252,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useApp = () => {
   const context = useContext(AppContext);
   if (!context) throw new Error('useApp must be used within an AppProvider');

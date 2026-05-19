@@ -35,9 +35,8 @@
 ## 3. Next Steps (แผนการพัฒนาในอนาคต)
 
 1.  **QR Code Integration:** ติดตั้ง QR Code ประจำตัวเครื่องแพทย์ เพื่อให้เจ้าหน้าที่ใช้มือถือสแกนแล้วเปิดแบบฟอร์มได้ทันทีโดยไม่ต้องค้นหา
-2.  **Line Notify Integration:** เชื่อมต่อกับ Line API เพื่อส่งข้อความแจ้งเตือน (Alert) เข้ากลุ่มหัวหน้างานทันทีเมื่อพบค่าที่ผิดปกติหรือพนักงานลืมทำหน้าที่
-3.  **Advanced Analytics:** ระบบออกรายงานสรุปรายเดือนแบบอัตโนมัติ (Monthly Compliance Report) เพื่อใช้ในการตรวจสอบมาตรฐานโรงพยาบาล
-4.  **Cloud Synchronization:** พัฒนาระบบ Backend (เช่น Supabase หรือ Firebase) เพื่อให้ข้อมูลซิงค์กันแบบ Real-time ระหว่างอุปกรณ์หลายเครื่อง
+2.  **Advanced Analytics:** ระบบออกรายงานสรุปรายเดือนแบบอัตโนมัติ (Monthly Compliance Report) เพื่อใช้ในการตรวจสอบมาตรฐานโรงพยาบาล
+3.  **Cloud Synchronization:** พัฒนาระบบ Backend (เช่น Supabase หรือ Firebase) เพื่อให้ข้อมูลซิงค์กันแบบ Real-time ระหว่างอุปกรณ์หลายเครื่อง
 
 ---
 **Developed by Gemini CLI Agent**

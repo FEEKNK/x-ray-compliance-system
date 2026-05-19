@@ -4,7 +4,7 @@
       "id": "1",
       "employeeId": "E001",
       "name": "Admin User",
-      "department": "Management",
+      "department": "X-RAY",
       "email": "admin@xray.com",
       "role": "ADMIN"
     },
@@ -12,19 +12,25 @@
       "id": "2",
       "employeeId": "E002",
       "name": "Somchai K.",
-      "department": "X-Ray Dept",
+      "department": "X-RAY",
       "email": "somchai@xray.com",
-      "role": "STAFF",
-      "lineToken": "token_somchai"
+      "role": "STAFF"
     },
     {
       "id": "3",
       "employeeId": "E003",
       "name": "Wichai S.",
-      "department": "X-Ray Dept",
+      "department": "X-RAY",
       "email": "wichai@xray.com",
-      "role": "STAFF",
-      "lineToken": "token_wichai"
+      "role": "STAFF"
+    },
+    {
+      "id": "4",
+      "employeeId": "E004",
+      "name": "MRI Specialist",
+      "department": "MRI",
+      "email": "mri@hospital.com",
+      "role": "STAFF"
     }
   ],
   "forms": [
@@ -2927,16 +2933,17 @@
       "department": "X-RAY"
     },
     {
-      "id": "m1",
+      "id": "f29",
       "title": "อุปกรณ์ที่ใช้ในศูนย์ MRI โรงพยาบาลกรุงเทพสิริโรจน์ จังหวัดภูเก็ต",
-      "description": "Checklist for MRI Center equipment",
+      "description": "Equipment checklist for MRI Center",
       "isActive": true,
-      "createdAt": "2024-01-01T00:00:00.000Z",
+      "createdAt": "2026-05-18T00:00:00.000Z",
       "shifts": [
         "Morning",
         "Afternoon",
         "Night"
       ],
+      "department": "MRI",
       "questions": [
         {
           "id": "q1",
@@ -2954,66 +2961,46 @@
           "id": "q3_1",
           "label": "1.เครื่องสแกนโลหะ",
           "type": "yesno",
-          "options": [
-            "พร้อมใช้งาน",
-            "ไม่พร้อมใช้งาน"
-          ],
           "required": true
         },
         {
           "id": "q3_2",
-          "label": "2.เตียงเคลื่อนย้าย",
+          "label": "2.เตียงเคลื่อนย้ายผู้ป่วย",
           "type": "yesno",
-          "options": [
-            "พร้อมใช้งาน",
-            "ไม่พร้อมใช้งาน"
-          ],
           "required": true
         },
         {
           "id": "q3_3",
-          "label": "3.รถเข็น",
+          "label": "3.รถเข็นเคลื่อนย้ายผู้ป่วย",
           "type": "yesno",
-          "options": [
-            "พร้อมใช้งาน",
-            "ไม่พร้อมใช้งาน"
-          ],
           "required": true
         },
         {
           "id": "q3_4",
           "label": "4.รถเตรียมยา",
           "type": "yesno",
-          "options": [
-            "พร้อมใช้งาน",
-            "ไม่พร้อมใช้งาน"
-          ],
           "required": true
         },
         {
           "id": "q3_5",
           "label": "5.เสาน้ำเกลือ",
           "type": "yesno",
-          "options": [
-            "พร้อมใช้งาน",
-            "ไม่พร้อมใช้งาน"
-          ],
           "required": true
         }
-      ],
-      "department": "MRI"
+      ]
     },
     {
-      "id": "m2",
+      "id": "f30",
       "title": "EMERGENCY CART CHECKLIST FORM MRI",
       "description": "F/M-NUR-009.1 Rev.8",
       "isActive": true,
-      "createdAt": "2024-01-01T00:00:00.000Z",
+      "createdAt": "2026-05-18T00:00:00.000Z",
       "shifts": [
         "Morning",
         "Afternoon",
         "Night"
       ],
+      "department": "MRI",
       "questions": [
         {
           "id": "q1",
@@ -3046,60 +3033,60 @@
         },
         {
           "id": "q5",
-          "label": "Laryngoscope",
+          "label": "Set laryngoscope",
           "type": "yesno",
           "required": true
         },
         {
-          "id": "q7_0",
+          "id": "q6_0",
           "label": "Blade No.0",
           "type": "yesno",
           "required": true
         },
         {
-          "id": "q7_1",
+          "id": "q6_1",
           "label": "Blade No.1",
           "type": "yesno",
           "required": true
         },
         {
-          "id": "q7_2",
+          "id": "q6_2",
           "label": "Blade No.2",
           "type": "yesno",
           "required": true
         },
         {
-          "id": "q7_3",
+          "id": "q6_3",
           "label": "Blade No.3",
           "type": "yesno",
           "required": true
         },
         {
-          "id": "q7_4",
+          "id": "q6_4",
           "label": "Blade No.4",
           "type": "yesno",
           "required": true
         },
         {
-          "id": "q8",
+          "id": "q7",
           "label": "LOCK No.",
           "type": "text",
           "required": true
         },
         {
-          "id": "q9",
-          "label": "Suction",
+          "id": "q8",
+          "label": "กระบอก Suction (ด้านข้างรถ)",
           "type": "yesno",
           "required": true
         },
         {
-          "id": "q10",
-          "label": "ถัง Oxygen",
-          "type": "number",
+          "id": "q9",
+          "label": "ถัง Oxygen + เกย์",
+          "type": "text",
           "required": true
         },
         {
-          "id": "q6",
+          "id": "q10",
           "label": "Mobile Suction",
           "type": "select",
           "options": [
@@ -3111,24 +3098,24 @@
         },
         {
           "id": "q11",
-          "label": "Backboard",
+          "label": "กระดานรองหลัง",
           "type": "yesno",
           "required": true
         }
-      ],
-      "department": "MRI"
+      ]
     },
     {
-      "id": "m3",
+      "id": "f31",
       "title": "ตรวจเช็คประจำวันเครื่อง Magnetic Resonance Imaging (MRI) SCAN",
-      "description": "Daily MRI Scanner Checklist",
+      "description": "F/M-MRI-001.1 Rev.2",
       "isActive": true,
-      "createdAt": "2024-01-01T00:00:00.000Z",
+      "createdAt": "2026-05-18T00:00:00.000Z",
       "shifts": [
         "Morning",
         "Afternoon",
         "Night"
       ],
+      "department": "MRI",
       "questions": [
         {
           "id": "q1",
@@ -3144,169 +3131,169 @@
         },
         {
           "id": "q3_1",
-          "label": "Gantry: 1.Table position",
+          "label": "1.Table position",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q3_2",
-          "label": "Gantry: 2.Alignment light",
+          "label": "2.Alignment light",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q3_3",
-          "label": "Gantry: 3.Horizontal motion",
+          "label": "3.horizontal smoothness",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q3_4",
-          "label": "Gantry: 4.Vertical motion",
+          "label": "4.vertical motion",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q4_1",
-          "label": "RF: 1.Contacts",
+          "label": "1.RF door",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q4_2",
-          "label": "RF: 2.Window",
+          "label": "2.RF window",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q4_3",
-          "label": "RF: 3.Console",
+          "label": "3.Operator console",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q4_4",
-          "label": "RF: 4.Monitor",
+          "label": "4.Patient monitor",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q4_5",
-          "label": "RF: 5.Intercom",
+          "label": "5.Patient intercom",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q4_6",
-          "label": "RF: 6.Temp",
+          "label": "6.Room temperature",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q4_7",
-          "label": "RF: 7.Humidity",
+          "label": "7.Room humidity",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q5_1",
-          "label": "Safety: 1.Cart",
+          "label": "1.Emergency cart",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q5_2",
-          "label": "Safety: 2.Signage",
+          "label": "2.Safety warning",
           "type": "yesno",
           "required": true
         },
         {
           "id": "q5_3",
-          "label": "Safety: 3.Cryogen level",
+          "label": "3.Cryogen level indicator",
           "type": "yesno",
           "required": true
         }
-      ],
-      "department": "MRI"
+      ]
     },
     {
-      "id": "m4",
-      "title": "ตารางการตรวจเช็คแรงดัน ระบบก๊าซทางการแพทย์ ออกซิเจน_ไนตรัสออกไซด์_ระบบสูญญากาส Zone 2 MRI",
-      "description": "Medical Gas Pressure Monitoring Zone 2 MRI",
+      "id": "f32",
+      "title": "ตารางตรวจเช็คแรงดัน ระบบก๊าซทางการแพทย์แผนก MRI Zone 2",
+      "description": "F/M-BSI-223.1",
       "isActive": true,
-      "createdAt": "2024-01-01T00:00:00.000Z",
+      "createdAt": "2026-05-18T00:00:00.000Z",
       "shifts": [
         "Morning",
         "Afternoon",
         "Night"
       ],
+      "department": "MRI",
       "questions": [
         {
           "id": "q1",
-          "label": "วันที่ Check list",
+          "label": "ประจำ วัน/เดือน/ปี",
           "type": "date",
           "required": true
         },
         {
           "id": "q2",
-          "label": "O2",
+          "label": "ออกซิเจน: ระดับแรงดันอยู่ในระดับใด (PSI)",
           "type": "number",
           "required": true
         },
         {
           "id": "q3",
-          "label": "Nitrous",
+          "label": "ไนตรัสออกไซด์: ระดับแรงดันอยู่ในระดับใด (PSI)",
           "type": "number",
           "required": true
         },
         {
           "id": "q4",
-          "label": "Vacuum",
+          "label": "ระบบสูญญากาศ: ระดับแรงดันอยู่ในระดับใด (inHg)",
           "type": "number",
           "required": true
         },
         {
           "id": "q5",
-          "label": "Recorder",
+          "label": "ชื่อ-นามสกุล ผู้บันทึก",
           "type": "text",
           "required": true
         }
-      ],
-      "department": "MRI"
+      ]
     },
     {
-      "id": "m5",
+      "id": "f33",
       "title": "ตารางตรวจเช็คระดับ O2, ระดับและความดัน He ห้องเครื่อง MRI",
-      "description": "O2 and Helium Levels Monitoring",
+      "description": "Oxygen and Helium level monitoring for MRI room",
       "isActive": true,
-      "createdAt": "2024-01-01T00:00:00.000Z",
+      "createdAt": "2026-05-18T00:00:00.000Z",
       "shifts": [
         "Morning",
         "Afternoon",
         "Night"
       ],
+      "department": "MRI",
       "questions": [
         {
           "id": "q1",
-          "label": "วันที่ Check list",
+          "label": "ประจำ วัน/เดือน/ปี",
           "type": "date",
           "required": true
         },
         {
           "id": "q2",
-          "label": "Time",
+          "label": "เวลา",
           "type": "text",
           "required": true
         },
         {
           "id": "q3",
-          "label": "O2%",
+          "label": "ระดับ O2 ที่ตรวจเช็ค (%)",
           "type": "number",
           "required": true
         },
         {
           "id": "q4",
-          "label": "O2 category",
+          "label": "ระดับ O2 ที่ตรวจเช็ค (%) (เกณฑ์)",
           "type": "select",
           "options": [
             "under 19%",
@@ -3317,13 +3304,13 @@
         },
         {
           "id": "q5",
-          "label": "He%",
+          "label": "ระดับ He ที่ตรวจเช็ค (%)",
           "type": "number",
           "required": true
         },
         {
           "id": "q6",
-          "label": "He category",
+          "label": "ระดับ He ที่ตรวจเช็ค (%) (เกณฑ์)",
           "type": "select",
           "options": [
             "under 81%",
@@ -3334,13 +3321,13 @@
         },
         {
           "id": "q7",
-          "label": "He psi",
+          "label": "ระดับ He Pressure ตรวจเช็ค (psl)",
           "type": "number",
           "required": true
         },
         {
           "id": "q8",
-          "label": "He Pressure category",
+          "label": "ระดับ He Pressure ตรวจเช็ค (psl) (เกณฑ์)",
           "type": "select",
           "options": [
             "under 0.9",
@@ -3349,36 +3336,36 @@
           ],
           "required": true
         }
-      ],
-      "department": "MRI"
+      ]
     },
     {
-      "id": "m6",
-      "title": "ตารางตรวจเช็คอุณหภูมิ_ความชื้นสัมพัทธ์ห้อง MRI",
-      "description": "Environmental Monitoring for MRI Room",
+      "id": "f34",
+      "title": "ตารางตรวจเช็คอุณหภูมิ/ความชื้นสัมพัทธ์ห้อง MRI",
+      "description": "Environmental monitoring for MRI room",
       "isActive": true,
-      "createdAt": "2024-01-01T00:00:00.000Z",
+      "createdAt": "2026-05-18T00:00:00.000Z",
       "shifts": [
         "Morning",
         "Afternoon",
         "Night"
       ],
+      "department": "MRI",
       "questions": [
         {
           "id": "q1",
-          "label": "วันที่ Check list",
+          "label": "ประจำ วัน/เดือน/ปี",
           "type": "date",
           "required": true
         },
         {
           "id": "q2",
-          "label": "Temp",
+          "label": "อุณหภูมิที่ตรวจเช็ค",
           "type": "number",
           "required": true
         },
         {
           "id": "q3",
-          "label": "Temp category",
+          "label": "ระดับอุณหภูมิอยู่ในระดับใด (°C)",
           "type": "select",
           "options": [
             "14-18",
@@ -3389,13 +3376,13 @@
         },
         {
           "id": "q4",
-          "label": "Humidity",
+          "label": "ความชื้นที่ตรวจเช็ค",
           "type": "number",
           "required": true
         },
         {
           "id": "q5",
-          "label": "Humidity category",
+          "label": "ความชื้นที่ตรวจเช็คอยู่ในระดับใด (%RH)",
           "type": "select",
           "options": [
             "35-45",
@@ -3403,43 +3390,37 @@
             "65-75"
           ],
           "required": true
-        },
-        {
-          "id": "q6",
-          "label": "Recorder",
-          "type": "text",
-          "required": true
         }
-      ],
-      "department": "MRI"
+      ]
     },
     {
-      "id": "m7",
-      "title": "ตารางตรวจเช็คอุณหภูมิ_ความชื้นสัมพัทธ์ห้อง เครื่อง MRI",
-      "description": "Environmental Monitoring for MRI Machine Room",
+      "id": "f35",
+      "title": "ตารางตรวจเช็คอุณหภูมิ/ความชื้นสัมพัทธ์ห้อง เครื่อง MRI",
+      "description": "Environmental monitoring for MRI machine room",
       "isActive": true,
-      "createdAt": "2024-01-01T00:00:00.000Z",
+      "createdAt": "2026-05-18T00:00:00.000Z",
       "shifts": [
         "Morning",
         "Afternoon",
         "Night"
       ],
+      "department": "MRI",
       "questions": [
         {
           "id": "q1",
-          "label": "วันที่ Check list",
+          "label": "ประจำ วัน/เดือน/ปี",
           "type": "date",
           "required": true
         },
         {
           "id": "q2",
-          "label": "Temp",
+          "label": "อุณหภูมิที่ตรวจเช็ค",
           "type": "number",
           "required": true
         },
         {
           "id": "q3",
-          "label": "Temp category",
+          "label": "ระดับอุณหภูมิอยู่ในระดับใด (°C)",
           "type": "select",
           "options": [
             "14-18",
@@ -3450,13 +3431,13 @@
         },
         {
           "id": "q4",
-          "label": "Humidity",
+          "label": "ความชื้นที่ตรวจเช็ค",
           "type": "number",
           "required": true
         },
         {
           "id": "q5",
-          "label": "Humidity category",
+          "label": "ความชื้นที่ตรวจเช็คอยู่ในระดับใด (%RH)",
           "type": "select",
           "options": [
             "35-45",
@@ -3467,40 +3448,40 @@
         },
         {
           "id": "q6",
-          "label": "Recorder",
+          "label": "ชื่อ-นามสกุล ผู้บันทึก",
           "type": "text",
           "required": true
         }
-      ],
-      "department": "MRI"
+      ]
     },
     {
-      "id": "m8",
-      "title": "ตารางตรวจเช็คอุณหภูมิ_ความชื้นสัมพัทธ์ห้องเก็บยา MRI",
-      "description": "Environmental Monitoring for MRI Medicine Storage",
+      "id": "f36",
+      "title": "ตารางตรวจเช็คอุณหภูมิ/ความชื้นสัมพัทธ์ห้องเก็บยา MRI",
+      "description": "Environmental monitoring for MRI medicine storage room",
       "isActive": true,
-      "createdAt": "2024-01-01T00:00:00.000Z",
+      "createdAt": "2026-05-18T00:00:00.000Z",
       "shifts": [
         "Morning",
         "Afternoon",
         "Night"
       ],
+      "department": "MRI",
       "questions": [
         {
           "id": "q1",
-          "label": "วันที่ Check list",
+          "label": "ประจำ วัน/เดือน/ปี",
           "type": "date",
           "required": true
         },
         {
           "id": "q2",
-          "label": "Temp",
+          "label": "อุณหภูมิที่ตรวจเช็ค",
           "type": "number",
           "required": true
         },
         {
           "id": "q3",
-          "label": "Temp category",
+          "label": "ระดับอุณหภูมิอยู่ในระดับใด (°C)",
           "type": "select",
           "options": [
             "14-18",
@@ -3511,13 +3492,13 @@
         },
         {
           "id": "q4",
-          "label": "Humidity",
+          "label": "ความชื้นที่ตรวจเช็ค",
           "type": "number",
           "required": true
         },
         {
           "id": "q5",
-          "label": "Humidity category",
+          "label": "ความชื้นที่ตรวจเช็คอยู่ในระดับใด (%RH)",
           "type": "select",
           "options": [
             "35-45",
@@ -3528,63 +3509,86 @@
         },
         {
           "id": "q6",
-          "label": "Recorder",
+          "label": "ชื่อ-นามสกุล ผู้บันทึก",
           "type": "text",
           "required": true
         }
-      ],
-      "department": "MRI"
+      ]
     },
     {
-      "id": "m9",
+      "id": "f37",
       "title": "รายการตรวจเช็คยา MRI",
-      "description": "Medicine Checklist for MRI",
+      "description": "MRI medicine inventory checklist",
       "isActive": true,
-      "createdAt": "2024-01-01T00:00:00.000Z",
+      "createdAt": "2026-05-18T00:00:00.000Z",
       "shifts": [
         "Morning",
         "Afternoon",
         "Night"
       ],
+      "department": "MRI",
       "questions": [
         {
           "id": "q1",
-          "label": "Recorder",
+          "label": "ผู้บันทึก",
           "type": "text",
           "required": true
         },
         {
           "id": "q2",
-          "label": "วันที่ Check list",
+          "label": "วัน/เดือน/ปี",
           "type": "date",
           "required": true
         },
         {
-          "id": "q3_1",
-          "label": "Expiry: Primovist 10ml",
+          "id": "q3",
+          "label": "Primovist 10 ml (จำนวน)",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "q4",
+          "label": "Expiry date Primovist 10 ml",
           "type": "date",
           "required": true
         },
         {
-          "id": "q3_2",
-          "label": "Expiry: Clariscan 10ml",
+          "id": "q5",
+          "label": "Clariscan 10 ml (จำนวน)",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "q6",
+          "label": "Expiry date Clariscan 10 ml",
           "type": "date",
           "required": true
         },
         {
-          "id": "q3_3",
-          "label": "Expiry: Gadovist 7.5ml",
+          "id": "q7",
+          "label": "Gadovist 7.5 ml (จำนวน)",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "q8",
+          "label": "Expiry date Gadovist 7.5 ml",
           "type": "date",
           "required": true
         },
         {
-          "id": "q3_4",
-          "label": "Expiry: Dotarem 10ml",
+          "id": "q9",
+          "label": "Dotarem 10 ml (จำนวน)",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "q10",
+          "label": "Expiry date Dotarem 10 ml",
           "type": "date",
           "required": true
         }
-      ],
-      "department": "MRI"
+      ]
     }
   ],
   "schedules": [

@@ -7,7 +7,6 @@ export interface User {
   department: string;
   email: string;
   role: Role;
-  lineToken?: string;
 }
 
 export interface QuestionBlock {
@@ -52,14 +51,13 @@ export interface Submission {
   staffId: string;
   formId: string;
   submittedAt: string;
-  data: Record<string, any>;
+  data: Record<string, string | number | boolean | string[]>;
   photos: string[];
 }
 
 export interface SystemSettings {
   hospitalName: string;
   supervisorEmail: string;
-  supervisorLineToken?: string;
   shifts: {
     Morning: string;
     Afternoon: string;
@@ -93,9 +91,10 @@ export interface AppContextType {
   deleteForm: (id: string) => void;
   addSchedule: (schedule: Schedule | Schedule[]) => void;
   deleteSchedule: (id: string) => void;
+  bulkDeleteSchedules: (ids: string[]) => void;
   submitForm: (submission: Submission) => void;
   getStaffSchedule: (staffId: string, date: string) => Schedule[];
-  getCompletionRate: (date: string) => number;
+  getCompletionRate: (date: string, department?: 'MRI' | 'X-RAY') => number;
   announcements: string[];
   addAnnouncement: (text: string) => void;
   addAlert: (alert: Omit<Alert, 'id' | 'isRead' | 'timestamp'>) => void;
