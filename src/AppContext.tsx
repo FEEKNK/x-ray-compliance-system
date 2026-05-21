@@ -1,13 +1,16 @@
 import React, { createContext, useContext, useState } from 'react';
-import type { User, DynamicForm, Schedule, Submission, SystemSettings, AppContextType, Alert, Shift } from './types';
+import type { User, DynamicForm, Schedule, Submission, SystemSettings, AppContextType, Alert, Shift, ProtocolBundle, DatabaseSchema } from './types';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 import db from './data/db.json';
 
-const MOCK_USERS: User[] = db.users as User[];
-const MOCK_FORMS: DynamicForm[] = db.forms as DynamicForm[];
-const INITIAL_SCHEDULES: Schedule[] = db.schedules as Schedule[];
+const typedDb = db as DatabaseSchema;
+
+const MOCK_USERS: User[] = typedDb.users;
+const MOCK_FORMS: DynamicForm[] = typedDb.forms;
+const INITIAL_SCHEDULES: Schedule[] = typedDb.schedules;
+const MOCK_BUNDLES: ProtocolBundle[] = typedDb.bundles || [];
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<'TH' | 'EN'>('TH');
@@ -26,6 +29,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [forms, setForms] = useState<DynamicForm[]>(() => {
     const saved = localStorage.getItem('xray_forms');
     return saved ? JSON.parse(saved) : MOCK_FORMS;
+  });
+
+  const [bundles, setBundles] = useState<ProtocolBundle[]>(() => {
+    const saved = localStorage.getItem('xray_bundles');
+    return saved ? JSON.parse(saved) : MOCK_BUNDLES;
   });
   
   const [schedules, setSchedules] = useState<Schedule[]>(() => {
@@ -68,12 +76,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('xray_users', JSON.stringify(users));
     localStorage.setItem('xray_currentUser', JSON.stringify(currentUser));
     localStorage.setItem('xray_forms', JSON.stringify(forms));
+    localStorage.setItem('xray_bundles', JSON.stringify(bundles));
     localStorage.setItem('xray_schedules', JSON.stringify(schedules));
     localStorage.setItem('xray_submissions', JSON.stringify(submissions));
     localStorage.setItem('xray_announcements', JSON.stringify(announcements));
     localStorage.setItem('xray_settings', JSON.stringify(settings));
     localStorage.setItem('xray_alerts', JSON.stringify(alerts));
-  }, [users, currentUser, forms, schedules, submissions, announcements, settings, alerts]);
+  }, [users, currentUser, forms, bundles, schedules, submissions, announcements, settings, alerts]);
 
   const addUser = (user: User) => setUsers(prev => [...prev, user]);
   const updateUser = (user: User) => setUsers(prev => prev.map(u => u.id === user.id ? user : u));
@@ -82,6 +91,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addForm = (form: DynamicForm) => setForms(prev => [...prev, form]);
   const updateForm = (form: DynamicForm) => setForms(prev => prev.map(f => f.id === form.id ? form : f));
   const deleteForm = (id: string) => setForms(prev => prev.filter(f => f.id !== id));
+
+  const addBundle = (bundle: ProtocolBundle) => setBundles(prev => [...prev, bundle]);
+  const updateBundle = (bundle: ProtocolBundle) => setBundles(prev => prev.map(b => b.id === bundle.id ? bundle : b));
+  const deleteBundle = (id: string) => setBundles(prev => prev.filter(b => b.id !== id));
 
   const addSchedule = (schedule: Schedule | Schedule[]) => {
     if (Array.isArray(schedule)) {
@@ -240,6 +253,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{
       currentUser, setCurrentUser, users, addUser, updateUser, deleteUser,
       forms, addForm, updateForm, deleteForm, 
+      bundles, addBundle, updateBundle, deleteBundle,
       schedules, addSchedule, deleteSchedule, bulkDeleteSchedules,
       submissions, submitForm, getStaffSchedule, getCompletionRate,
       announcements, addAnnouncement,

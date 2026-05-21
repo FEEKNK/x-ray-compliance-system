@@ -53,12 +53,6 @@
           "required": true
         },
         {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
-          "required": true
-        },
-        {
           "id": "q3_1",
           "label": "CONTROL: Power ON / OFF",
           "type": "yesno",
@@ -143,12 +137,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
           "required": true
         },
         {
@@ -242,12 +230,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ผู้ตรวจ (RN)",
-          "type": "text",
           "required": true
         },
         {
@@ -355,12 +337,6 @@
           "required": true
         },
         {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
-          "required": true
-        },
-        {
           "id": "q3",
           "label": "NSS 5 ml. (20)",
           "type": "date",
@@ -415,12 +391,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
           "required": true
         },
         {
@@ -514,12 +484,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
           "required": true
         },
         {
@@ -766,12 +730,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
           "required": true
         },
         {
@@ -1103,12 +1061,6 @@
             "อื่นๆ"
           ],
           "required": true
-        },
-        {
-          "id": "other_note",
-          "label": "อื่นๆ (โปรดระบุ)",
-          "type": "text",
-          "required": false
         }
       ],
       "department": "X-RAY"
@@ -1129,12 +1081,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
           "required": true
         },
         {
@@ -1207,12 +1153,6 @@
           "required": true
         },
         {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
-          "required": true
-        },
-        {
           "id": "q3_kvp",
           "label": "Hand: kVp",
           "type": "number",
@@ -1279,12 +1219,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
           "required": true
         },
         {
@@ -1546,12 +1480,6 @@
             "อื่นๆ"
           ],
           "required": true
-        },
-        {
-          "id": "other_note",
-          "label": "อื่นๆ (โปรดระบุ)",
-          "type": "text",
-          "required": false
         }
       ],
       "department": "X-RAY"
@@ -1765,12 +1693,6 @@
           "required": true
         },
         {
-          "id": "q2",
-          "label": "ชื่อ-สกุล ผู้ตรวจ",
-          "type": "text",
-          "required": true
-        },
-        {
           "id": "q3_1",
           "label": "Ambubag + mask เด็ก (1 ชุด) และ ผู้ใหญ่ (1 ชุด)",
           "type": "yesno",
@@ -1976,12 +1898,6 @@
           "required": true
         },
         {
-          "id": "q2",
-          "label": "ชื่อ-สกุล ผู้ตรวจ",
-          "type": "text",
-          "required": true
-        },
-        {
           "id": "q3_1",
           "label": "Ambubag + mask เด็ก (1 ชุด) และ ผู้ใหญ่ (1 ชุด)",
           "type": "yesno",
@@ -2048,12 +1964,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล ผู้ตรวจ",
-          "type": "text",
           "required": true
         },
         {
@@ -2126,12 +2036,6 @@
           "required": true
         },
         {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
-          "required": true
-        },
-        {
           "id": "q3",
           "label": "เวลา",
           "type": "select",
@@ -2175,12 +2079,6 @@
           "required": true
         },
         {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
-          "required": true
-        },
-        {
           "id": "q3",
           "label": "CD (30)",
           "type": "select",
@@ -2219,12 +2117,6 @@
             "อื่นๆ"
           ],
           "required": true
-        },
-        {
-          "id": "other_note",
-          "label": "อื่นๆ (โปรดระบุ)",
-          "type": "text",
-          "required": false
         }
       ],
       "department": "X-RAY"
@@ -2245,12 +2137,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
           "required": true
         },
         {
@@ -2314,12 +2200,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
           "required": true
         },
         {
@@ -2476,12 +2356,6 @@
           "required": true
         },
         {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
-          "required": true
-        },
-        {
           "id": "q3",
           "label": "เวลา",
           "type": "select",
@@ -2516,12 +2390,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
           "required": true
         },
         {
@@ -2654,12 +2522,6 @@
           "required": true
         },
         {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
-          "required": true
-        },
-        {
           "id": "q3_1",
           "label": "CONTROL: Power ON / OFF",
           "type": "yesno",
@@ -2720,12 +2582,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
           "required": true
         },
         {
@@ -2882,12 +2738,6 @@
           "required": true
         },
         {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
-          "required": true
-        },
-        {
           "id": "q3",
           "label": "สวิตช์ ON/OFF",
           "type": "yesno",
@@ -2952,12 +2802,6 @@
           "required": true
         },
         {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
-          "required": true
-        },
-        {
           "id": "q3_1",
           "label": "1.เครื่องสแกนโลหะ",
           "type": "yesno",
@@ -3006,12 +2850,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ผู้ตรวจ (RN)",
-          "type": "text",
           "required": true
         },
         {
@@ -3121,12 +2959,6 @@
           "id": "q1",
           "label": "วันที่ Check list",
           "type": "date",
-          "required": true
-        },
-        {
-          "id": "q2",
-          "label": "ชื่อ-สกุล",
-          "type": "text",
           "required": true
         },
         {
@@ -3611,5 +3443,6 @@
       "status": "Pending"
     }
   ],
-  "submissions": []
+  "submissions": [],
+  "bundles": []
 }

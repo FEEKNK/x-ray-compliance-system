@@ -253,7 +253,7 @@ const FormBuilder: React.FC = () => {
                         onChange={(e) => updateQuestionState(q.id, { required: e.target.checked })}
                         className="hidden"
                       />
-                      <span className="text-sm font-bold text-gray-600">Required</span>
+                      <span className="text-sm font-bold text-gray-600">Required (บังคับกรอก)</span>
                     </label>
 
                     {q.type === 'composite' && (

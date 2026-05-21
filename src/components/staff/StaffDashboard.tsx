@@ -301,7 +301,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <form onSubmit={handleSubmit} id="compliance-form" className="p-6 md:p-10 space-y-12 pb-32">
+        <form onSubmit={handleSubmit} id="compliance-form" className="p-6 md:p-10 space-y-12 pb-44">
           {form.questions.map((q, idx) => (
             <div key={q.id} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: `${idx * 50}ms` }}>
               <div className="flex items-start space-x-3">
@@ -414,6 +414,31 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
                     )}
                   </div>
                 )}
+
+                {/* Auto-Specify Box for 'Others' (อื่นๆ), Medication (ยา), details (ระบุ/จำนวน) or anomalous selections */}
+                {(
+                  q.label === 'อื่นๆ' ||
+                  q.label.includes('(ระบุ)') || 
+                  q.label.includes('ยา') || 
+                  q.label.includes('จำนวน') ||
+                  formData[q.id] === 'อื่นๆ' ||
+                  formData[q.id] === 'Fail' ||
+                  formData[q.id] === 'Alert'
+                ) && (
+                  <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center space-x-2 mb-2 px-1">
+                       <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Detail Required (กรุณาระบุรายละเอียด)</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder={language === 'TH' ? 'ระบุจำนวน / เลขล็อค / หมายเหตุเพิ่มเติม...' : 'Specify amount / lock no / notes...'}
+                      className="w-full border-2 border-orange-100 bg-orange-50/30 rounded-2xl p-4 focus:border-orange-400 focus:bg-white shadow-sm outline-none transition-all font-bold text-sm text-gray-700 placeholder-orange-300"
+                      value={String(formData[`${q.id}_other`] || '')}
+                      onChange={(e) => setFormData({...formData, [`${q.id}_other`]: e.target.value})}
+                      required={q.required}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -422,7 +447,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
       </div>
 
       {/* Sticky Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] z-20 flex gap-4">
+      <div className="shrink-0 p-6 bg-white border-t border-gray-100 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] z-20 flex gap-4">
           <button 
             type="button"
             onClick={onCancel}

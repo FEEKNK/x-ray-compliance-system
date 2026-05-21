@@ -39,7 +39,7 @@ export interface Schedule {
   date: string;
   shift: Shift;
   staffId: string;
-  formId: string;
+  formId?: string;
   location?: string;
   supervisorId: string;
   status: 'Pending' | 'Completed';
@@ -75,10 +75,18 @@ export interface Alert {
   formId?: string;
 }
 
+export interface ProtocolBundle {
+  id: string;
+  name: string;
+  department: 'MRI' | 'X-RAY';
+  formIds: string[];
+}
+
 export interface AppContextType {
   currentUser: User | null;
   users: User[];
   forms: DynamicForm[];
+  bundles: ProtocolBundle[];
   schedules: Schedule[];
   submissions: Submission[];
   alerts: Alert[];
@@ -89,6 +97,9 @@ export interface AppContextType {
   addForm: (form: DynamicForm) => void;
   updateForm: (form: DynamicForm) => void;
   deleteForm: (id: string) => void;
+  addBundle: (bundle: ProtocolBundle) => void;
+  updateBundle: (bundle: ProtocolBundle) => void;
+  deleteBundle: (id: string) => void;
   addSchedule: (schedule: Schedule | Schedule[]) => void;
   deleteSchedule: (id: string) => void;
   bulkDeleteSchedules: (ids: string[]) => void;
@@ -105,4 +116,13 @@ export interface AppContextType {
   updateSettings: (settings: SystemSettings) => void;
   resetDatabase: () => void;
   clearLogs: () => void;
+}
+
+export interface DatabaseSchema {
+  users: User[];
+  forms: DynamicForm[];
+  schedules: Schedule[];
+  submissions: Submission[];
+  bundles: ProtocolBundle[];
+  // Add other top-level properties from db.json if any
 }

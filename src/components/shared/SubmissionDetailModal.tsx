@@ -9,7 +9,7 @@ interface SubmissionDetailModalProps {
 }
 
 const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({ submission, onClose }) => {
-  const { users, forms } = useApp();
+  const { users, forms, language } = useApp();
   const staff = users.find(u => u.id === submission.staffId);
   const form = forms.find(f => f.id === submission.formId);
 
@@ -66,10 +66,15 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({ submissio
             <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">Inspection Responses</h4>
             <div className="grid grid-cols-1 gap-4 print:gap-2">
               {Object.entries(submission.data).map(([key, value]) => {
-                const question = form?.questions.find(q => q.id === key);
+                const isOther = key.endsWith('_other');
+                const mainKey = isOther ? key.replace('_other', '') : key;
+                const question = form?.questions.find(q => q.id === mainKey);
+                
                 return (
-                  <div key={key} className="bg-gray-50 p-4 rounded-xl border border-gray-100 print:bg-white print:p-2 print:border-gray-200">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">{question?.label || key}</label>
+                  <div key={key} className={`p-4 rounded-xl border border-gray-100 print:bg-white print:p-2 print:border-gray-200 ${isOther ? 'bg-orange-50/30 border-orange-100 ml-4' : 'bg-gray-50'}`}>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+                      {isOther ? (language === 'TH' ? `รายละเอียดเพิ่มเติมของ: ${question?.label}` : `Details for: ${question?.label}`) : (question?.label || key)}
+                    </label>
                     <p className={`font-bold ${value === 'Fail' || value === 'Alert' ? 'text-red-600' : 'text-gray-800'}`}>
                       {String(value)}
                     </p>

@@ -14,6 +14,7 @@ import SystemGuide from './components/shared/SystemGuide';
 import LandingPage from './components/shared/LandingPage';
 import BottomNav from './components/layout/BottomNav';
 import MonthlyDashboard from './components/admin/MonthlyDashboard';
+import BundleManager from './components/admin/BundleManager';
 import { LogOut, UserCircle } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -38,8 +39,9 @@ const AppContent: React.FC = () => {
               {activeTab === 'dashboard' && <AdminDashboard />}
               {activeTab === 'monthly' && <MonthlyDashboard />}
               {activeTab === 'forms' && <FormBuilder />}
-              {activeTab === 'schedule' && <Scheduler />}
-              {activeTab === 'logs' && <MasterLogs />}
+              {activeTab === 'scheduling' && <Scheduler />}
+              {activeTab === 'bundles' && <BundleManager />}
+              {activeTab === 'master-logs' && <MasterLogs />}
               {activeTab === 'users' && <UserManagement />}
               {activeTab === 'settings' && <Settings />}
               {activeTab === 'guide' && <SystemGuide />}

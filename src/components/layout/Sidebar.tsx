@@ -9,7 +9,8 @@ import {
   Settings as SettingsIcon,
   BookOpen,
   LogOut,
-  TrendingUp
+  TrendingUp,
+  Layers
 } from 'lucide-react';
 import logo from '../../assets/logo.svg';
 import type { Role } from '../../types';
@@ -28,8 +29,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
     { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard },
     { id: 'monthly', label: 'Monthly Audit', icon: TrendingUp },
     { id: 'forms', label: t.formBuilder, icon: FileEdit },
-    { id: 'schedule', label: t.scheduling, icon: Calendar },
-    { id: 'logs', label: t.masterLogs, icon: ClipboardList },
+    { id: 'scheduling', label: t.scheduling, icon: Calendar },
+    { id: 'bundles', label: t.formGroups, icon: Layers },
+    { id: 'master-logs', label: t.masterLogs, icon: ClipboardList },
     { id: 'users', label: t.employees, icon: Users },
     { id: 'settings', label: t.settings, icon: SettingsIcon },
   ];
