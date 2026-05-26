@@ -13,7 +13,33 @@ import {
 } from 'lucide-react';
 import type { Submission, Schedule, DynamicForm } from '../../types';
 import { translations } from '../../i18n';
-import { getLockStatus } from '../../utils/shiftTime';
+import { getLockStatus, getSubmitDeadline } from '../../utils/shiftTime';
+
+/** Live countdown: re-renders every second until deadline */
+function useCountdown(scheduleDate: string, shift: import('../../types').Shift) {
+  const [now, setNow] = React.useState(() => new Date());
+  React.useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const deadline = getSubmitDeadline(scheduleDate, shift);
+  const diffMs = deadline.getTime() - now.getTime();
+  const isLocked = diffMs <= 0;
+  const totalSec = Math.max(0, Math.floor(diffMs / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const label = isLocked
+    ? 'ล็อกแล้ว'
+    : h > 0
+    ? `${h}:${pad(m)}:${pad(s)}`
+    : `${pad(m)}:${pad(s)}`;
+  const urgent = !isLocked && totalSec < 30 * 60; // < 30 min
+  const warning = !isLocked && totalSec < 60 * 60; // < 60 min
+  return { isLocked, label, urgent, warning, totalSec };
+}
 
 const StaffDashboard: React.FC = () => {
   const { currentUser, getStaffSchedule, forms, submitForm } = useApp();
@@ -94,6 +120,8 @@ const StaffDashboard: React.FC = () => {
               const form = forms.find(f => f.id === s.formId);
               const isCompleted = s.status === 'Completed';
               const lockStatus = getLockStatus(s.date, s.shift);
+              // eslint-disable-next-line react-hooks/rules-of-hooks
+              const cd = useCountdown(s.date, s.shift);
               return (
                 <div 
                   key={s.id} 
@@ -106,35 +134,39 @@ const StaffDashboard: React.FC = () => {
                   }`}
                 >
                   <div className="space-y-4">
+                    {/* Top row: shift badge + lock badge */}
                     <div className="flex items-center justify-between">
                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${
                          s.shift === 'Morning' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
                        }`}>{s.shift}</span>
-                       {isCompleted && !lockStatus.isLocked && <CheckCircle2 className="text-green-500" size={16} />}
-                       {lockStatus.isLocked && (
-                         <span className="text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-50 px-2 py-1 rounded-lg border border-red-100 flex items-center gap-1">
-                           🔒 ล็อกแล้ว
-                         </span>
-                       )}
+                       {isCompleted && !cd.isLocked && <CheckCircle2 className="text-green-500" size={16} />}
                     </div>
                     <h4 className="font-bold text-gray-800 text-lg leading-tight line-clamp-2">{form?.title}</h4>
+
+                    {/* Countdown badge — top-right corner of card body */}
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-black tracking-widest self-start ${
+                      cd.isLocked
+                        ? 'bg-red-100 text-red-600'
+                        : cd.urgent
+                        ? 'bg-orange-100 text-orange-600 animate-pulse'
+                        : cd.warning
+                        ? 'bg-yellow-50 text-yellow-700'
+                        : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {cd.isLocked ? '🔒' : <Clock size={11} />}
+                      {cd.isLocked ? 'หมดเวลา' : cd.label}
+                    </div>
                   </div>
                   
-                  <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
+                  <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
                     <div className="flex flex-col">
                       <div className="flex items-center text-xs text-gray-400 font-bold">
                          <TrendingUpIcon className="mr-1" /> {s.location || 'N/A'}
                       </div>
-                      <span className={`text-[10px] font-bold mt-1 ${
-                        lockStatus.isLocked ? 'text-red-400' :
-                        (lockStatus.minutesLeft ?? 999) <= 30 ? 'text-orange-500 animate-pulse' : 'text-gray-400'
-                      }`}>
-                        {lockStatus.label}
-                      </span>
                     </div>
-                    {lockStatus.isLocked ? (
+                    {cd.isLocked ? (
                       <span className="px-5 py-2 rounded-xl text-xs font-bold bg-red-50 text-red-400 border border-red-100">
-                        ไม่ได้ทำ (ล็อก)
+                        ไม่ได้ทำ
                       </span>
                     ) : (
                       <button 
