@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { User, DynamicForm, Schedule, Submission, SystemSettings, AppContextType, Alert, Shift, ProtocolBundle } from './types';
+import type { User, DynamicForm, Schedule, Submission, SystemSettings, AppContextType, Alert, ProtocolBundle } from './types';
 import { api } from './api';
+import { getShiftStatus } from './utils/shiftTime';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -307,50 +308,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // ============================================
-  // Automated Alert Check (1 hour delay) — still client-side
+  // Client-side overdue alert check
+  // Uses shiftTime utility: Morning alert @2h, Afternoon/Night @1h
   // ============================================
   useEffect(() => {
     if (isLoading) return;
 
     const checkOverdue = () => {
       const now = new Date();
-      const hour = now.getHours();
-      const dateStr = now.toISOString().split('T')[0];
-      
-      let currentShift: Shift | null = null;
-      if (hour >= 9 && hour < 16) currentShift = 'Morning';
-      else if (hour >= 17 && hour < 24) currentShift = 'Afternoon';
-      else if (hour >= 1 && hour < 8) currentShift = 'Night';
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      if (currentShift) {
+      // For each shift, check if current time >= alertTime and schedule is still Pending
+      const shiftsToCheck: Array<'Morning' | 'Afternoon' | 'Night'> = ['Morning', 'Afternoon', 'Night'];
+      
+      shiftsToCheck.forEach(shift => {
+        const { isAlertTime: shouldAlert } = getShiftStatus(dateStr, shift, now);
+        if (!shouldAlert) return;
+
         const overdue = schedules.filter(s => 
           s.date === dateStr && 
-          s.shift === currentShift && 
+          s.shift === shift && 
           s.status === 'Pending'
         );
 
         overdue.forEach(s => {
-          const exists = alerts.some(a => a.message?.includes(s.id));
-          
+          const alertKey = `alert-${s.id}`;
+          const exists = alerts.some(a => a.message?.includes(alertKey));
           if (!exists) {
             const staff = users.find(u => u.id === s.staffId);
             const form = forms.find(f => f.id === s.formId);
-            
+            const shiftTh = shift === 'Morning' ? 'เช้า' : shift === 'Afternoon' ? 'บ่าย' : 'ดึก';
+            const alertAfter = shift === 'Morning' ? 2 : 1;
             addAlert({
               type: 'Missed Task',
-              message: `⚠️ แจ้งเตือน: ${staff?.name} ยังไม่ได้ทำ ${form?.title} (เกิน 1 ชม. ของเวร${currentShift === 'Morning' ? 'เช้า' : currentShift === 'Afternoon' ? 'บ่าย' : 'ดึก'}) [Task: ${s.id}]`,
+              message: `⚠️ แจ้งเตือน: ${staff?.name} ยังไม่ได้กรอก ${form?.title} (ผ่านไป ${alertAfter} ชม.ของเวร${shiftTh}) [${alertKey}]`,
               staffId: s.staffId,
               formId: s.formId
             });
           }
         });
-      }
+      });
     };
 
-    const interval = setInterval(checkOverdue, 60000 * 10);
+    const interval = setInterval(checkOverdue, 60000 * 5); // every 5 min
     checkOverdue();
     return () => clearInterval(interval);
-  }, [isLoading, schedules, alerts, users, forms, settings, addAlert]);
+  }, [isLoading, schedules, alerts, users, forms, addAlert]);
 
   // ============================================
   // Utility Functions

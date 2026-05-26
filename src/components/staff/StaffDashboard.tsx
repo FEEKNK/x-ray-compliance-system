@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { Submission, Schedule, DynamicForm } from '../../types';
 import { translations } from '../../i18n';
+import { getLockStatus } from '../../utils/shiftTime';
 
 const StaffDashboard: React.FC = () => {
   const { currentUser, getStaffSchedule, forms, submitForm } = useApp();
@@ -92,12 +93,15 @@ const StaffDashboard: React.FC = () => {
             {mySchedules.map(s => {
               const form = forms.find(f => f.id === s.formId);
               const isCompleted = s.status === 'Completed';
+              const lockStatus = getLockStatus(s.date, s.shift);
               return (
                 <div 
                   key={s.id} 
                   className={`min-w-[280px] md:min-w-[320px] snap-start p-6 rounded-3xl border-2 transition-all flex flex-col justify-between ${
-                    isCompleted 
-                      ? 'bg-gray-50 border-gray-100 opacity-60' 
+                    lockStatus.isLocked
+                      ? 'bg-red-50/60 border-red-100 opacity-80'
+                      : isCompleted 
+                      ? 'bg-gray-50 border-gray-100 opacity-70' 
                       : 'bg-white border-[#00468B]/10 shadow-lg shadow-blue-900/5'
                   }`}
                 >
@@ -106,23 +110,42 @@ const StaffDashboard: React.FC = () => {
                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${
                          s.shift === 'Morning' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
                        }`}>{s.shift}</span>
-                       {isCompleted && <CheckCircle2 className="text-green-500" size={16} />}
+                       {isCompleted && !lockStatus.isLocked && <CheckCircle2 className="text-green-500" size={16} />}
+                       {lockStatus.isLocked && (
+                         <span className="text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-50 px-2 py-1 rounded-lg border border-red-100 flex items-center gap-1">
+                           🔒 ล็อกแล้ว
+                         </span>
+                       )}
                     </div>
                     <h4 className="font-bold text-gray-800 text-lg leading-tight line-clamp-2">{form?.title}</h4>
                   </div>
                   
                   <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
-                    <div className="flex items-center text-xs text-gray-400 font-bold">
-                       <TrendingUpIcon className="mr-1" /> {s.location || 'N/A'}
+                    <div className="flex flex-col">
+                      <div className="flex items-center text-xs text-gray-400 font-bold">
+                         <TrendingUpIcon className="mr-1" /> {s.location || 'N/A'}
+                      </div>
+                      <span className={`text-[10px] font-bold mt-1 ${
+                        lockStatus.isLocked ? 'text-red-400' :
+                        (lockStatus.minutesLeft ?? 999) <= 30 ? 'text-orange-500 animate-pulse' : 'text-gray-400'
+                      }`}>
+                        {lockStatus.label}
+                      </span>
                     </div>
+                    {lockStatus.isLocked ? (
+                      <span className="px-5 py-2 rounded-xl text-xs font-bold bg-red-50 text-red-400 border border-red-100">
+                        ไม่ได้ทำ (ล็อก)
+                      </span>
+                    ) : (
                       <button 
                         onClick={() => setActiveSchedule(s)}
                         className={`px-5 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all ${
                           isCompleted ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'bg-[#00468B] text-white'
                         }`}
                       >
-                        {isCompleted ? 'Edit Submission' : 'Audit Now'}
+                        {isCompleted ? 'แก้ไข' : 'Audit Now'}
                       </button>
+                    )}
                   </div>
                 </div>
               );
@@ -154,7 +177,7 @@ interface FormRendererProps {
   onSubmit: (submission: Submission) => void;
 }
 
-const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, onSubmit }) => {
+export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, onSubmit }) => {
   const { language, submissions } = useApp();
   const t = translations[language];
   const existingSubmission = submissions.find(s => s.scheduleId === schedule.id);
