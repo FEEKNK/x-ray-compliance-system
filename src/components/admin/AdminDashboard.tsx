@@ -9,7 +9,7 @@ const AdminDashboard: React.FC = () => {
   const { schedules, getCompletionRate, users, forms, announcements, addAnnouncement, alerts, addAlert, markAlertAsRead, language, settings, submissions } = useApp();
   const t = translations[language];
   const [newAnnouncement, setNewAnnouncement] = useState('');
-  const [selectedDept, setSelectedDept] = useState<'X-RAY' | 'MRI'>('X-RAY');
+  const [selectedDept, setSelectedDept] = useState<'IMAGING' | 'MRI'>('IMAGING');
   
   const today = new Date().toISOString().split('T')[0];
   const rate = getCompletionRate(today, selectedDept);
@@ -85,7 +85,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* Department Selector */}
       <div className="flex bg-white p-2 rounded-2xl border border-gray-100 shadow-sm w-fit">
-        {(['X-RAY', 'MRI'] as const).map((dept) => (
+        {(['IMAGING', 'MRI'] as const).map((dept) => (
           <button
             key={dept}
             onClick={() => setSelectedDept(dept)}

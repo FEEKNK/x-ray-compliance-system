@@ -83,6 +83,39 @@ const MonthlyDashboard: React.FC = () => {
   }, [submissions, forms, selectedMonthStr]);
 
   // ==========================================
+  // Staff KPI Analytics
+  // ==========================================
+  const staffKPI = useMemo(() => {
+    const staffList = users.filter(u => u.role === 'STAFF');
+    return staffList.map(s => {
+      const staffSchedules = schedules.filter(sch => sch.staffId === s.id && sch.date.startsWith(selectedMonthStr));
+      const total = staffSchedules.length;
+      const completed = staffSchedules.filter(sch => sch.status === 'Completed').length;
+      const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+      return { id: s.id, name: s.name, department: s.department, total, completed, percent };
+    }).sort((a, b) => b.percent - a.percent);
+  }, [users, schedules, selectedMonthStr]);
+
+  // ==========================================
+  // Machine Error Analytics
+  // ==========================================
+  const machineErrors = useMemo(() => {
+    const monthSubmissions = submissions.filter(s => s.submittedAt.startsWith(selectedMonthStr));
+    const errorsMap: Record<string, number> = {};
+    monthSubmissions.forEach(sub => {
+      const hasAlert = Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert');
+      if (hasAlert) {
+        errorsMap[sub.formId] = (errorsMap[sub.formId] || 0) + 1;
+      }
+    });
+    
+    return Object.keys(errorsMap).map(formId => {
+      const form = forms.find(f => f.id === formId);
+      return { formId, title: form?.title || 'Unknown', errorCount: errorsMap[formId] };
+    }).sort((a, b) => b.errorCount - a.errorCount);
+  }, [submissions, forms, selectedMonthStr]);
+
+  // ==========================================
   // Staff Matrix Logic
   // ==========================================
   const staff = users.filter(u => u.role === 'STAFF');
@@ -130,7 +163,7 @@ const MonthlyDashboard: React.FC = () => {
       {/* Header & Month Selector */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-gray-800">{t.monthlyPerformance || 'Monthly Audit'}</h2>
+          <h2 className="text-2xl font-black text-gray-800">{t.monthlyPerformance || 'Quality Dashboard'}</h2>
           <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">
             Performance & Compliance Matrix
           </p>
@@ -264,6 +297,91 @@ const MonthlyDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Analytics Widgets */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* Staff KPI Analytics */}
+        <div className="bg-white p-6 md:p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
+              <Users size={20} />
+            </div>
+            <span className="font-bold text-gray-700">Staff KPI (ความสำเร็จในการทำงาน)</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs tracking-wider">
+                <tr>
+                  <th className="px-4 py-3">พนักงาน</th>
+                  <th className="px-4 py-3 text-center">มอบหมาย</th>
+                  <th className="px-4 py-3 text-center">สำเร็จ</th>
+                  <th className="px-4 py-3 text-center">KPI (%)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {staffKPI.map((staff) => (
+                  <tr key={staff.id} className="hover:bg-gray-50/50">
+                    <td className="px-4 py-3 font-bold text-gray-800">{staff.name}</td>
+                    <td className="px-4 py-3 text-center text-gray-500">{staff.total}</td>
+                    <td className="px-4 py-3 text-center text-green-600 font-bold">{staff.completed}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex items-center justify-center px-2 py-1 rounded font-bold text-xs ${
+                        staff.percent >= 90 ? 'bg-green-100 text-green-700' :
+                        staff.percent >= 70 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {staff.percent}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {staffKPI.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="text-center py-4 text-gray-400">ไม่มีข้อมูลพนักงาน</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Machine Error Analytics */}
+        <div className="bg-white p-6 md:p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center">
+              <AlertCircle size={20} />
+            </div>
+            <span className="font-bold text-gray-700">Machine Error Analytics (ปัญหาเครื่องมือ)</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs tracking-wider">
+                <tr>
+                  <th className="px-4 py-3">โปรโตคอล / เครื่องมือ</th>
+                  <th className="px-4 py-3 text-center">จำนวนครั้งที่พบปัญหา</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {machineErrors.slice(0, 5).map((machine) => (
+                  <tr key={machine.formId} className="hover:bg-gray-50/50">
+                    <td className="px-4 py-3 font-bold text-gray-800">{machine.title}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 font-black">
+                        {machine.errorCount}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {machineErrors.length === 0 && (
+                  <tr>
+                    <td colSpan={2} className="text-center py-4 text-gray-400">ไม่พบปัญหาเครื่องมือในเดือนนี้</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
       {/* Environmental Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

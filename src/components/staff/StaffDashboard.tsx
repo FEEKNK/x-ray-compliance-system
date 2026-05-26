@@ -7,33 +7,26 @@ import {
   ChevronLeft, 
   ShieldCheck, 
   FileText,
-  Search,
-  ChevronRight,
   PartyPopper,
-  ChevronDown
+  ChevronDown,
+  Calendar
 } from 'lucide-react';
-import type { Schedule, DynamicForm, Submission, Shift } from '../../types';
+import type { Submission, Schedule, DynamicForm } from '../../types';
 import { translations } from '../../i18n';
 
 const StaffDashboard: React.FC = () => {
-  const { currentUser, getStaffSchedule, forms, submitForm, language, users } = useApp();
-  const t = translations[language];
+  const { currentUser, getStaffSchedule, forms, submitForm } = useApp();
   
   // Get local date YYYY-MM-DD
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
   const mySchedules = currentUser 
-    ? getStaffSchedule(currentUser.id, today).filter(s => s.status === 'Pending') 
+    ? getStaffSchedule(currentUser.id, today).sort((a, b) => (a.status === 'Pending' ? -1 : b.status === 'Pending' ? 1 : 0))
     : [];
   
   const [activeSchedule, setActiveSchedule] = useState<Schedule | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
-  const [selectedShift, setSelectedShift] = useState<Shift | 'All'>('Morning');
-  const [selectedDept, setSelectedDept] = useState<'MRI' | 'X-RAY'>(
-    (currentUser?.department as 'MRI' | 'X-RAY') || 'X-RAY'
-  );
 
   const handleFinishSubmission = (data: Submission) => {
     submitForm(data);
@@ -42,12 +35,7 @@ const StaffDashboard: React.FC = () => {
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  const filteredForms = forms.filter(f => {
-    const matchesSearch = f.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesShift = selectedShift === 'All' || (f.shifts && f.shifts.includes(selectedShift as Shift));
-    const matchesDept = f.department === selectedDept;
-    return matchesSearch && matchesShift && matchesDept;
-  });
+
 
   if (activeSchedule) {
     const form = forms.find(f => f.id === activeSchedule.formId);
@@ -127,14 +115,14 @@ const StaffDashboard: React.FC = () => {
                     <div className="flex items-center text-xs text-gray-400 font-bold">
                        <TrendingUpIcon className="mr-1" /> {s.location || 'N/A'}
                     </div>
-                    {!isCompleted && (
                       <button 
                         onClick={() => setActiveSchedule(s)}
-                        className="bg-[#00468B] text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all"
+                        className={`px-5 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all ${
+                          isCompleted ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'bg-[#00468B] text-white'
+                        }`}
                       >
-                        Audit Now
+                        {isCompleted ? 'Edit Submission' : 'Audit Now'}
                       </button>
-                    )}
                   </div>
                 </div>
               );
@@ -143,107 +131,17 @@ const StaffDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Main Grid: All Forms */}
-      <div className="space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2 border-b border-gray-100 pb-6">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-xl font-black text-gray-800 tracking-tight">{t.machineRegistry}</h3>
-              <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">{t.directAccessProtocols}</p>
-            </div>
-            
-            {/* Department Selector */}
-            <div className="flex gap-2">
-              {(['X-RAY', 'MRI'] as const).map((dept) => (
-                <button
-                  key={dept}
-                  onClick={() => setSelectedDept(dept)}
-                  className={`px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
-                    selectedDept === dept
-                      ? 'bg-[#00468B] text-white shadow-xl shadow-blue-900/20'
-                      : 'bg-white border-2 border-gray-100 text-gray-400 hover:border-gray-200'
-                  }`}
-                >
-                  {dept}
-                </button>
-              ))}
-            </div>
-
-            {/* Shift Selector */}
-            <div className="flex flex-wrap gap-2">
-              {['Morning', 'Afternoon', 'Night', 'All'].map((shift) => (
-                <button
-                  key={shift}
-                  onClick={() => setSelectedShift(shift as Shift | 'All')}
-                  className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-center min-w-[100px] ${
-                    selectedShift === shift
-                      ? 'bg-[#00468B] text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                  }`}
-                >
-                  <div className="text-[10px] mb-0.5">
-                    {shift === 'Morning' ? t.morning : shift === 'Afternoon' ? t.afternoon : shift === 'Night' ? t.night : t.all}
-                  </div>
-                  {shift !== 'All' && (
-                    <div className={`text-[8px] opacity-70 ${selectedShift === shift ? 'text-blue-100' : 'text-gray-400'}`}>
-                      {shift === 'Morning' ? '08:00-16:00' : shift === 'Afternoon' ? '16:00-00:00' : '00:00-08:00'}
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="relative flex-1 max-w-md w-full">
-             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
-             <input 
-              type="text" 
-              placeholder="Filter machines or protocols..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-gray-50 border-2 border-gray-50 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold focus:border-[#00468B] focus:bg-white outline-none transition-all"
-             />
-          </div>
+      {mySchedules.length === 0 && (
+        <div className="text-center py-12 px-4 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+          <Clock size={48} className="mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-bold text-gray-700">No Duties Assigned</h3>
+          <p className="text-gray-500 text-sm mt-2">You have no pending assignments for today.</p>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
-          {filteredForms.map(f => (
-            <button 
-              key={f.id}
-              onClick={() => {
-                const manualSchedule: Schedule = {
-                  id: `manual-${crypto.randomUUID()}`,
-                  date: today,
-                  shift: selectedShift === 'All' ? 'Morning' : (selectedShift as Shift),
-                  staffId: currentUser?.id || '00000000-0000-0000-0000-000000000000',
-                  formId: f.id,
-                  location: 'Ad-hoc Check',
-                  supervisorId: users.find(u => u.role === 'ADMIN')?.id || '00000000-0000-0000-0000-000000000000',
-                  status: 'Pending'
-                };
-                setActiveSchedule(manualSchedule);
-              }}
-              className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group text-left flex items-center space-x-5 h-full relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/50 rounded-bl-[100px] -mr-8 -mt-8 group-hover:scale-125 transition-transform duration-500"></div>
-              
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#00468B] group-hover:bg-[#00468B] group-hover:text-white flex items-center justify-center shrink-0 transition-all duration-300 relative z-10">
-                <FileText size={28} />
-              </div>
-              
-              <div className="relative z-10 flex-1 min-w-0">
-                <h4 className="font-bold text-gray-800 text-sm leading-snug group-hover:text-[#00468B] transition-colors mb-1 truncate pr-4">{f.title}</h4>
-                <div className="flex items-center space-x-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                   <span>{f.questions.length} Audit Points</span>
-                   <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all" />
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   );
 };
+
 
 const TrendingUpIcon = ({ className }: { className?: string }) => (
   <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
@@ -257,24 +155,33 @@ interface FormRendererProps {
 }
 
 const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, onSubmit }) => {
-  const { language } = useApp();
+  const { language, submissions } = useApp();
   const t = translations[language];
-  const [formData, setFormData] = useState<Record<string, string | number | boolean | string[]>>({});
-  const [photos, setPhotos] = useState<string[]>([]);
+  const existingSubmission = submissions.find(s => s.scheduleId === schedule.id);
+  const [formData, setFormData] = useState<Record<string, string | number | boolean | string[]>>(existingSubmission ? existingSubmission.data : {});
+  const [photos, setPhotos] = useState<string[]>(existingSubmission ? existingSubmission.photos : []);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
+    // Auto-fill any date questions with today's date
+    const finalFormData = { ...formData };
+    form.questions.forEach(q => {
+      if (q.type === 'date') {
+        finalFormData[q.id] = new Date().toISOString().split('T')[0];
+      }
+    });
+
     setTimeout(() => {
       const submission: Submission = {
-        id: crypto.randomUUID(),
+        id: existingSubmission?.id || crypto.randomUUID(),
         scheduleId: schedule.id,
         staffId: schedule.staffId,
         formId: form.id,
         submittedAt: new Date().toISOString(),
-        data: formData,
+        data: finalFormData,
         photos: photos
       };
       onSubmit(submission);
@@ -313,12 +220,10 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
               
               <div className="pl-9">
                 {q.type === 'date' && (
-                  <input 
-                    type="date" 
-                    required={q.required}
-                    className="w-full border-2 border-gray-100 rounded-2xl p-4 focus:border-[#00468B] focus:bg-white bg-white shadow-sm outline-none transition-all font-bold text-gray-700"
-                    onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
-                  />
+                  <div className="w-full border-2 border-gray-100 rounded-2xl p-4 bg-gray-50 text-gray-400 font-bold text-sm flex items-center">
+                    <Calendar size={18} className="mr-2 opacity-50" />
+                    [วันที่ทำรายการจะถูกบันทึกอัตโนมัติเมื่อกดส่ง]
+                  </div>
                 )}
 
                 {q.type === 'select' && (

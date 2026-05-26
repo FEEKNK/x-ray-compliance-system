@@ -10,7 +10,7 @@ const MasterLogs: React.FC = () => {
   const t = translations[language];
   const [searchTerm, setSearchTerm] = useState('');
   const [filterShift, setFilterShift] = useState('All');
-  const [filterDept, setFilterDept] = useState<'All' | 'X-RAY' | 'MRI'>('All');
+  const [filterDept, setFilterDept] = useState<'All' | 'IMAGING' | 'MRI'>('All');
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
 
   const filteredSubmissions = submissions.filter(sub => {
@@ -115,11 +115,11 @@ const MasterLogs: React.FC = () => {
           </select>
           <select 
             value={filterDept}
-            onChange={(e) => setFilterDept(e.target.value as 'All' | 'X-RAY' | 'MRI')}
+            onChange={(e) => setFilterDept(e.target.value as 'All' | 'IMAGING' | 'MRI')}
             className="border-2 border-gray-50 rounded-xl px-4 py-3 bg-gray-50 text-xs font-black uppercase tracking-widest text-gray-600 focus:border-blue-500 outline-none transition-all"
           >
             <option value="All">All Depts</option>
-            <option value="X-RAY">X-RAY</option>
+            <option value="IMAGING">IMAGING</option>
             <option value="MRI">MRI</option>
           </select>
         </div>
@@ -143,6 +143,7 @@ const MasterLogs: React.FC = () => {
                 const staff = users.find(u => u.id === sub.staffId);
                 const form = forms.find(f => f.id === sub.formId);
                 const schedule = schedules.find(s => s.id === sub.scheduleId);
+                const hasAlert = Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert');
                 return (
                   <tr key={sub.id} className="hover:bg-blue-50/30 transition-colors group">
                     <td className="px-8 py-6">
@@ -171,7 +172,13 @@ const MasterLogs: React.FC = () => {
                     <td className="px-8 py-6">
                       <div className="flex items-center space-x-2">
                         {sub.photos.length > 0 && <ImageIcon size={14} className="text-blue-500" />}
-                        <span className="text-[10px] font-black uppercase tracking-widest text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100">{t.verifiedCertified}</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${
+                          hasAlert 
+                            ? 'text-red-600 bg-red-50 border-red-100' 
+                            : 'text-green-600 bg-green-50 border-green-100'
+                        }`}>
+                          {hasAlert ? '🔴 Issue Found' : t.verifiedCertified}
+                        </span>
                       </div>
                     </td>
                     <td className="px-8 py-6">

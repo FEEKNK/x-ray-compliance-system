@@ -42,6 +42,7 @@ const StaffHistory: React.FC = () => {
       <div className="grid grid-cols-1 gap-4">
         {mySubmissions.length > 0 ? mySubmissions.map(sub => {
           const form = forms.find(f => f.id === sub.formId);
+          const hasAlert = Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert');
           return (
             <div 
               key={sub.id} 
@@ -58,8 +59,12 @@ const StaffHistory: React.FC = () => {
                     <span className="flex items-center text-[10px] font-black text-gray-400 uppercase tracking-widest">
                       <Clock size={12} className="mr-1" /> {new Date(sub.submittedAt).toLocaleDateString()}
                     </span>
-                    <span className="flex items-center text-[10px] font-black text-green-600 uppercase tracking-widest bg-green-50 px-2 py-0.5 rounded">
-                      <CheckCircle2 size={12} className="mr-1" /> {t.verifiedCertified}
+                    <span className={`flex items-center text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                      hasAlert ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50'
+                    }`}>
+                      {hasAlert ? '🔴 Issue Found' : (
+                        <><CheckCircle2 size={12} className="mr-1" /> {t.verifiedCertified}</>
+                      )}
                     </span>
                   </div>
                 </div>

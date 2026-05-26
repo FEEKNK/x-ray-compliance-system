@@ -55,7 +55,7 @@ const UserModal: React.FC<UserModalProps> = ({ editingUser, formData, setFormDat
                     className="w-full border-2 border-gray-50 rounded-xl p-3 bg-gray-50 font-bold text-gray-700 outline-none focus:border-blue-500 transition-all appearance-none"
                   >
                     <option value="">Select Dept...</option>
-                    <option value="X-RAY">X-RAY</option>
+                    <option value="IMAGING">IMAGING</option>
                     <option value="MRI">MRI</option>
                   </select>
                 </div>

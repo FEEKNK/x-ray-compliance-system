@@ -10,7 +10,7 @@ const SystemGuide: React.FC = () => {
         </div>
         <h1 className="text-4xl font-black text-gray-800">System Documentation</h1>
         <p className="text-lg text-gray-500 font-medium max-w-2xl mx-auto">
-          Everything you need to know about the X-Ray Compliance & Scheduling Management System.
+          Everything you need to know about the Imaging Compliance & Scheduling Management System.
         </p>
       </div>
 
@@ -66,7 +66,7 @@ const SystemGuide: React.FC = () => {
             <ul className="space-y-4">
                <li className="flex items-start space-x-3">
                   <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">1</div>
-                  <p className="text-gray-600"><strong>QR Code Access:</strong> ติดสติกเกอร์ที่เครื่อง X-Ray เพื่อให้พนักงานสแกนแล้วเข้าสู่ฟอร์มได้ทันที</p>
+                  <p className="text-gray-600"><strong>QR Code Access:</strong> ติดสติกเกอร์ที่เครื่อง Imaging เพื่อให้พนักงานสแกนแล้วเข้าสู่ฟอร์มได้ทันที</p>
                </li>
                <li className="flex items-start space-x-3">
                   <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">2</div>

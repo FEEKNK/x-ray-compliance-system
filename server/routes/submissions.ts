@@ -33,13 +33,29 @@ router.post('/', async (req, res) => {
     const isAdhoc = scheduleId && String(scheduleId).startsWith('manual-');
     const dbScheduleId = isAdhoc ? null : (scheduleId || null);
 
-    const [newSubmission] = await db.insert(submissions).values({
-      scheduleId: dbScheduleId,
-      staffId,
-      formId,
-      data,
-      photos: photos || [],
-    }).returning();
+    let newSubmission;
+
+    if (dbScheduleId) {
+      const existing = await db.select().from(submissions).where(eq(submissions.scheduleId, dbScheduleId)).limit(1);
+      if (existing.length > 0) {
+        const [updated] = await db.update(submissions)
+          .set({ data, photos: photos || [], submittedAt: new Date().toISOString() })
+          .where(eq(submissions.id, existing[0].id))
+          .returning();
+        newSubmission = updated;
+      }
+    }
+
+    if (!newSubmission) {
+      const [inserted] = await db.insert(submissions).values({
+        scheduleId: dbScheduleId,
+        staffId,
+        formId,
+        data,
+        photos: photos || [],
+      }).returning();
+      newSubmission = inserted;
+    }
 
     // Mark the related schedule as Completed if scheduleId exists and is not a manual/ad-hoc one
     if (dbScheduleId) {

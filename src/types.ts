@@ -29,7 +29,7 @@ export interface DynamicForm {
   isActive: boolean;
   createdAt: string;
   shifts?: Shift[];
-  department?: 'MRI' | 'X-RAY';
+  department?: 'MRI' | 'IMAGING';
 }
 
 export type Shift = 'Morning' | 'Afternoon' | 'Night';
@@ -78,7 +78,7 @@ export interface Alert {
 export interface ProtocolBundle {
   id: string;
   name: string;
-  department: 'MRI' | 'X-RAY';
+  department: 'MRI' | 'IMAGING';
   formIds: string[];
 }
 
@@ -105,7 +105,7 @@ export interface AppContextType {
   bulkDeleteSchedules: (ids: string[]) => void;
   submitForm: (submission: Submission) => void;
   getStaffSchedule: (staffId: string, date: string) => Schedule[];
-  getCompletionRate: (date: string, department?: 'MRI' | 'X-RAY') => number;
+  getCompletionRate: (date: string, department?: 'MRI' | 'IMAGING') => number;
   announcements: string[];
   addAnnouncement: (text: string) => void;
   addAlert: (alert: Omit<Alert, 'id' | 'isRead' | 'timestamp'>) => void;

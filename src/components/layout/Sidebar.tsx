@@ -27,7 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
 
   const adminItems = [
     { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard },
-    { id: 'monthly', label: 'Monthly Audit', icon: TrendingUp },
+    { id: 'monthly', label: 'Quality Dashboard', icon: TrendingUp },
     { id: 'forms', label: t.formBuilder, icon: FileEdit },
     { id: 'scheduling', label: t.scheduling, icon: Calendar },
     { id: 'bundles', label: t.formGroups, icon: Layers },

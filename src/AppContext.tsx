@@ -342,19 +342,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               staffId: s.staffId,
               formId: s.formId
             });
-
-            // Send automated reminder email
-            fetch('/api/send-reminder-email', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                staffEmail: staff?.email,
-                staffName: staff?.name,
-                supervisorEmail: settings.supervisorEmail,
-                formTitle: form?.title,
-                shift: currentShift
-              })
-            }).catch(err => console.error('Failed to send reminder email:', err));
           }
         });
       }
@@ -387,7 +374,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return schedules.filter(s => s.staffId === staffId && s.date === date);
   }, [schedules]);
 
-  const getCompletionRate = useCallback((date: string, department?: 'MRI' | 'X-RAY') => {
+  const getCompletionRate = useCallback((date: string, department?: 'MRI' | 'IMAGING') => {
     let dailySchedules = schedules.filter(s => s.date === date);
     
     if (department) {

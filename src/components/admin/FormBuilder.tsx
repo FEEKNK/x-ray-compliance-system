@@ -9,7 +9,7 @@ const FormBuilder: React.FC = () => {
   const t = translations[language];
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [department, setDepartment] = useState<'X-RAY' | 'MRI'>('X-RAY');
+  const [department, setDepartment] = useState<'IMAGING' | 'MRI'>('IMAGING');
   const [questions, setQuestions] = useState<QuestionBlock[]>([]);
   const [selectedForm, setSelectedForm] = useState<DynamicForm | null>(null);
 
@@ -64,7 +64,7 @@ const FormBuilder: React.FC = () => {
     setSelectedForm(null);
     setTitle('');
     setDescription('');
-    setDepartment('X-RAY');
+    setDepartment('IMAGING');
     setQuestions([]);
   };
 
@@ -93,7 +93,7 @@ const FormBuilder: React.FC = () => {
                    setSelectedForm(null);
                    setTitle('');
                    setDescription('');
-                   setDepartment('X-RAY');
+                   setDepartment('IMAGING');
                    setQuestions([]);
                  }} className="p-1.5 rounded-lg hover:bg-white text-[#00468B] transition-colors">
                     <Plus size={16} />
@@ -107,14 +107,14 @@ const FormBuilder: React.FC = () => {
                       setSelectedForm(f);
                       setTitle(f.title);
                       setDescription(f.description);
-                      setDepartment(f.department || 'X-RAY');
+                      setDepartment(f.department || 'IMAGING');
                       setQuestions(f.questions);
                     }}
                     className={`p-4 flex items-center justify-between cursor-pointer transition-all group ${selectedForm?.id === f.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                    >
                       <div className="flex-1 min-w-0 mr-2">
                          <p className={`text-xs font-bold truncate ${selectedForm?.id === f.id ? 'text-[#00468B]' : 'text-gray-700'}`}>{f.title}</p>
-                         <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">{f.department || 'X-RAY'} | {f.questions.length} fields</p>
+                         <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">{f.department || 'IMAGING'} | {f.questions.length} fields</p>
                       </div>
                       <div className="flex items-center space-x-1">
                         <button 
@@ -126,7 +126,7 @@ const FormBuilder: React.FC = () => {
                                 setSelectedForm(null);
                                 setTitle('');
                                 setDescription('');
-                                setDepartment('X-RAY');
+                                setDepartment('IMAGING');
                                 setQuestions([]);
                               }
                             }
@@ -161,7 +161,7 @@ const FormBuilder: React.FC = () => {
                 <div>
                   <label className="block text-xs font-bold text-[#00468B] uppercase mb-2">Department</label>
                   <div className="flex space-x-2">
-                    {(['X-RAY', 'MRI'] as const).map(d => (
+                    {(['IMAGING', 'MRI'] as const).map(d => (
                       <button
                         key={d}
                         onClick={() => setDepartment(d)}

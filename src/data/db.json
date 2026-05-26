@@ -4,7 +4,7 @@
       "id": "1",
       "employeeId": "E001",
       "name": "Admin User",
-      "department": "X-RAY",
+      "department": "IMAGING",
       "email": "admin@xray.com",
       "role": "ADMIN"
     },
@@ -12,7 +12,7 @@
       "id": "2",
       "employeeId": "E002",
       "name": "Somchai K.",
-      "department": "X-RAY",
+      "department": "IMAGING",
       "email": "somchai@xray.com",
       "role": "STAFF"
     },
@@ -20,7 +20,7 @@
       "id": "3",
       "employeeId": "E003",
       "name": "Wichai S.",
-      "department": "X-RAY",
+      "department": "IMAGING",
       "email": "wichai@xray.com",
       "role": "STAFF"
     },
@@ -36,7 +36,7 @@
   "forms": [
     {
       "id": "f20",
-      "title": "ตรวจเช็คประจำวันเครื่อง X-RAY GENERAL Model JUMONG E",
+      "title": "ตรวจเช็คประจำวันเครื่อง IMAGING GENERAL Model JUMONG E",
       "description": "/M-XRA-018.1 Rev.4",
       "isActive": true,
       "createdAt": "2026-05-12T00:00:00.000Z",
@@ -119,7 +119,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f2",
@@ -212,7 +212,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f7",
@@ -316,7 +316,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f1",
@@ -373,7 +373,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f3",
@@ -466,7 +466,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f4",
@@ -553,7 +553,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f5",
@@ -712,7 +712,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f6",
@@ -1063,7 +1063,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f8",
@@ -1132,7 +1132,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f9",
@@ -1201,7 +1201,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f10",
@@ -1482,7 +1482,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f11",
@@ -1530,7 +1530,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f12",
@@ -1601,7 +1601,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f13",
@@ -1672,7 +1672,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f14",
@@ -1741,7 +1741,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f15",
@@ -1806,7 +1806,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f16",
@@ -1877,7 +1877,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f17",
@@ -1946,7 +1946,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f18",
@@ -2015,7 +2015,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f19",
@@ -2058,7 +2058,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f21",
@@ -2119,7 +2119,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f22",
@@ -2182,11 +2182,11 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f23",
-      "title": "ตรวจเช็คประจำวันเครื่อง X-RAY GENERAL 1 Model JUMONG M",
+      "title": "ตรวจเช็คประจำวันเครื่อง IMAGING GENERAL 1 Model JUMONG M",
       "description": "F/M-XRA-016.1 REV.4",
       "isActive": true,
       "createdAt": "2026-05-12T00:00:00.000Z",
@@ -2335,7 +2335,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f24",
@@ -2372,11 +2372,11 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f25",
-      "title": "ตรวจเช็คประจำวันเครื่อง X-RAY PORTABLE Model SM 20 HF-B",
+      "title": "ตรวจเช็คประจำวันเครื่อง IMAGING PORTABLE Model SM 20 HF-B",
       "description": "F/M-XRA-020.1 Rev.4",
       "isActive": true,
       "createdAt": "2026-05-12T00:00:00.000Z",
@@ -2501,7 +2501,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f26",
@@ -2564,11 +2564,11 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f27",
-      "title": "ตรวจเช็คประจำวันเครื่อง X-RAY GENERAL 2 Model AERODR C 80",
+      "title": "ตรวจเช็คประจำวันเครื่อง IMAGING GENERAL 2 Model AERODR C 80",
       "description": "F/M-XRA-001.1 REV.2",
       "isActive": true,
       "createdAt": "2026-05-12T00:00:00.000Z",
@@ -2717,7 +2717,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f28",
@@ -2780,7 +2780,7 @@
           "required": true
         }
       ],
-      "department": "X-RAY"
+      "department": "IMAGING"
     },
     {
       "id": "f29",

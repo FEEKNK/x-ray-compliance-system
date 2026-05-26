@@ -6,7 +6,11 @@ import {
   Plus,
   X,
   Check,
-  User
+  User,
+  Copy,
+  Download,
+  Printer,
+  Trash2
 } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { Schedule, Shift } from '../../types';
@@ -14,7 +18,7 @@ import type { Schedule, Shift } from '../../types';
 const Scheduler: React.FC = () => {
   const { users, forms, bundles, addSchedule, schedules, bulkDeleteSchedules, language, currentUser } = useApp();
   const t = translations[language];
-  const [selectedDept, setSelectedDept] = useState<'X-RAY' | 'MRI'>('X-RAY');
+  const [selectedDept, setSelectedDept] = useState<'IMAGING' | 'MRI'>('IMAGING');
   
   const staff = useMemo(() => 
     users.filter(u => u.role === 'STAFF' && u.department === selectedDept), 
@@ -31,7 +35,8 @@ const Scheduler: React.FC = () => {
   
   // Modal States
   const [selectedShifts, setSelectedShifts] = useState<Shift[]>([]);
-  const [selectedForms, setSelectedForms] = useState<string[]>([]);
+  const [selectedFormsByShift, setSelectedFormsByShift] = useState<Record<Shift, string[]>>({ Morning: [], Afternoon: [], Night: [] });
+  const [activeShiftTab, setActiveShiftTab] = useState<Shift>('Morning');
 
   const deptBundles = useMemo(() => 
     bundles.filter(b => b.department === selectedDept),
@@ -42,23 +47,22 @@ const Scheduler: React.FC = () => {
     return forms
       .filter(f => !f.department || f.department === selectedDept)
       .filter(f => {
-        if (selectedShifts.length === 0) return true;
-        return f.shifts?.some(s => selectedShifts.includes(s)) ?? true;
+        return f.shifts?.includes(activeShiftTab) ?? true;
       });
-  }, [forms, selectedDept, selectedShifts]);
+  }, [forms, selectedDept, activeShiftTab]);
 
-  const allFilteredSelected = filteredForms.length > 0 && filteredForms.every(f => selectedForms.includes(f.id));
+  const allFilteredSelected = filteredForms.length > 0 && filteredForms.every(f => selectedFormsByShift[activeShiftTab].includes(f.id));
 
   const toggleSelectCategory = () => {
-    if (allFilteredSelected) {
-      // Unselect only the ones in current filter
-      const filteredIds = filteredForms.map(f => f.id);
-      setSelectedForms(prev => prev.filter(id => !filteredIds.includes(id)));
-    } else {
-      // Select all in current filter
-      const filteredIds = filteredForms.map(f => f.id);
-      setSelectedForms(prev => [...new Set([...prev, ...filteredIds])]);
-    }
+    const filteredIds = filteredForms.map(f => f.id);
+    setSelectedFormsByShift(prev => {
+      const current = prev[activeShiftTab];
+      if (allFilteredSelected) {
+        return { ...prev, [activeShiftTab]: current.filter(id => !filteredIds.includes(id)) };
+      } else {
+        return { ...prev, [activeShiftTab]: [...new Set([...current, ...filteredIds])] };
+      }
+    });
   };
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -73,14 +77,19 @@ const Scheduler: React.FC = () => {
     setSelectedStaffId(staffId);
     setSelectedDays([day]);
     const existing = getSchedulesForCell(staffId, day);
-    setSelectedShifts([...new Set(existing.map(s => s.shift))]);
+    const shifts = [...new Set(existing.map(s => s.shift))];
+    setSelectedShifts(shifts);
+    if (shifts.length > 0) setActiveShiftTab(shifts[0]);
+    else setActiveShiftTab('Morning');
     
-    // Filter out undefined and ensure we only have strings
-    const existingFormIds = existing
-      .map(s => s.formId)
-      .filter((id): id is string => !!id);
+    const formsByShift: Record<Shift, string[]> = { Morning: [], Afternoon: [], Night: [] };
+    existing.forEach(s => {
+      if (s.formId) {
+        formsByShift[s.shift].push(s.formId);
+      }
+    });
     
-    setSelectedForms([...new Set(existingFormIds)]);
+    setSelectedFormsByShift(formsByShift);
     setShowShowAssignModal(true);
   };
 
@@ -124,18 +133,14 @@ const Scheduler: React.FC = () => {
       const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const existing = getSchedulesForCell(selectedStaffId, day);
       
-      // Identify assignments to remove
-      // If we have selected forms, remove existing that are NOT in selected forms (including placeholders)
-      // If we have NO selected forms, remove ALL existing form assignments but keep placeholder if shift selected
       const toDelete = existing.filter(ex => {
         const shiftStillSelected = selectedShifts.includes(ex.shift);
-        if (!shiftStillSelected) return true; // Delete if shift unselected
+        if (!shiftStillSelected) return true; 
         
-        if (selectedForms.length > 0) {
-          // If we have forms, any record without a formId or with a non-selected formId should go
-          return !ex.formId || !selectedForms.includes(ex.formId);
+        const formsForThisShift = selectedFormsByShift[ex.shift] || [];
+        if (formsForThisShift.length > 0) {
+          return !ex.formId || !formsForThisShift.includes(ex.formId);
         } else {
-          // If we have NO forms, any record WITH a formId should go (we only want the placeholder)
           return !!ex.formId;
         }
       });
@@ -144,7 +149,8 @@ const Scheduler: React.FC = () => {
       allToDeleteIds = [...allToDeleteIds, ...toDelete.map(s => s.id)];
 
       selectedShifts.forEach(shift => {
-        if (selectedForms.length === 0) {
+        const formsForThisShift = selectedFormsByShift[shift] || [];
+        if (formsForThisShift.length === 0) {
           // Placeholder (Shift Only)
           const alreadyExists = existing.some(ex => ex.shift === shift && !ex.formId);
           if (!alreadyExists) {
@@ -159,7 +165,7 @@ const Scheduler: React.FC = () => {
           }
         } else {
           // Specific Form Assignments
-          selectedForms.forEach(formId => {
+          formsForThisShift.forEach(formId => {
             const alreadyExists = existing.some(ex => ex.shift === shift && ex.formId === formId);
             if (!alreadyExists) {
               allNewSchedules.push({
@@ -194,21 +200,162 @@ const Scheduler: React.FC = () => {
     setSelectedDays([]);
   };
 
+  const handleCopyPreviousMonth = () => {
+    const prevMonthDate = new Date(currentDate);
+    prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+    
+    const prevYear = prevMonthDate.getFullYear();
+    const prevMonth = String(prevMonthDate.getMonth() + 1).padStart(2, '0');
+    const prevMonthPrefix = `${prevYear}-${prevMonth}-`;
+
+    const currYear = currentDate.getFullYear();
+    const currMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const currMonthPrefix = `${currYear}-${currMonth}-`;
+
+    const prevSchedules = schedules.filter(s => {
+      if (!s.date.startsWith(prevMonthPrefix)) return false;
+      const staffMember = users.find(u => u.id === s.staffId);
+      return staffMember && staffMember.department === selectedDept;
+    });
+
+    if (prevSchedules.length === 0) {
+      alert(language === 'TH' ? 'ไม่มีตารางเวรในเดือนก่อนหน้าสำหรับแผนกนี้' : 'No schedules found in the previous month for this department.');
+      return;
+    }
+
+    if (!confirm(language === 'TH' ? `ยืนยันการคัดลอกเวร ${prevSchedules.length} รายการ จากเดือนก่อนหน้า? (ข้อมูลจะเพิ่มเข้าไปในเดือนปัจจุบัน)` : `Are you sure you want to copy ${prevSchedules.length} schedules from the previous month? (They will be added to the current month)`)) {
+      return;
+    }
+
+    const newSchedules: Schedule[] = [];
+    prevSchedules.forEach(s => {
+      const day = s.date.split('-')[2];
+      const maxDaysInCurrentMonth = new Date(currYear, currentDate.getMonth() + 1, 0).getDate();
+      if (parseInt(day) <= maxDaysInCurrentMonth) {
+        newSchedules.push({
+          ...s,
+          id: crypto.randomUUID(),
+          date: `${currMonthPrefix}${day}`,
+          status: 'Pending'
+        });
+      }
+    });
+
+    if (newSchedules.length > 0) {
+      addSchedule(newSchedules);
+      alert(language === 'TH' ? `คัดลอกสำเร็จ ${newSchedules.length} รายการ` : `Successfully copied ${newSchedules.length} schedules.`);
+    }
+  };
+
+  const handleClearMonth = () => {
+    const currYear = currentDate.getFullYear();
+    const currMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const monthPrefix = `${currYear}-${currMonth}-`;
+
+    const schedulesToDelete = schedules.filter(s => {
+      if (!s.date.startsWith(monthPrefix)) return false;
+      const staffMember = users.find(u => u.id === s.staffId);
+      return staffMember && staffMember.department === selectedDept;
+    });
+
+    if (schedulesToDelete.length === 0) {
+      alert(language === 'TH' ? 'ไม่มีเวรในเดือนนี้สำหรับแผนกที่เลือก' : 'No schedules found in this month for the selected department.');
+      return;
+    }
+
+    const hasCompleted = schedulesToDelete.some(s => s.status === 'Completed');
+    let confirmMsg = language === 'TH' 
+      ? `ยืนยันการลบตารางเวรทั้งหมด ${schedulesToDelete.length} รายการในเดือนนี้?` 
+      : `Are you sure you want to delete all ${schedulesToDelete.length} schedules in this month?`;
+    
+    if (hasCompleted) {
+      confirmMsg += language === 'TH' 
+        ? '\n\n⚠️ คำเตือน: มีรายการที่ทำเสร็จแล้วรวมอยู่ด้วย ข้อมูลจะถูกลบทั้งหมด ยืนยันหรือไม่?' 
+        : '\n\n⚠️ WARNING: There are completed tasks included. They will all be deleted. Confirm?';
+    }
+
+    if (confirm(confirmMsg)) {
+      bulkDeleteSchedules(schedulesToDelete.map(s => s.id));
+    }
+  };
+
+  const exportToCSV = () => {
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+    const headerRow = ["Personnel", ...Array.from({ length: daysInMonth }).map((_, i) => i + 1)];
+    csvContent += headerRow.join(",") + "\n";
+
+    staff.forEach(s => {
+      const row = [s.name];
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cellSchedules = getSchedulesForCell(s.id, day);
+        const shifts = [...new Set(cellSchedules.map(sc => sc.shift))];
+        const shiftLetters = shifts.map(sh => sh === 'Morning' ? 'M' : sh === 'Afternoon' ? 'A' : 'N');
+        row.push(shiftLetters.length > 0 ? shiftLetters.join("/") : "");
+      }
+      csvContent += row.join(",") + "\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `schedule_${selectedDept}_${monthName.replace(/\s+/g, '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (viewMode === 'List') {
     return <OldSchedulerView setViewMode={setViewMode} />;
   }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20 max-w-full overflow-hidden">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-2xl font-black text-gray-800 tracking-tight">{t.personnelRoster}</h1>
           <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">{t.matrixAssignment}</p>
         </div>
-        <div className="flex items-center space-x-3 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <button 
+            onClick={handleClearMonth}
+            className="flex items-center space-x-2 bg-red-50 text-red-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-red-100 transition-all border border-red-100"
+          >
+            <Trash2 size={14} />
+            <span>{language === 'TH' ? 'ล้างทั้งเดือน' : 'Clear Month'}</span>
+          </button>
+          <button 
+            onClick={handleCopyPreviousMonth}
+            className="flex items-center space-x-2 bg-blue-50 text-[#00468B] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-blue-100 transition-all border border-blue-100"
+          >
+            <Copy size={14} />
+            <span>{language === 'TH' ? 'ก๊อปปี้เดือนก่อนหน้า' : 'Copy Prev Month'}</span>
+          </button>
+
+          <div className="flex items-center space-x-1 bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
+            <button 
+              onClick={exportToCSV}
+              className="flex items-center justify-center p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all"
+              title="Export to Excel (CSV)"
+            >
+              <Download size={16} />
+            </button>
+            <button 
+              onClick={() => window.print()}
+              className="flex items-center justify-center p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+              title="Print to PDF"
+            >
+              <Printer size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+        <div className="flex items-center space-x-3 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm w-full md:w-auto overflow-x-auto">
           {/* Department Filter in Scheduler */}
-          <div className="flex bg-gray-50 p-1 rounded-xl mr-2">
-            {(['X-RAY', 'MRI'] as const).map((dept) => (
+          <div className="flex bg-gray-50 p-1 rounded-xl mr-2 shrink-0">
+            {(['IMAGING', 'MRI'] as const).map((dept) => (
               <button
                 key={dept}
                 onClick={() => setSelectedDept(dept)}
@@ -225,21 +372,21 @@ const Scheduler: React.FC = () => {
 
           <button 
             onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)))}
-            className="p-2 hover:bg-gray-50 rounded-xl transition-all"
+            className="p-2 hover:bg-gray-50 rounded-xl transition-all shrink-0"
           >
             <ChevronLeft size={20} className="text-gray-400" />
           </button>
-          <span className="text-sm font-black text-[#00468B] uppercase tracking-widest px-4">{monthName}</span>
+          <span className="text-sm font-black text-[#00468B] uppercase tracking-widest px-4 shrink-0 whitespace-nowrap">{monthName}</span>
           <button 
             onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))}
-            className="p-2 hover:bg-gray-50 rounded-xl transition-all"
+            className="p-2 hover:bg-gray-50 rounded-xl transition-all shrink-0"
           >
             <ChevronRight size={20} className="text-gray-400" />
           </button>
-          <div className="w-px h-6 bg-gray-100 mx-2"></div>
+          <div className="w-px h-6 bg-gray-100 mx-2 shrink-0"></div>
           <button 
             onClick={() => setViewMode('List')}
-            className="text-[10px] font-black uppercase tracking-widest px-4 py-2 hover:bg-gray-50 rounded-xl transition-all text-gray-400"
+            className="text-[10px] font-black uppercase tracking-widest px-4 py-2 hover:bg-gray-50 rounded-xl transition-all text-gray-400 shrink-0"
           >
             {t.listView}
           </button>
@@ -323,7 +470,7 @@ const Scheduler: React.FC = () => {
       </div>
 
       {/* Matrix Legend */}
-      <div className="flex flex-col items-center space-y-3 pt-4">
+      <div className="flex flex-col items-center space-y-3 pt-4 print:hidden">
         <div className="flex items-center justify-center space-x-8">
           <div className="flex items-center space-x-2">
             <div className="w-2.5 h-2.5 rounded-full bg-orange-400"></div>
@@ -350,7 +497,7 @@ const Scheduler: React.FC = () => {
 
       {/* Assignment Modal */}
       {showAssignModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300 print:hidden">
           <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="bg-[#00468B] p-8 text-white flex items-center justify-between">
               <div>
@@ -425,8 +572,19 @@ const Scheduler: React.FC = () => {
                       <button
                         key={s}
                         onClick={() => {
-                          if (isSelected) setSelectedShifts(selectedShifts.filter(i => i !== s));
-                          else setSelectedShifts([...selectedShifts, s]);
+                          let newShifts = [...selectedShifts];
+                          if (isSelected) {
+                            newShifts = selectedShifts.filter(i => i !== s);
+                          } else {
+                            newShifts.push(s);
+                          }
+                          setSelectedShifts(newShifts);
+                          
+                          if (!isSelected) {
+                            setActiveShiftTab(s);
+                          } else if (activeShiftTab === s) {
+                            setActiveShiftTab(newShifts.length > 0 ? newShifts[0] : 'Morning');
+                          }
                         }}
                         className={`flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all ${
                           isSelected ? 'bg-blue-50 border-[#00468B] text-[#00468B] shadow-lg' : 'bg-gray-50 border-gray-50 text-gray-400'
@@ -443,74 +601,91 @@ const Scheduler: React.FC = () => {
               </div>
 
               {/* Step 3: Forms with Bundles and Categories */}
+              {selectedShifts.length > 0 && (
               <div className="space-y-6">
                 <div className="flex flex-col space-y-4">
                    <div className="flex justify-between items-center px-1">
                       <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.assignProtocols}</h4>
-                      <div className="flex flex-wrap gap-2">
-                          {deptBundles.map(bundle => (
-                            <button 
-                              key={bundle.id}
-                              onClick={() => {
-                                // Add all forms from bundle to selection
-                                setSelectedForms(prev => [...new Set([...prev, ...bundle.formIds])]);
-                              }} 
-                              className="text-[9px] font-black bg-blue-50 text-[#00468B] px-2.5 py-1.5 rounded-lg border border-blue-100 uppercase tracking-tight hover:bg-blue-100 transition-colors"
-                            >
-                              {bundle.name}
-                            </button>
-                          ))}
-                          {deptBundles.length === 0 && (
-                            <p className="text-[9px] text-gray-400 italic">{t.noGroupsDefined}</p>
-                          )}
-                          <div className="w-px h-4 bg-gray-200 mx-1 self-center"></div>
-                          <button 
-                            onClick={toggleSelectCategory}
-                            className={`text-[9px] font-black px-2.5 py-1.5 rounded-lg border uppercase tracking-tight transition-colors ${
-                              allFilteredSelected 
-                                ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
-                                : 'bg-blue-50 text-[#00468B] border-blue-100 hover:bg-blue-100'
+                      <div className="flex space-x-2 bg-gray-50 p-1 rounded-xl">
+                        {selectedShifts.map(s => (
+                          <button
+                            key={s}
+                            onClick={() => setActiveShiftTab(s)}
+                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                              activeShiftTab === s
+                                ? 'bg-white text-[#00468B] shadow-sm border border-gray-200'
+                                : 'text-gray-400 hover:bg-gray-100'
                             }`}
                           >
-                            {allFilteredSelected 
-                              ? (language === 'TH' ? 'ยกเลิกทั้งหมด' : 'Unselect All') 
-                              : (language === 'TH' ? 'เลือกทั้งหมด' : 'Select All')}
+                            {s === 'Morning' ? t.morning : s === 'Afternoon' ? t.afternoon : t.night}
                           </button>
-                          <button 
-                            onClick={() => setSelectedForms([])} 
-                            className="text-[9px] font-black bg-gray-50 text-gray-400 px-2.5 py-1.5 rounded-lg border border-gray-100 uppercase tracking-tight hover:bg-gray-100 transition-colors"
-                          >
-                            Clear
-                          </button>
+                        ))}
                       </div>
+                   </div>
+                   
+                   <div className="flex flex-wrap gap-2 px-1">
+                       {deptBundles.map(bundle => (
+                         <button 
+                           key={bundle.id}
+                           onClick={() => {
+                             setSelectedFormsByShift(prev => ({
+                               ...prev,
+                               [activeShiftTab]: [...new Set([...prev[activeShiftTab], ...bundle.formIds])]
+                             }));
+                           }} 
+                           className="text-[9px] font-black bg-blue-50 text-[#00468B] px-2.5 py-1.5 rounded-lg border border-blue-100 uppercase tracking-tight hover:bg-blue-100 transition-colors"
+                         >
+                           {bundle.name}
+                         </button>
+                       ))}
+                       {deptBundles.length === 0 && (
+                         <p className="text-[9px] text-gray-400 italic">{t.noGroupsDefined}</p>
+                       )}
+                       <div className="w-px h-4 bg-gray-200 mx-1 self-center"></div>
+                       <button 
+                         onClick={toggleSelectCategory}
+                         className={`text-[9px] font-black px-2.5 py-1.5 rounded-lg border uppercase tracking-tight transition-colors ${
+                           allFilteredSelected 
+                             ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
+                             : 'bg-blue-50 text-[#00468B] border-blue-100 hover:bg-blue-100'
+                         }`}
+                       >
+                         {allFilteredSelected 
+                           ? (language === 'TH' ? 'ยกเลิกทั้งหมด' : 'Unselect All') 
+                           : (language === 'TH' ? 'เลือกทั้งหมด' : 'Select All')}
+                       </button>
+                       <button 
+                         onClick={() => setSelectedFormsByShift(prev => ({ ...prev, [activeShiftTab]: [] }))} 
+                         className="text-[9px] font-black bg-gray-50 text-gray-400 px-2.5 py-1.5 rounded-lg border border-gray-100 uppercase tracking-tight hover:bg-gray-100 transition-colors"
+                       >
+                         Clear
+                       </button>
                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2">
-                  {forms
-                    .filter(f => !f.department || f.department === selectedDept)
-                    .filter(f => {
-                      if (selectedShifts.length === 0) return true;
-                      // Show form if it supports ANY of the selected shifts
-                      return f.shifts?.some(s => selectedShifts.includes(s)) ?? true;
-                    })
-                    .map(f => {
-                    const isSelected = selectedForms.includes(f.id);
+                  {filteredForms.map(f => {
+                    const isSelected = selectedFormsByShift[activeShiftTab].includes(f.id);
                     
-                    // Check if assigned to others on ANY of the selected days/shifts
                     const assignedToOthers = schedules.filter(sc => 
                       selectedDays.some(day => sc.date === `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`) &&
                       sc.formId === f.id &&
                       sc.staffId !== selectedStaffId &&
-                      selectedShifts.includes(sc.shift)
+                      sc.shift === activeShiftTab
                     );
 
                     return (
                       <button
                         key={f.id}
                         onClick={() => {
-                          if (isSelected) setSelectedForms(selectedForms.filter(i => i !== f.id));
-                          else setSelectedForms([...selectedForms, f.id]);
+                          setSelectedFormsByShift(prev => {
+                            const current = prev[activeShiftTab];
+                            if (isSelected) {
+                              return { ...prev, [activeShiftTab]: current.filter(i => i !== f.id) };
+                            } else {
+                              return { ...prev, [activeShiftTab]: [...current, f.id] };
+                            }
+                          });
                         }}
                         className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left ${
                           isSelected ? 'bg-[#00468B] border-[#00468B] text-white shadow-md' : 'bg-gray-50 border-gray-50 text-gray-600 hover:bg-gray-100'
@@ -537,6 +712,7 @@ const Scheduler: React.FC = () => {
                   })}
                 </div>
               </div>
+              )}
             </div>
 
             <div className="p-8 bg-gray-50 border-t border-gray-100 flex gap-4">

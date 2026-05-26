@@ -10,7 +10,7 @@ const BundleManager: React.FC = () => {
 
   const [selectedBundle, setSelectedBundle] = useState<ProtocolBundle | null>(null);
   const [name, setName] = useState('');
-  const [department, setDepartment] = useState<'X-RAY' | 'MRI'>('X-RAY');
+  const [department, setDepartment] = useState<'IMAGING' | 'MRI'>('IMAGING');
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
 
   const handleSave = () => {
@@ -35,7 +35,7 @@ const BundleManager: React.FC = () => {
   const reset = () => {
     setSelectedBundle(null);
     setName('');
-    setDepartment('X-RAY');
+    setDepartment('IMAGING');
     setSelectedFormIds([]);
   };
 
@@ -120,14 +120,14 @@ const BundleManager: React.FC = () => {
                     type="text" 
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., Morning X-RAY Standard"
+                    placeholder="e.g., Morning IMAGING Standard"
                     className="w-full border-2 border-gray-50 rounded-xl p-4 font-bold focus:border-blue-500 bg-gray-50 outline-none transition-all"
                    />
                 </div>
                 <div>
                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-widest">Target Department</label>
                    <div className="flex space-x-2 h-[58px]">
-                    {(['X-RAY', 'MRI'] as const).map(d => (
+                    {(['IMAGING', 'MRI'] as const).map(d => (
                       <button
                         key={d}
                         onClick={() => setDepartment(d)}
