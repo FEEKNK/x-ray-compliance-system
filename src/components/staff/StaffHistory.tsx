@@ -9,13 +9,16 @@ const StaffHistory: React.FC = () => {
   const { submissions, forms, currentUser, language } = useApp();
   const t = translations[language];
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [filterDate, setFilterDate] = React.useState('');
   const [selectedSubmission, setSelectedSubmission] = React.useState<Submission | null>(null);
 
   const mySubmissions = submissions
     .filter(s => s.staffId === currentUser?.id)
     .filter(s => {
       const form = forms.find(f => f.id === s.formId);
-      return form?.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = form?.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDate = !filterDate || s.submittedAt.startsWith(filterDate);
+      return matchesSearch && matchesDate;
     })
     .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
 
@@ -28,15 +31,25 @@ const StaffHistory: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative">
-        <Search size={20} className="absolute left-10 top-1/2 -translate-y-1/2 text-gray-300" />
-        <input 
-          type="text" 
-          placeholder="Search your records..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-14 pr-4 py-4 border-2 border-gray-50 rounded-2xl focus:border-blue-500 bg-gray-50 font-bold text-gray-700 outline-none transition-all"
-        />
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+        <div className="relative flex-1">
+          <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+          <input 
+            type="text" 
+            placeholder="Search your records..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-4 border-2 border-gray-50 rounded-2xl focus:border-blue-500 bg-gray-50 font-bold text-gray-700 outline-none transition-all"
+          />
+        </div>
+        <div className="w-full md:w-auto">
+          <input 
+            type="date" 
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="w-full border-2 border-gray-50 rounded-2xl px-4 py-4 bg-gray-50 font-bold text-gray-600 focus:border-blue-500 outline-none transition-all"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4">

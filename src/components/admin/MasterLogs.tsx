@@ -11,6 +11,7 @@ const MasterLogs: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterShift, setFilterShift] = useState('All');
   const [filterDept, setFilterDept] = useState<'All' | 'IMAGING' | 'MRI'>('All');
+  const [filterDate, setFilterDate] = useState('');
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
 
   const filteredSubmissions = submissions.filter(sub => {
@@ -24,8 +25,9 @@ const MasterLogs: React.FC = () => {
     
     const matchesShift = filterShift === 'All' || schedule?.shift === filterShift;
     const matchesDept = filterDept === 'All' || form?.department === filterDept;
+    const matchesDate = !filterDate || sub.submittedAt.startsWith(filterDate);
 
-    return matchesSearch && matchesShift && matchesDept;
+    return matchesSearch && matchesShift && matchesDept && matchesDate;
   });
 
   const stats = {
@@ -103,6 +105,12 @@ const MasterLogs: React.FC = () => {
         
         <div className="flex items-center space-x-3">
           <Filter size={20} className="text-gray-300" />
+          <input 
+            type="date" 
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="border-2 border-gray-50 rounded-xl px-4 py-3 bg-gray-50 text-xs font-bold text-gray-600 focus:border-blue-500 outline-none transition-all"
+          />
           <select 
             value={filterShift}
             onChange={(e) => setFilterShift(e.target.value)}

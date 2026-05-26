@@ -28,6 +28,8 @@ const MonthlyDashboard: React.FC = () => {
     d.setDate(1); 
     return d;
   });
+  
+  const [filterDate, setFilterDate] = useState('');
 
   const selectedMonthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -88,21 +90,26 @@ const MonthlyDashboard: React.FC = () => {
   const staffKPI = useMemo(() => {
     const staffList = users.filter(u => u.role === 'STAFF');
     return staffList.map(s => {
-      const staffSchedules = schedules.filter(sch => sch.staffId === s.id && sch.date.startsWith(selectedMonthStr));
+      const staffSchedules = schedules.filter(sch => 
+        sch.staffId === s.id && 
+        (filterDate ? sch.date === filterDate : sch.date.startsWith(selectedMonthStr))
+      );
       const total = staffSchedules.length;
       const completed = staffSchedules.filter(sch => sch.status === 'Completed').length;
       const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
       return { id: s.id, name: s.name, department: s.department, total, completed, percent };
     }).sort((a, b) => b.percent - a.percent);
-  }, [users, schedules, selectedMonthStr]);
+  }, [users, schedules, selectedMonthStr, filterDate]);
 
   // ==========================================
   // Machine Error Analytics
   // ==========================================
   const machineErrors = useMemo(() => {
-    const monthSubmissions = submissions.filter(s => s.submittedAt.startsWith(selectedMonthStr));
+    const periodSubmissions = submissions.filter(s => 
+      filterDate ? s.submittedAt.startsWith(filterDate) : s.submittedAt.startsWith(selectedMonthStr)
+    );
     const errorsMap: Record<string, number> = {};
-    monthSubmissions.forEach(sub => {
+    periodSubmissions.forEach(sub => {
       const hasAlert = Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert');
       if (hasAlert) {
         errorsMap[sub.formId] = (errorsMap[sub.formId] || 0) + 1;
@@ -113,7 +120,7 @@ const MonthlyDashboard: React.FC = () => {
       const form = forms.find(f => f.id === formId);
       return { formId, title: form?.title || 'Unknown', errorCount: errorsMap[formId] };
     }).sort((a, b) => b.errorCount - a.errorCount);
-  }, [submissions, forms, selectedMonthStr]);
+  }, [submissions, forms, selectedMonthStr, filterDate]);
 
   // ==========================================
   // Staff Matrix Logic
@@ -299,6 +306,26 @@ const MonthlyDashboard: React.FC = () => {
       )}
 
       {/* Analytics Widgets */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
+        <h3 className="font-bold text-gray-800 text-lg">Analytics Overview</h3>
+        <div className="flex items-center space-x-2 mt-4 md:mt-0">
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Filter By Date:</span>
+          <input 
+            type="date" 
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="border-2 border-gray-100 rounded-xl px-4 py-2 bg-white text-xs font-bold text-gray-600 focus:border-[#00468B] outline-none transition-all shadow-sm"
+          />
+          {filterDate && (
+            <button 
+              onClick={() => setFilterDate('')}
+              className="text-xs font-bold text-[#00468B] hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Staff KPI Analytics */}
