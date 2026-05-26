@@ -10,6 +10,30 @@ const UserManagement: React.FC = () => {
   const t = translations[language];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [testingEmailId, setTestingEmailId] = useState<string | null>(null);
+
+  const handleTestEmail = async (email: string, id: string) => {
+    if (!email) return;
+    setTestingEmailId(id);
+    try {
+      const res = await fetch('/api/test-email', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ ส่งอีเมลทดสอบไปที่ ${email} สำเร็จ! (✅ Test email sent!)`);
+      } else {
+        alert('❌ ไม่สามารถส่งอีเมลได้ (Failed to send email): ' + data.error);
+      }
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ (Connection error): ' + error.message);
+    } finally {
+      setTestingEmailId(null);
+    }
+  };
 
   const [formData, setFormData] = useState<Partial<User>>({
     name: '',
@@ -39,7 +63,7 @@ const UserManagement: React.FC = () => {
     } else {
       const newUser: User = {
         ...formData,
-        id: Math.random().toString(36).substr(2, 9)
+        id: crypto.randomUUID()
       } as User;
       addUser(newUser);
     }
@@ -94,7 +118,16 @@ const UserManagement: React.FC = () => {
               </div>
               <div className="flex items-center text-sm text-gray-500 font-medium">
                 <Mail size={16} className="mr-3 text-gray-300" />
-                <span className="truncate">{user.email}</span>
+                <span className="truncate flex-1">{user.email}</span>
+                {user.email && (
+                  <button
+                    onClick={() => handleTestEmail(user.email, user.id)}
+                    disabled={testingEmailId === user.id}
+                    className="ml-2 bg-blue-50 text-[#00468B] px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-blue-100 transition-colors disabled:opacity-50"
+                  >
+                    {testingEmailId === user.id ? '...' : 'Test'}
+                  </button>
+                )}
               </div>
             </div>
 

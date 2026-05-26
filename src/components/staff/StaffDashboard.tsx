@@ -16,7 +16,7 @@ import type { Schedule, DynamicForm, Submission, Shift } from '../../types';
 import { translations } from '../../i18n';
 
 const StaffDashboard: React.FC = () => {
-  const { currentUser, getStaffSchedule, forms, submitForm, language } = useApp();
+  const { currentUser, getStaffSchedule, forms, submitForm, language, users } = useApp();
   const t = translations[language];
   
   // Get local date YYYY-MM-DD
@@ -211,13 +211,13 @@ const StaffDashboard: React.FC = () => {
               key={f.id}
               onClick={() => {
                 const manualSchedule: Schedule = {
-                  id: `manual-${Math.random().toString(36).substr(2, 9)}`,
+                  id: `manual-${crypto.randomUUID()}`,
                   date: today,
                   shift: selectedShift === 'All' ? 'Morning' : (selectedShift as Shift),
-                  staffId: currentUser?.id || '',
+                  staffId: currentUser?.id || '00000000-0000-0000-0000-000000000000',
                   formId: f.id,
                   location: 'Ad-hoc Check',
-                  supervisorId: '1',
+                  supervisorId: users.find(u => u.role === 'ADMIN')?.id || '00000000-0000-0000-0000-000000000000',
                   status: 'Pending'
                 };
                 setActiveSchedule(manualSchedule);
@@ -269,7 +269,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, o
     
     setTimeout(() => {
       const submission: Submission = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: crypto.randomUUID(),
         scheduleId: schedule.id,
         staffId: schedule.staffId,
         formId: form.id,

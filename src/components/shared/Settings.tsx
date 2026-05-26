@@ -9,11 +9,40 @@ const Settings: React.FC = () => {
   const t = translations[language];
 
   const [localSettings, setLocalSettings] = useState<SystemSettings>(settings);
+  const [isTestingEmail, setIsTestingEmail] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     updateSettings(localSettings);
     alert('System settings updated successfully.');
+  };
+
+  const handleTestEmail = async () => {
+    if (!localSettings.supervisorEmail) {
+      alert('กรุณากรอกอีเมลก่อนทำการทดสอบ (Please enter an email address first)');
+      return;
+    }
+    setIsTestingEmail(true);
+    try {
+      const res = await fetch('/api/test-email', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: localSettings.supervisorEmail })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ ส่งอีเมลทดสอบสำเร็จ! กรุณาตรวจสอบกล่องจดหมายของคุณ (✅ Test email sent successfully!)');
+      } else {
+        alert('❌ ไม่สามารถส่งอีเมลได้ (Failed to send email): ' + data.error);
+      }
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ (Connection error): ' + error.message);
+    } finally {
+      setIsTestingEmail(false);
+    }
   };
 
   return (
@@ -51,13 +80,27 @@ const Settings: React.FC = () => {
                     <Mail size={12} className="mr-1.5" />
                     {t.supervisorEmail}
                   </label>
-                  <input 
-                    type="email" 
-                    value={localSettings.supervisorEmail}
-                    onChange={(e) => setLocalSettings({...localSettings, supervisorEmail: e.target.value})}
-                    className="w-full border-2 border-gray-50 rounded-xl p-4 bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none transition-all"
-                    placeholder="supervisor@hospital.com"
-                  />
+                  <div className="flex space-x-2">
+                    <input 
+                      type="email" 
+                      value={localSettings.supervisorEmail}
+                      onChange={(e) => setLocalSettings({...localSettings, supervisorEmail: e.target.value})}
+                      className="flex-1 border-2 border-gray-50 rounded-xl p-4 bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none transition-all"
+                      placeholder="supervisor@hospital.com"
+                    />
+                    <button 
+                      type="button"
+                      onClick={handleTestEmail}
+                      disabled={isTestingEmail}
+                      className="bg-blue-50 text-[#00468B] px-6 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all disabled:opacity-50 flex items-center justify-center min-w-[100px]"
+                    >
+                      {isTestingEmail ? (
+                        <div className="w-4 h-4 border-2 border-[#00468B] border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        'Test Email'
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 

@@ -12,7 +12,7 @@ import { translations } from '../../i18n';
 import type { Schedule, Shift } from '../../types';
 
 const Scheduler: React.FC = () => {
-  const { users, forms, bundles, addSchedule, schedules, bulkDeleteSchedules, language } = useApp();
+  const { users, forms, bundles, addSchedule, schedules, bulkDeleteSchedules, language, currentUser } = useApp();
   const t = translations[language];
   const [selectedDept, setSelectedDept] = useState<'X-RAY' | 'MRI'>('X-RAY');
   
@@ -149,11 +149,11 @@ const Scheduler: React.FC = () => {
           const alreadyExists = existing.some(ex => ex.shift === shift && !ex.formId);
           if (!alreadyExists) {
             allNewSchedules.push({
-              id: Math.random().toString(36).substr(2, 9),
+              id: crypto.randomUUID(),
               date: dateStr,
               shift,
               staffId: selectedStaffId,
-              supervisorId: '1',
+              supervisorId: currentUser?.id || users.find(u => u.role === 'ADMIN')?.id || '00000000-0000-0000-0000-000000000000',
               status: 'Pending'
             });
           }
@@ -163,12 +163,12 @@ const Scheduler: React.FC = () => {
             const alreadyExists = existing.some(ex => ex.shift === shift && ex.formId === formId);
             if (!alreadyExists) {
               allNewSchedules.push({
-                id: Math.random().toString(36).substr(2, 9),
+                id: crypto.randomUUID(),
                 date: dateStr,
                 shift,
                 staffId: selectedStaffId,
                 formId,
-                supervisorId: '1',
+                supervisorId: currentUser?.id || users.find(u => u.role === 'ADMIN')?.id || '00000000-0000-0000-0000-000000000000',
                 status: 'Pending'
               });
             }
@@ -568,7 +568,7 @@ const Scheduler: React.FC = () => {
 
 // Extracted Old Scheduler Logic for legacy access
 const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> = ({ setViewMode }) => {
-  const { users, forms, addSchedule, schedules, deleteSchedule, language } = useApp();
+  const { users, forms, addSchedule, schedules, deleteSchedule, language, currentUser } = useApp();
   const t = translations[language];
   const staff = users.filter(u => u.role === 'STAFF');
 
@@ -582,12 +582,12 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
     if (!staffId || !formId) return alert('Please fill all required fields');
 
     const newSchedule: Schedule = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       date,
       shift,
       staffId,
       formId,
-      supervisorId: '1',
+      supervisorId: currentUser?.id || users.find(u => u.role === 'ADMIN')?.id || '00000000-0000-0000-0000-000000000000',
       status: 'Pending'
     };
     addSchedule(newSchedule);

@@ -15,7 +15,7 @@ const FormBuilder: React.FC = () => {
 
   const addQuestion = () => {
     const newQ: QuestionBlock = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       label: '',
       type: 'text',
       required: true
@@ -48,7 +48,7 @@ const FormBuilder: React.FC = () => {
     } else {
       // Create new
       const newForm: DynamicForm = {
-        id: `f-${Math.random().toString(36).substr(2, 9)}`,
+        id: `f-${crypto.randomUUID()}`,
         title,
         description,
         department,
