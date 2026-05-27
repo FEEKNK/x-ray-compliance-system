@@ -204,8 +204,12 @@ setInterval(async () => {
       });
     }
 
-  } catch (err) {
-    console.error('Error in SLA Background Job:', err);
+  } catch (err: any) {
+    if (err?.cause?.message?.includes('fetch failed') || err?.message?.includes('fetch failed')) {
+      console.warn('[SLA Background Job] Network fetch failed (likely transient). Will retry next cycle.');
+    } else {
+      console.error('[SLA Background Job] Error:', err?.message || err);
+    }
   }
 }, 30 * 60 * 1000); // Check every 30 minutes
 
