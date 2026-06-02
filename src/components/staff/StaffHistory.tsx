@@ -9,7 +9,7 @@ import { getLockStatus, isSubmitAllowed } from '../../utils/shiftTime';
 import { FormRenderer } from './StaffDashboard';
 
 const StaffHistory: React.FC = () => {
-  const { submissions, forms, schedules, currentUser, language, submitForm } = useApp();
+  const { submissions, forms, schedules, currentUser, language, submitForm, settings } = useApp();
   const t = translations[language];
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filterDate, setFilterDate] = React.useState('');

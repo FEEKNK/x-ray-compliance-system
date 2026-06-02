@@ -38,6 +38,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       Morning: "08:00 - 16:00",
       Afternoon: "16:00 - 00:00",
       Night: "00:00 - 08:00"
+    },
+    lockoutHours: {
+      Morning: 3,
+      Afternoon: 2,
+      Night: 2
     }
   });
 
