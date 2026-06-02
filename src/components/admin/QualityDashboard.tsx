@@ -27,7 +27,6 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
   { id: 'index', label: '#', visible: true, width: '50px' },
   { id: 'title', label: 'ชื่อแบบฟอร์ม', visible: true, width: '280px' },
   { id: 'department', label: 'แผนก', visible: true, width: '100px' },
-  { id: 'shifts', label: 'เวร', visible: true, width: '120px' },
   { id: 'status', label: 'สถานะ', visible: true, width: '130px' },
   { id: 'submitCount', label: 'จำนวน Submit', visible: true, width: '120px' },
   { id: 'failCount', label: 'Fail/Alert', visible: true, width: '110px' },
@@ -491,14 +490,7 @@ const QualityDashboard: React.FC = () => {
             {stat.department}
           </span>
         );
-      case 'shifts':
-        return (
-          <div className="flex flex-wrap gap-1">
-            {stat.shifts.length > 0 ? stat.shifts.map((sh, i) => (
-              <span key={i} className="px-2 py-0.5 rounded-md bg-gray-100 text-[9px] font-bold text-gray-500">{sh}</span>
-            )) : <span className="text-gray-300 text-xs">—</span>}
-          </div>
-        );
+
       case 'status':
         if (stat.status === 'complete') {
           return (
