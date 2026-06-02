@@ -1,14 +1,25 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { submissions, schedules } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 
 const router = Router();
 
-// GET /api/submissions — fetch all submissions
-router.get('/', async (_req, res) => {
+// GET /api/submissions — fetch paginated submissions
+router.get('/', async (req, res) => {
   try {
-    const allSubmissions = await db.select().from(submissions);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = (page - 1) * limit;
+
+    const allSubmissions = await db.select()
+      .from(submissions)
+      .orderBy(desc(submissions.submittedAt))
+      .limit(limit)
+      .offset(offset);
+
+    const [{ count }] = await db.select({ count: db.$count(submissions) }).from(submissions);
+
     const mapped = allSubmissions.map(s => ({
       id: s.id,
       scheduleId: s.scheduleId,
@@ -18,10 +29,39 @@ router.get('/', async (_req, res) => {
       data: s.data as Record<string, unknown>,
       photos: s.photos as string[],
     }));
-    res.json(mapped);
+    
+    res.json({
+      data: mapped,
+      total: count,
+      page,
+      totalPages: Math.ceil(count / limit)
+    });
   } catch (error) {
     console.error('Error fetching submissions:', error);
     res.status(500).json({ error: 'Failed to fetch submissions' });
+  }
+});
+
+// GET /api/submissions/schedule/:scheduleId — fetch by schedule ID
+router.get('/schedule/:scheduleId', async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+    const existing = await db.select().from(submissions).where(eq(submissions.scheduleId, scheduleId)).limit(1);
+    if (existing.length === 0) return res.status(404).json({ error: 'Not found' });
+    
+    const s = existing[0];
+    res.json({
+      id: s.id,
+      scheduleId: s.scheduleId,
+      staffId: s.staffId,
+      formId: s.formId,
+      submittedAt: s.submittedAt,
+      data: s.data as Record<string, unknown>,
+      photos: s.photos as string[],
+    });
+  } catch (error) {
+    console.error('Error fetching submission by schedule ID:', error);
+    res.status(500).json({ error: 'Failed to fetch submission' });
   }
 });
 
@@ -76,4 +116,34 @@ router.post('/', async (req, res) => {
   }
 });
 
+// DELETE /api/submissions/:id — delete a submission and reset schedule to Pending
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the submission first to get the scheduleId
+    const [existing] = await db.select().from(submissions).where(eq(submissions.id, id)).limit(1);
+    if (!existing) {
+      return res.status(404).json({ error: 'Submission not found' });
+    }
+
+    // Delete the submission
+    await db.delete(submissions).where(eq(submissions.id, id));
+
+    // Reset the related schedule back to Pending (if it has a real scheduleId)
+    if (existing.scheduleId) {
+      await db.update(schedules)
+        .set({ status: 'Pending' })
+        .where(eq(schedules.id, existing.scheduleId))
+        .catch(() => { /* schedule might not exist */ });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting submission:', error);
+    res.status(500).json({ error: 'Failed to delete submission' });
+  }
+});
+
 export default router;
+

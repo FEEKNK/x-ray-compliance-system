@@ -1,9 +1,20 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { alerts } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { alerts, users, forms } from '../db/schema';
+import nodemailer from 'nodemailer';
 
 const router = Router();
+
+const getTransporter = () => {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+};
 
 // GET /api/alerts — fetch all alerts (latest first, limit 50)
 router.get('/', async (_req, res) => {
@@ -26,6 +37,46 @@ router.post('/', async (req, res) => {
       staffId: staffId || null,
       formId: formId || null,
     }).returning();
+
+    // Fire email notification to staff for Missed Tasks
+    if (type === 'Missed Task' && staffId) {
+      (async () => {
+        try {
+          const staffRes = await db.select().from(users).where(eq(users.id, staffId)).limit(1);
+          const staff = staffRes[0];
+          let formTitle = 'Unknown Form';
+          if (formId) {
+             const formRes = await db.select().from(forms).where(eq(forms.id, formId)).limit(1);
+             if (formRes[0]) formTitle = formRes[0].title;
+          }
+
+          if (staff && staff.email) {
+            const transporter = getTransporter();
+            await transporter.sendMail({
+              from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
+              to: staff.email,
+              subject: `🔔 แจ้งเตือน: กรุณาทำรายการ ${formTitle}`,
+              html: `
+                <div style="font-family: sans-serif; color: #333;">
+                  <h2 style="color: #f59e0b;">🔔 แจ้งเตือนคิวงานคงค้าง</h2>
+                  <p>เรียน คุณ ${staff.name}</p>
+                  <p>ระบบตรวจสอบพบว่า <strong>คุณยังไม่ได้ดำเนินการตรวจสอบ</strong> รายการเข้าเวรดังต่อไปนี้:</p>
+                  <div style="background-color: #fffbeb; padding: 15px; border-left: 4px solid #f59e0b; margin: 15px 0;">
+                    <p><strong>รายการ:</strong> ${formTitle}</p>
+                    <p style="color: #666; font-size: 0.9em;">${message}</p>
+                  </div>
+                  <p>กรุณาเข้าสู่ระบบเพื่อทำรายการให้เรียบร้อยก่อนหมดเวลา</p>
+                  <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                  <small style="color: #999;">อีเมลฉบับนี้ถูกส่งอัตโนมัติจาก Imaging Compliance System</small>
+                </div>
+              `
+            });
+          }
+        } catch (e) {
+          console.error('Failed to send missed task email:', e);
+        }
+      })();
+    }
     res.status(201).json(newAlert);
   } catch (error) {
     console.error('Error creating alert:', error);

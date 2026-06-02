@@ -1,25 +1,76 @@
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../../AppContext';
 import {
-  LineChart, Line, BarChart, Bar,
+  BarChart, Bar,
   XAxis, YAxis,
   CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine
 } from 'recharts';
-import { Thermometer, Droplets, Calendar, Users, AlertCircle, ChevronLeft, ChevronRight, User, Check, Clock, TrendingUp, BarChart2 } from 'lucide-react';
+import { Calendar, Users, AlertCircle, ChevronLeft, ChevronRight, User, Check, Clock, TrendingUp, BarChart2, X } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { Schedule } from '../../types';
+import { getLocalTodayStr } from '../../utils/shiftTime';
 
-interface GroupedData {
-  [date: string]: {
-    date: string;
-    temp: number[];
-    humidity: number[];
-  };
-}
+
 
 const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+interface MachineErrorDetail {
+  formId: string;
+  title: string;
+  errorCount: number;
+  equipmentDetails: Record<string, number>;
+}
+
+const MachineErrorModal: React.FC<{
+  detail: MachineErrorDetail;
+  onClose: () => void;
+}> = ({ detail, onClose }) => {
+  const equipments = Object.entries(detail.equipmentDetails).sort((a, b) => b[1] - a[1]);
+  return (
+    <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-[32px] w-full max-w-lg shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-red-50/50">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+              <AlertCircle size={20} />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 text-lg pr-4">{detail.title}</h3>
+              <p className="text-xs font-black text-gray-400 uppercase tracking-widest mt-1">พบปัญหาการเช็ค {detail.errorCount} ครั้ง</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-red-100 rounded-full text-red-400 hover:text-red-600 transition-colors shrink-0">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-6 max-h-[60vh] overflow-y-auto">
+          <table className="w-full text-sm text-left">
+             <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs tracking-wider">
+               <tr>
+                 <th className="px-4 py-3 rounded-l-xl">อุปกรณ์ / คำถามที่ขัดข้อง</th>
+                 <th className="px-4 py-3 text-center rounded-r-xl w-24">จำนวนครั้ง</th>
+               </tr>
+             </thead>
+             <tbody className="divide-y divide-gray-50">
+               {equipments.map(([name, count]) => (
+                 <tr key={name} className="hover:bg-gray-50/50">
+                   <td className="px-4 py-3 font-medium text-gray-700">{name}</td>
+                   <td className="px-4 py-3 text-center">
+                     <span className="inline-flex items-center justify-center px-2 py-1 bg-red-100 text-red-700 rounded-lg font-bold text-xs">
+                       {count}
+                     </span>
+                   </td>
+                 </tr>
+               ))}
+             </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ─────────────────────────────────────────
 // Sub-components for Monthly & Yearly views
@@ -28,40 +79,18 @@ const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','
 interface MonthlyViewProps {
   year: number;
   month: number; // 0-indexed
-  language: 'TH' | 'EN';
 }
 
-const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, language }) => {
-  const { submissions, forms, schedules, users } = useApp();
-  const t = translations[language];
+const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month }) => {
+  const { forms, submissions, users, schedules } = useApp();
   const [filterDate, setFilterDate] = useState('');
+  const [selectedError, setSelectedError] = useState<MachineErrorDetail | null>(null);
 
   const selectedMonthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalTodayStr();
 
-  // ── Environmental Chart ──────────────────
-  const envChartData = useMemo(() => {
-    const envForms = forms.filter(f => f.title.includes('อุณหภูมิ') || f.title.includes('ความชื้น'));
-    const envFormIds = envForms.map(f => f.id);
-    const envSubmissions = submissions.filter(s =>
-      envFormIds.includes(s.formId) && s.submittedAt.startsWith(selectedMonthStr)
-    );
-    const grouped = envSubmissions.reduce((acc: GroupedData, sub) => {
-      const date = sub.submittedAt.split('T')[0];
-      if (!acc[date]) acc[date] = { date, temp: [], humidity: [] };
-      const tValue = parseFloat(sub.data['q3'] as string);
-      const hValue = parseFloat((sub.data['q5'] || sub.data['q6']) as string);
-      if (!isNaN(tValue)) acc[date].temp.push(tValue);
-      if (!isNaN(hValue)) acc[date].humidity.push(hValue);
-      return acc;
-    }, {});
-    return Object.values(grouped).map(day => ({
-      date: day.date,
-      avgTemp: day.temp.length > 0 ? parseFloat((day.temp.reduce((a, b) => a + b, 0) / day.temp.length).toFixed(1)) : null,
-      avgHumidity: day.humidity.length > 0 ? parseFloat((day.humidity.reduce((a, b) => a + b, 0) / day.humidity.length).toFixed(1)) : null,
-    })).sort((a, b) => a.date.localeCompare(b.date));
-  }, [submissions, forms, selectedMonthStr]);
+
 
   // ── Staff KPI ────────────────────────────
   const staffKPI = useMemo(() => {
@@ -80,18 +109,41 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, language }) => {
 
   // ── Machine Errors ───────────────────────
   const machineErrors = useMemo(() => {
-    const periodSubmissions = submissions.filter(s =>
-      filterDate ? s.submittedAt.startsWith(filterDate) : s.submittedAt.startsWith(selectedMonthStr)
-    );
-    const errorsMap: Record<string, number> = {};
+    const periodSubmissions = submissions.filter(s => {
+      const localDate = getLocalTodayStr(new Date(s.submittedAt));
+      return filterDate ? localDate === filterDate : localDate.startsWith(selectedMonthStr);
+    });
+    const errorsMap: Record<string, { count: number, details: Record<string, number> }> = {};
+    
     periodSubmissions.forEach(sub => {
-      if (Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert')) {
-        errorsMap[sub.formId] = (errorsMap[sub.formId] || 0) + 1;
+      const form = forms.find(f => f.id === sub.formId);
+      if (!form) return;
+      
+      let formHasError = false;
+      Object.entries(sub.data).forEach(([key, value]) => {
+        if (value === 'Fail' || value === 'Alert') {
+          formHasError = true;
+          if (!errorsMap[sub.formId]) {
+            errorsMap[sub.formId] = { count: 0, details: {} };
+          }
+          const question = form.questions.find(q => q.id === key);
+          const eqName = question ? question.label : key;
+          errorsMap[sub.formId].details[eqName] = (errorsMap[sub.formId].details[eqName] || 0) + 1;
+        }
+      });
+      if (formHasError) {
+         errorsMap[sub.formId].count += 1;
       }
     });
+
     return Object.keys(errorsMap).map(formId => {
       const form = forms.find(f => f.id === formId);
-      return { formId, title: form?.title || 'Unknown', errorCount: errorsMap[formId] };
+      return { 
+        formId, 
+        title: form?.title || 'Unknown', 
+        errorCount: errorsMap[formId].count,
+        equipmentDetails: errorsMap[formId].details
+      };
     }).sort((a, b) => b.errorCount - a.errorCount);
   }, [submissions, forms, selectedMonthStr, filterDate]);
 
@@ -296,8 +348,8 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, language }) => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {machineErrors.slice(0, 5).map(m => (
-                <tr key={m.formId} className="hover:bg-gray-50/50">
-                  <td className="px-4 py-3 font-bold text-gray-800">{m.title}</td>
+                <tr key={m.formId} onClick={() => setSelectedError(m)} className="hover:bg-gray-50 cursor-pointer group transition-colors">
+                  <td className="px-4 py-3 font-bold text-gray-800 group-hover:text-[#00468B] transition-colors">{m.title}</td>
                   <td className="px-4 py-3 text-center">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 font-black">{m.errorCount}</span>
                   </td>
@@ -308,48 +360,9 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, language }) => {
           </table>
         </div>
       </div>
+      {selectedError && <MachineErrorModal detail={selectedError} onClose={() => setSelectedError(null)} />}
 
-      {/* Environmental Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 md:p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center"><Thermometer size={20} /></div>
-            <span className="font-bold text-gray-700">{t.temperatureLog || 'Temperature Log'}</span>
-          </div>
-          <div className="h-[280px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={envChartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="date" hide />
-                <YAxis domain={[15, 30]} unit="°" stroke="#94a3b8" fontSize={10} fontWeight="bold" />
-                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                <ReferenceLine y={18} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'right', value: 'Min', fill: '#ef4444', fontSize: 10 }} />
-                <ReferenceLine y={24} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'right', value: 'Max', fill: '#ef4444', fontSize: 10 }} />
-                <Line type="monotone" dataKey="avgTemp" stroke="#f97316" strokeWidth={3} dot={{ r: 3 }} name="อุณหภูมิ" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        <div className="bg-white p-6 md:p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center"><Droplets size={20} /></div>
-            <span className="font-bold text-gray-700">{t.humidityLog || 'Humidity Log'}</span>
-          </div>
-          <div className="h-[280px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={envChartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="date" hide />
-                <YAxis domain={[30, 80]} unit="%" stroke="#94a3b8" fontSize={10} fontWeight="bold" />
-                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                <ReferenceLine y={45} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'right', value: 'Min', fill: '#ef4444', fontSize: 10 }} />
-                <ReferenceLine y={65} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'right', value: 'Max', fill: '#ef4444', fontSize: 10 }} />
-                <Line type="monotone" dataKey="avgHumidity" stroke="#3b82f6" strokeWidth={3} dot={{ r: 3 }} name="ความชื้น" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 };
@@ -366,6 +379,7 @@ interface YearlyViewProps {
 const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
   const { submissions, forms, schedules, users } = useApp();
   const MONTHS = language === 'TH' ? MONTHS_TH : MONTHS_EN;
+  const [selectedError, setSelectedError] = useState<MachineErrorDetail | null>(null);
 
   // ── Compliance per month (completion rate %) ──
   const monthlyCompliance = useMemo(() => {
@@ -383,7 +397,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
   const monthlyErrors = useMemo(() => {
     return Array.from({ length: 12 }, (_, m) => {
       const monthStr = `${year}-${String(m + 1).padStart(2, '0')}`;
-      const monthSubs = submissions.filter(s => s.submittedAt.startsWith(monthStr));
+      const monthSubs = submissions.filter(s => getLocalTodayStr(new Date(s.submittedAt)).startsWith(monthStr));
       const errors = monthSubs.filter(s => Object.values(s.data).some(v => v === 'Fail' || v === 'Alert')).length;
       return { month: MONTHS[m], errors };
     });
@@ -398,7 +412,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
       );
       const total = staffSchedules.length;
       const completed = staffSchedules.filter(sch => sch.status === 'Completed').length;
-      const missed = staffSchedules.filter(sch => sch.status === 'Pending' && sch.date < new Date().toISOString().split('T')[0]).length;
+      const missed = staffSchedules.filter(sch => sch.status === 'Pending' && sch.date < getLocalTodayStr()).length;
       const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
       return { id: s.id, name: s.name, department: s.department, total, completed, missed, percent };
     }).sort((a, b) => b.percent - a.percent);
@@ -406,16 +420,38 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
 
   // ── Top machine errors for whole year ──
   const yearlyMachineErrors = useMemo(() => {
-    const yearSubs = submissions.filter(s => s.submittedAt.startsWith(`${year}-`));
-    const errorsMap: Record<string, number> = {};
+    const yearSubs = submissions.filter(s => getLocalTodayStr(new Date(s.submittedAt)).startsWith(`${year}-`));
+    const errorsMap: Record<string, { count: number, details: Record<string, number> }> = {};
+    
     yearSubs.forEach(sub => {
-      if (Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert')) {
-        errorsMap[sub.formId] = (errorsMap[sub.formId] || 0) + 1;
+      const form = forms.find(f => f.id === sub.formId);
+      if (!form) return;
+      
+      let formHasError = false;
+      Object.entries(sub.data).forEach(([key, value]) => {
+        if (value === 'Fail' || value === 'Alert') {
+          formHasError = true;
+          if (!errorsMap[sub.formId]) {
+            errorsMap[sub.formId] = { count: 0, details: {} };
+          }
+          const question = form.questions.find(q => q.id === key);
+          const eqName = question ? question.label : key;
+          errorsMap[sub.formId].details[eqName] = (errorsMap[sub.formId].details[eqName] || 0) + 1;
+        }
+      });
+      if (formHasError) {
+         errorsMap[sub.formId].count += 1;
       }
     });
+
     return Object.keys(errorsMap).map(formId => {
       const form = forms.find(f => f.id === formId);
-      return { formId, title: form?.title || 'Unknown', errorCount: errorsMap[formId] };
+      return { 
+        formId, 
+        title: form?.title || 'Unknown', 
+        errorCount: errorsMap[formId].count,
+        equipmentDetails: errorsMap[formId].details
+      };
     }).sort((a, b) => b.errorCount - a.errorCount);
   }, [submissions, forms, year]);
 
@@ -423,7 +459,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
   const yearSchedules = schedules.filter(s => s.date.startsWith(`${year}-`));
   const totalTasks = yearSchedules.length;
   const completedTasks = yearSchedules.filter(s => s.status === 'Completed').length;
-  const missedTasks = yearSchedules.filter(s => s.status === 'Pending' && s.date < new Date().toISOString().split('T')[0]).length;
+  const missedTasks = yearSchedules.filter(s => s.status === 'Pending' && s.date < getLocalTodayStr()).length;
   const overallRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return (
@@ -461,8 +497,8 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
             <span className="text-xs text-gray-400">% งานที่เสร็จสมบูรณ์ในแต่ละเดือน ปี {year}</span>
           </div>
         </div>
-        <div className="h-[280px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-[280px] w-full min-h-[280px]">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <BarChart data={monthlyCompliance} barSize={28}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
               <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }} />
@@ -492,8 +528,8 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
             <span className="text-xs text-gray-400">จำนวนฟอร์มที่พบ Fail/Alert ในแต่ละเดือน ปี {year}</span>
           </div>
         </div>
-        <div className="h-[240px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-[240px] w-full min-h-[240px]">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <BarChart data={monthlyErrors} barSize={28}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
               <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }} />
@@ -571,13 +607,13 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {yearlyMachineErrors.slice(0, 8).map((m, idx) => (
-                <tr key={m.formId} className="hover:bg-gray-50/50">
+                <tr key={m.formId} onClick={() => setSelectedError(m)} className="hover:bg-gray-50 cursor-pointer group transition-colors">
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-black ${idx === 0 ? 'bg-red-500 text-white' : idx === 1 ? 'bg-orange-400 text-white' : idx === 2 ? 'bg-yellow-400 text-white' : 'bg-gray-100 text-gray-500'}`}>
                       {idx + 1}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-bold text-gray-800 text-xs">{m.title}</td>
+                  <td className="px-4 py-3 font-bold text-gray-800 text-xs group-hover:text-[#00468B] transition-colors">{m.title}</td>
                   <td className="px-4 py-3 text-center">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 font-black">{m.errorCount}</span>
                   </td>
@@ -588,6 +624,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
           </table>
         </div>
       </div>
+      {selectedError && <MachineErrorModal detail={selectedError} onClose={() => setSelectedError(null)} />}
     </div>
   );
 };
@@ -672,7 +709,7 @@ const MonthlyDashboard: React.FC = () => {
 
       {/* Content */}
       {view === 'monthly'
-        ? <MonthlyView year={currentDate.getFullYear()} month={currentDate.getMonth()} language={language} />
+        ? <MonthlyView year={currentDate.getFullYear()} month={currentDate.getMonth()} />
         : <YearlyView year={currentYear} language={language} />
       }
     </div>

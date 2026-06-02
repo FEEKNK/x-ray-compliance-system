@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, DynamicForm, Schedule, Submission, SystemSettings, AppContextType, Alert, ProtocolBundle } from './types';
 import { api } from './api';
-import { getShiftStatus } from './utils/shiftTime';
+import { getShiftStatus, getLocalTodayStr } from './utils/shiftTime';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -16,6 +16,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('xray_currentUser');
     return saved ? JSON.parse(saved) : null;
   });
+  // Check if we have a token
+  const hasToken = !!localStorage.getItem('xray_jwt_token');
   const [forms, setForms] = useState<DynamicForm[]>([]);
   const [bundles, setBundles] = useState<ProtocolBundle[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -25,6 +27,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [settings, setSettings] = useState<SystemSettings>({
     hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
     supervisorEmail: "supervisor@hospital.com",
+    escalationEmail: "director@hospital.com",
+    departments: ["IMAGING", "MRI"],
+    slaHours: {
+      Morning: 3,
+      Afternoon: 2,
+      Night: 2
+    },
     shifts: {
       Morning: "08:00 - 16:00",
       Afternoon: "16:00 - 00:00",
@@ -41,31 +50,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsLoading(true);
         setLoadError(null);
 
-        const [
-          usersData,
-          formsData,
-          schedulesData,
-          submissionsData,
-          bundlesData,
-          alertsData,
-          configData,
-        ] = await Promise.all([
-          api.users.getAll(),
-          api.forms.getAll(),
-          api.schedules.getAll(),
-          api.submissions.getAll(),
-          api.bundles.getAll(),
-          api.alerts.getAll(),
-          api.config.get(),
-        ]);
+        let usersData: User[] = [];
+        let formsData: DynamicForm[] = [];
+        let schedulesData: Schedule[] = [];
+        let bundlesData: ProtocolBundle[] = [];
+        let alertsData: Alert[] = [];
+        let configData: { settings: SystemSettings; announcements: string[] } | undefined;
+
+        // Config is needed for LandingPage (hospitalName)
+        configData = await api.config.get();
+
+        if (hasToken) {
+          [
+            usersData,
+            formsData,
+            schedulesData,
+            bundlesData,
+            alertsData,
+          ] = await Promise.all([
+            api.users.getAll(),
+            api.forms.getAll(),
+            api.schedules.getAll(),
+            api.bundles.getAll(),
+            api.alerts.getAll(),
+          ]);
+        } else {
+          // Unauthenticated state: load only public user list
+          usersData = await api.users.getPublic() as User[];
+          formsData = [];
+          schedulesData = [];
+          bundlesData = [];
+          alertsData = [];
+        }
 
         setUsers(usersData);
         setForms(formsData);
         setSchedules(schedulesData);
-        setSubmissions(submissionsData);
         setBundles(bundlesData);
         setAlerts(alertsData);
-        setSettings(configData.settings as SystemSettings);
+        // Fetch submissions separately (limit 200 for global state)
+        if (hasToken) {
+          api.submissions.getAll(1, 200).then(res => setSubmissions(res.data)).catch(() => {});
+        }
+        const defaultSettings: SystemSettings = {
+          hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
+          supervisorEmail: "supervisor@hospital.com",
+          escalationEmail: "director@hospital.com",
+          departments: ["IMAGING", "MRI"],
+          slaHours: { Morning: 3, Afternoon: 2, Night: 2 },
+          shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00" },
+        };
+        const mergedSettings: SystemSettings = { ...defaultSettings, ...(configData.settings as Partial<SystemSettings>) };
+        // Also deep-merge nested objects so old rows without slaHours/shifts still work
+        if (!(configData.settings as SystemSettings)?.slaHours) mergedSettings.slaHours = defaultSettings.slaHours;
+        if (!(configData.settings as SystemSettings)?.shifts) mergedSettings.shifts = defaultSettings.shifts;
+        if (!(configData.settings as SystemSettings)?.departments) mergedSettings.departments = defaultSettings.departments;
+        setSettings(mergedSettings);
         setAnnouncements(configData.announcements as string[]);
       } catch (error) {
         console.error('Failed to load data from API:', error);
@@ -75,12 +115,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
     fetchAll();
-  }, []);
+  }, [hasToken]);
 
   // Persist currentUser to localStorage (for page reload, since no auth yet)
   const setCurrentUser = useCallback((user: User | null) => {
     setCurrentUserState(user);
-    localStorage.setItem('xray_currentUser', JSON.stringify(user));
+    if (user) {
+      localStorage.setItem('xray_currentUser', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('xray_currentUser');
+      localStorage.removeItem('xray_jwt_token');
+      window.location.reload(); // Reload to clear states and fetch public data
+    }
   }, []);
 
   // ============================================
@@ -243,7 +289,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Submissions — with API sync
   // ============================================
   const submitForm = useCallback((submission: Submission) => {
-    setSubmissions(prev => [...prev, submission]);
+    setSubmissions(prev => {
+      const exists = prev.find(s => s.id === submission.id);
+      return exists ? prev.map(s => s.id === submission.id ? submission : s) : [...prev, submission];
+    });
     setSchedules(prev => prev.map(s => s.id === submission.scheduleId ? { ...s, status: 'Completed' as const } : s));
 
     // Auto-alert logic for clinical failures
@@ -287,6 +336,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, [users, forms, addAlert]);
 
+  const deleteSubmission = useCallback(async (id: string) => {
+    // Optimistic: find scheduleId from global state and reset it
+    const sub = submissions.find(s => s.id === id);
+    setSubmissions(prev => prev.filter(s => s.id !== id));
+    if (sub?.scheduleId) {
+      setSchedules(prev => prev.map(s => s.id === sub.scheduleId ? { ...s, status: 'Pending' as const } : s));
+    }
+    try {
+      await api.submissions.delete(id);
+    } catch (err) {
+      console.error('Failed to delete submission:', err);
+      // Rollback on error: re-fetch
+      api.submissions.getAll(1, 200).then(res => setSubmissions(res.data)).catch(() => {});
+    }
+  }, [submissions]);
+
   // ============================================
   // Announcements — with API sync
   // ============================================
@@ -317,7 +382,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const checkOverdue = () => {
       const now = new Date();
-      const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const dateStr = getLocalTodayStr(now);
       const sentKey = `sent_alerts_${dateStr}`;
       const sentSet: Set<string> = new Set(JSON.parse(localStorage.getItem(sentKey) || '[]'));
 
@@ -378,6 +443,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .catch(() => window.location.reload());
   }, []);
 
+  const resetData = useCallback(async () => {
+    await api.resetData();
+    // Clear client state immediately (no reload needed)
+    setSubmissions([]);
+    setSchedules([]);
+    setAlerts([]);
+  }, []);
+
   const clearLogs = useCallback(() => {
     setSubmissions([]);
     setSchedules(prev => prev.map(s => ({ ...s, status: 'Pending' as const })));
@@ -385,11 +458,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Note: This is a client-side clear; a full server-side clear would need additional endpoints
   }, []);
 
+  const exportData = useCallback(async () => {
+    const data = await api.exportData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `xray-system-export-${getLocalTodayStr()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, []);
+
   const getStaffSchedule = useCallback((staffId: string, date: string) => {
     return schedules.filter(s => s.staffId === staffId && s.date === date);
   }, [schedules]);
 
-  const getCompletionRate = useCallback((date: string, department?: 'MRI' | 'IMAGING') => {
+  const getCompletionRate = useCallback((date: string, department?: string) => {
     let dailySchedules = schedules.filter(s => s.date === date);
     
     if (department) {
@@ -441,15 +527,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <AppContext.Provider value={{
+      isLoading, loadError,
       currentUser, setCurrentUser, users, addUser, updateUser, deleteUser,
       forms, addForm, updateForm, deleteForm, 
       bundles, addBundle, updateBundle, deleteBundle,
       schedules, addSchedule, deleteSchedule, bulkDeleteSchedules,
-      submissions, submitForm, getStaffSchedule, getCompletionRate,
+      submissions, submitForm, deleteSubmission, getStaffSchedule, getCompletionRate,
       announcements, addAnnouncement,
       alerts, addAlert, markAlertAsRead,
       language, setLanguage,
-      settings, updateSettings, resetDatabase, clearLogs
+      settings, updateSettings, resetDatabase, resetData, exportData, clearLogs
     }}>
       {children}
     </AppContext.Provider>

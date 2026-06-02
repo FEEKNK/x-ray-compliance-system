@@ -2,31 +2,49 @@ import { Router } from 'express';
 import { db } from '../db';
 import { config } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
 const CONFIG_ID = 'main';
 
-// Helper to ensure config row exists
+const DEFAULT_SETTINGS = {
+  hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
+  supervisorEmail: "supervisor@hospital.com",
+  escalationEmail: "director@hospital.com",
+  departments: ["IMAGING", "MRI"],
+  slaHours: { Morning: 3, Afternoon: 2, Night: 2 },
+  shifts: {
+    Morning: "08:00 - 16:00",
+    Afternoon: "16:00 - 00:00",
+    Night: "00:00 - 08:00"
+  }
+};
+
+// Helper to ensure config row exists and has all required fields
 async function ensureConfig() {
   const existing = await db.select().from(config).where(eq(config.id, CONFIG_ID));
   if (existing.length === 0) {
     await db.insert(config).values({
       id: CONFIG_ID,
-      settings: {
-        hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
-        supervisorEmail: "supervisor@hospital.com",
-        shifts: {
-          Morning: "08:00 - 16:00",
-          Afternoon: "16:00 - 00:00",
-          Night: "00:00 - 08:00"
-        }
-      },
+      settings: DEFAULT_SETTINGS,
       announcements: [
         "New JCI Standards for medical imaging have been updated in the system.",
         "Biomedical Engineering maintenance window starts at 22:00 tonight."
       ],
     });
+  } else {
+    // Patch any missing nested fields in old rows
+    const current = (existing[0].settings || {}) as Record<string, unknown>;
+    let needsPatch = false;
+    const patched = { ...DEFAULT_SETTINGS, ...current };
+    if (!current.slaHours) { patched.slaHours = DEFAULT_SETTINGS.slaHours; needsPatch = true; }
+    if (!current.shifts) { patched.shifts = DEFAULT_SETTINGS.shifts; needsPatch = true; }
+    if (!current.departments) { patched.departments = DEFAULT_SETTINGS.departments; needsPatch = true; }
+    if (!current.escalationEmail) { patched.escalationEmail = DEFAULT_SETTINGS.escalationEmail; needsPatch = true; }
+    if (needsPatch) {
+      await db.update(config).set({ settings: patched }).where(eq(config.id, CONFIG_ID));
+    }
   }
 }
 
@@ -46,7 +64,7 @@ router.get('/', async (_req, res) => {
 });
 
 // PUT /api/config — update settings
-router.put('/', async (req, res) => {
+router.put('/', authenticateToken, async (req, res) => {
   try {
     await ensureConfig();
     const { settings } = req.body;
@@ -62,7 +80,7 @@ router.put('/', async (req, res) => {
 });
 
 // POST /api/config/announcements — add an announcement
-router.post('/announcements', async (req, res) => {
+router.post('/announcements', authenticateToken, async (req, res) => {
   try {
     await ensureConfig();
     const { text } = req.body;

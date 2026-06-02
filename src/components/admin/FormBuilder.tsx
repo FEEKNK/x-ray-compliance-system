@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { useApp } from '../../AppContext';
-import { Plus, Trash2, Save, FileText, Image as ImageIcon, ChevronRight, Edit3 } from 'lucide-react';
+import { Plus, Trash2, Save, FileText, ChevronRight, Edit3, X } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { QuestionBlock, DynamicForm } from '../../types';
 
 const FormBuilder: React.FC = () => {
-  const { forms, addForm, updateForm, deleteForm, language } = useApp();
+  const { forms, addForm, updateForm, deleteForm, language, settings } = useApp();
   const t = translations[language];
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [department, setDepartment] = useState<'IMAGING' | 'MRI'>('IMAGING');
+  const [department, setDepartment] = useState<string>(settings?.departments?.[0] || 'IMAGING');
   const [questions, setQuestions] = useState<QuestionBlock[]>([]);
   const [selectedForm, setSelectedForm] = useState<DynamicForm | null>(null);
 
@@ -160,12 +160,12 @@ const FormBuilder: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-[#00468B] uppercase mb-2">Department</label>
-                  <div className="flex space-x-2">
-                    {(['IMAGING', 'MRI'] as const).map(d => (
+                  <div className="flex flex-wrap gap-2">
+                    {(settings?.departments || []).map(d => (
                       <button
                         key={d}
                         onClick={() => setDepartment(d)}
-                        className={`flex-1 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                        className={`px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
                           department === d ? 'bg-[#00468B] text-white shadow-lg' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
                         }`}
                       >
@@ -230,19 +230,47 @@ const FormBuilder: React.FC = () => {
                   </div>
 
                   {q.type === 'select' && (
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-widest">Options (comma separated)</label>
-                      <input 
-                        type="text" 
-                        value={q.options?.join(', ') || ''}
-                        onChange={(e) => updateQuestionState(q.id, { options: e.target.value.split(',').map(s => s.trim()) })}
-                        placeholder="e.g., Option 1, Option 2, Option 3"
-                        className="w-full border-2 border-gray-50 rounded-xl p-3 bg-gray-50 font-bold text-gray-700 outline-none focus:border-blue-500 transition-all"
-                      />
+                    <div className="md:col-span-2 space-y-3 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                      <label className="block text-xs font-bold text-[#00468B] uppercase tracking-widest">Dropdown Options</label>
+                      
+                      <div className="space-y-2">
+                        {(q.options || []).map((opt, optIndex) => (
+                          <div key={optIndex} className="flex items-center space-x-2">
+                            <input 
+                              type="text"
+                              value={opt}
+                              onChange={(e) => {
+                                const newOpts = [...(q.options || [])];
+                                newOpts[optIndex] = e.target.value;
+                                updateQuestionState(q.id, { options: newOpts });
+                              }}
+                              className="flex-1 border-2 border-gray-100 rounded-lg p-2.5 text-sm font-bold text-gray-700 outline-none focus:border-[#00468B] transition-all"
+                              placeholder={`Option ${optIndex + 1}`}
+                            />
+                            <button
+                              onClick={() => {
+                                const newOpts = (q.options || []).filter((_, i) => i !== optIndex);
+                                updateQuestionState(q.id, { options: newOpts });
+                              }}
+                              className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg text-red-400 bg-white border-2 border-gray-100 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition-all"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => updateQuestionState(q.id, { options: [...(q.options || []), `Option ${(q.options?.length || 0) + 1}`] })}
+                        className="inline-flex items-center space-x-2 text-xs font-bold text-[#00468B] bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+                      >
+                        <Plus size={14} />
+                        <span>Add Option</span>
+                      </button>
                     </div>
                   )}
 
-                  <div className="flex items-center space-x-8">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-8 md:col-span-2 pt-2">
                     <label className="flex items-center space-x-3 cursor-pointer group/check">
                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${q.required ? 'bg-[#00468B] border-[#00468B]' : 'border-gray-200 group-hover/check:border-blue-400'}`}>
                         {q.required && <Plus size={14} className="text-white rotate-45" />}
@@ -256,18 +284,33 @@ const FormBuilder: React.FC = () => {
                       <span className="text-sm font-bold text-gray-600">Required (บังคับกรอก)</span>
                     </label>
 
-                    {q.type === 'composite' && (
-                      <label className="flex items-center space-x-3 cursor-pointer group/check">
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${q.config?.withPhoto ? 'bg-blue-500 border-blue-500' : 'border-gray-200 group-hover/check:border-blue-400'}`}>
-                          {q.config?.withPhoto && <ImageIcon size={14} className="text-white" />}
+                    {(q.type === 'select' || q.type === 'yesno' || q.type === 'composite') && (
+                      <label className="flex items-center space-x-3 cursor-pointer group/custom">
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${q.allowCustomInput ? 'bg-orange-500 border-orange-500' : 'border-gray-200 group-hover/custom:border-orange-400'}`}>
+                          {q.allowCustomInput && <Plus size={14} className="text-white rotate-45" />}
                         </div>
                         <input 
                           type="checkbox" 
-                          checked={q.config?.withPhoto}
-                          onChange={(e) => updateQuestionState(q.id, { config: { ...q.config, withPhoto: e.target.checked } })}
+                          checked={!!q.allowCustomInput}
+                          onChange={(e) => updateQuestionState(q.id, { allowCustomInput: e.target.checked })}
                           className="hidden"
                         />
-                        <span className="text-sm font-bold text-gray-600">Enable Evidence Photo</span>
+                        <span className="text-sm font-bold text-gray-600">Allow Custom Input (เปิดให้ระบุเอง)</span>
+                      </label>
+                    )}
+
+                    {q.type === 'date' && (
+                      <label className="flex items-center space-x-3 cursor-pointer group/autodate">
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${q.config?.autoFillToday ? 'bg-indigo-500 border-indigo-500' : 'border-gray-200 group-hover/autodate:border-indigo-400'}`}>
+                          {q.config?.autoFillToday && <Plus size={14} className="text-white rotate-45" />}
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={!!q.config?.autoFillToday}
+                          onChange={(e) => updateQuestionState(q.id, { config: { ...q.config, autoFillToday: e.target.checked } })}
+                          className="hidden"
+                        />
+                        <span className="text-sm font-bold text-gray-600">Auto-fill Current Date (ใช้วันที่ปัจจุบันอัตโนมัติ)</span>
                       </label>
                     )}
                   </div>

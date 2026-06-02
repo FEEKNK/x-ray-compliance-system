@@ -13,12 +13,13 @@ import {
   Trash2
 } from 'lucide-react';
 import { translations } from '../../i18n';
+import { getLocalTodayStr } from '../../utils/shiftTime';
 import type { Schedule, Shift } from '../../types';
 
 const Scheduler: React.FC = () => {
-  const { users, forms, bundles, addSchedule, schedules, bulkDeleteSchedules, language, currentUser } = useApp();
+  const { users, forms, bundles, addSchedule, schedules, bulkDeleteSchedules, language, currentUser, settings } = useApp();
   const t = translations[language];
-  const [selectedDept, setSelectedDept] = useState<'IMAGING' | 'MRI'>('IMAGING');
+  const [selectedDept, setSelectedDept] = useState<string>(settings?.departments?.[0] || 'IMAGING');
   
   const staff = useMemo(() => 
     users.filter(u => u.role === 'STAFF' && u.department === selectedDept), 
@@ -355,7 +356,7 @@ const Scheduler: React.FC = () => {
         <div className="flex items-center space-x-3 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm w-full md:w-auto overflow-x-auto">
           {/* Department Filter in Scheduler */}
           <div className="flex bg-gray-50 p-1 rounded-xl mr-2 shrink-0">
-            {(['IMAGING', 'MRI'] as const).map((dept) => (
+            {(settings?.departments || []).map((dept) => (
               <button
                 key={dept}
                 onClick={() => setSelectedDept(dept)}
@@ -748,7 +749,7 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
   const t = translations[language];
   const staff = users.filter(u => u.role === 'STAFF');
 
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getLocalTodayStr());
   const [shift, setShift] = useState<Shift>('Morning');
   const [staffId, setStaffId] = useState('');
   const [formId, setFormId] = useState('');

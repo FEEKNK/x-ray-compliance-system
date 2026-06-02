@@ -2,13 +2,16 @@ import express from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load the environment variables from the root directory
 dotenv.config({ path: '../.env' });
 
 import { db } from './db';
-import { schedules, forms, users, config } from './db/schema';
-import { eq, and } from 'drizzle-orm';
+import { schedules, forms, users, config, submissions, alerts, bundles } from './db/schema';
+import { eq, and, inArray } from 'drizzle-orm';
+import { authenticateToken } from './middleware/auth';
 
 // Import route handlers
 import usersRouter from './routes/users';
@@ -19,22 +22,27 @@ import bundlesRouter from './routes/bundles';
 import alertsRouter from './routes/alerts';
 import configRouter from './routes/config';
 import seedRouter from './routes/seed';
+import authRouter from './routes/auth';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 
 // ============================================
 // Register API Routes
 // ============================================
+app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
-app.use('/api/forms', formsRouter);
-app.use('/api/schedules', schedulesRouter);
-app.use('/api/submissions', submissionsRouter);
-app.use('/api/bundles', bundlesRouter);
-app.use('/api/alerts', alertsRouter);
+app.use('/api/forms', authenticateToken, formsRouter);
+app.use('/api/schedules', authenticateToken, schedulesRouter);
+app.use('/api/submissions', authenticateToken, submissionsRouter);
+app.use('/api/bundles', authenticateToken, bundlesRouter);
+app.use('/api/alerts', authenticateToken, alertsRouter);
 app.use('/api/config', configRouter);
 app.use('/api/seed', seedRouter);
 
@@ -45,6 +53,22 @@ app.use('/api/seed', seedRouter);
 // Basic test endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend is running' });
+});
+
+// ============================================
+// Reset Data — wipe submissions, schedules, alerts (keep users & forms)
+// ============================================
+app.post('/api/reset-data', async (_req, res) => {
+  try {
+    // Delete in FK-safe order: submissions before schedules
+    await db.delete(submissions);
+    await db.delete(schedules);
+    await db.delete(alerts);
+    res.json({ success: true, message: 'All submissions, schedules, and alerts have been cleared.' });
+  } catch (error) {
+    console.error('Error resetting data:', error);
+    res.status(500).json({ error: 'Failed to reset data' });
+  }
 });
 
 // Create Nodemailer transporter
@@ -120,22 +144,68 @@ app.post('/api/send-reminder-email', async (req, res) => {
 });
 
 // ============================================
+// Export Data API
+// ============================================
+app.get('/api/export-data', authenticateToken, async (_req, res) => {
+  try {
+    const allSubmissions = await db.select().from(submissions);
+    const allSchedules = await db.select().from(schedules);
+    const allAlerts = await db.select().from(alerts);
+    const allUsers = await db.select().from(users);
+    const allForms = await db.select().from(forms);
+    const allBundles = await db.select().from(bundles);
+    const allConfig = await db.select().from(config);
+    
+    res.json({
+      exportedAt: new Date().toISOString(),
+      submissions: allSubmissions,
+      schedules: allSchedules,
+      alerts: allAlerts,
+      users: allUsers,
+      forms: allForms,
+      bundles: allBundles,
+      config: allConfig
+    });
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    res.status(500).json({ error: 'Failed to export data' });
+  }
+});
+
+// ============================================
 // SLA Alert Background Job
 // ============================================
 setInterval(async () => {
   try {
     const now = new Date();
     const currentHour = now.getHours();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     
-    // Determine which shift needs alerting based on current time
-    // Morning (08:00-16:00, 3 hrs max -> Alert at >= 10:00)
-    // Afternoon (16:00-00:00, 2 hrs max -> Alert at >= 18:00)
-    // Night (00:00-08:00, 2 hrs max -> Alert at >= 02:00)
+    // Fetch config first to get SLA hours and emails
+    const sysConfig = await db.select().from(config).limit(1);
+    const settings = sysConfig[0]?.settings as Record<string, unknown> | undefined;
+    const supervisorEmail = (settings?.supervisorEmail as string | undefined) || process.env.SUPERVISOR_EMAIL;
+    const escalationEmail = (settings?.escalationEmail as string | undefined);
+    const slaHours = (settings?.slaHours as { Morning: number, Afternoon: number, Night: number }) || { Morning: 3, Afternoon: 2, Night: 2 };
+    
     let targetShift = '';
-    if (currentHour >= 10 && currentHour < 16) targetShift = 'Morning';
-    else if (currentHour >= 18 && currentHour < 24) targetShift = 'Afternoon';
-    else if (currentHour >= 2 && currentHour < 8) targetShift = 'Night';
+    let isEscalated = false;
+    
+    // Assuming standard shifts start at 8, 16, 0.
+    const mLimit = 8 + slaHours.Morning;
+    const aLimit = 16 + slaHours.Afternoon;
+    const nLimit = 0 + slaHours.Night;
+
+    if (currentHour >= mLimit && currentHour < 16) {
+      targetShift = 'Morning';
+      if (currentHour >= mLimit + 2) isEscalated = true; // Escalate if 2 hours past SLA
+    } else if (currentHour >= aLimit && currentHour < 24) {
+      targetShift = 'Afternoon';
+      if (currentHour >= aLimit + 2) isEscalated = true;
+    } else if (currentHour >= nLimit && currentHour < 8) {
+      targetShift = 'Night';
+      if (currentHour >= nLimit + 2) isEscalated = true;
+    }
 
     if (!targetShift) return; // Not time to alert yet
 
@@ -146,21 +216,20 @@ setInterval(async () => {
         and(
           eq(schedules.date, todayStr),
           eq(schedules.shift, targetShift),
-          eq(schedules.status, 'Pending')
+          eq(schedules.status, 'Pending'),
+          eq(schedules.slaAlertSent, false)
         )
       );
 
     if (pendingSchedules.length === 0) return;
 
-    // Fetch config for supervisor email
-    const sysConfig = await db.select().from(config).limit(1);
-    const supervisorEmail = sysConfig[0]?.supervisorEmail || process.env.SUPERVISOR_EMAIL;
-
     // Group by staffId
-    const staffGroup: Record<string, { staffId: string, formIds: string[] }> = {};
+    const staffGroup: Record<string, { staffId: string, formIds: string[], scheduleIds: string[] }> = {};
     for (const s of pendingSchedules) {
-      if (!staffGroup[s.staffId]) staffGroup[s.staffId] = { staffId: s.staffId, formIds: [] };
+      if (!s.formId) continue;
+      if (!staffGroup[s.staffId]) staffGroup[s.staffId] = { staffId: s.staffId, formIds: [], scheduleIds: [] };
       staffGroup[s.staffId].formIds.push(s.formId);
+      staffGroup[s.staffId].scheduleIds.push(s.id);
     }
 
     const transporter = getTransporter();
@@ -177,8 +246,13 @@ setInterval(async () => {
       }));
 
       const shiftTh = targetShift === 'Morning' ? 'เช้า' : targetShift === 'Afternoon' ? 'บ่าย' : 'ดึก';
-      const subject = `⚠️ แจ้งเตือน: คิวงานคงค้าง (เวร${shiftTh})`;
-      const toList = [staff.email, supervisorEmail].filter(Boolean).join(',');
+      const subject = `⚠️ แจ้งเตือน: คิวงานคงค้าง (เวร${shiftTh})${isEscalated ? ' [ESCALATED]' : ''}`;
+      
+      const recipients = [staff.email, supervisorEmail];
+      if (isEscalated && escalationEmail) {
+        recipients.push(escalationEmail);
+      }
+      const toList = recipients.filter(Boolean).join(',');
 
       const listHtml = formTitles.map(t => `<li style="padding: 5px 0;">${t}</li>`).join('');
 
@@ -202,16 +276,34 @@ setInterval(async () => {
           </div>
         `,
       });
+
+      // Update SLA sent status to prevent duplicate emails
+      await db.update(schedules)
+        .set({ slaAlertSent: true })
+        .where(inArray(schedules.id, group.scheduleIds));
     }
 
-  } catch (err: any) {
-    if (err?.cause?.message?.includes('fetch failed') || err?.message?.includes('fetch failed')) {
+  } catch (err: unknown) {
+    const error = err as Error & { cause?: { message?: string } };
+    if (error?.cause?.message?.includes('fetch failed') || error?.message?.includes('fetch failed')) {
       console.warn('[SLA Background Job] Network fetch failed (likely transient). Will retry next cycle.');
     } else {
-      console.error('[SLA Background Job] Error:', err?.message || err);
+      console.error('[SLA Background Job] Error:', error?.message || error);
     }
   }
 }, 30 * 60 * 1000); // Check every 30 minutes
+
+
+// ============================================
+// Serve Frontend in Production
+// ============================================
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.join(__dirname, '../dist');
+app.use(express.static(distPath));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 // ============================================
 // Global Error Handler

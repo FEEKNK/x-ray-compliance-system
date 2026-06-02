@@ -5,12 +5,12 @@ import type { ProtocolBundle } from '../../types';
 import { translations } from '../../i18n';
 
 const BundleManager: React.FC = () => {
-  const { forms, bundles, addBundle, updateBundle, deleteBundle, language } = useApp();
+  const { forms, bundles, addBundle, updateBundle, deleteBundle, language, settings } = useApp();
   const t = translations[language];
 
   const [selectedBundle, setSelectedBundle] = useState<ProtocolBundle | null>(null);
   const [name, setName] = useState('');
-  const [department, setDepartment] = useState<'IMAGING' | 'MRI'>('IMAGING');
+  const [department, setDepartment] = useState<string>(settings?.departments?.[0] || 'IMAGING');
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
 
   const handleSave = () => {
@@ -35,7 +35,7 @@ const BundleManager: React.FC = () => {
   const reset = () => {
     setSelectedBundle(null);
     setName('');
-    setDepartment('IMAGING');
+    setDepartment(settings?.departments?.[0] || 'IMAGING');
     setSelectedFormIds([]);
   };
 
@@ -126,12 +126,12 @@ const BundleManager: React.FC = () => {
                 </div>
                 <div>
                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-widest">Target Department</label>
-                   <div className="flex space-x-2 h-[58px]">
-                    {(['IMAGING', 'MRI'] as const).map(d => (
+                   <div className="flex flex-wrap gap-2 min-h-[58px]">
+                    {(settings?.departments || []).map(d => (
                       <button
                         key={d}
                         onClick={() => setDepartment(d)}
-                        className={`flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                           department === d ? 'bg-[#00468B] text-white shadow-md' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
                         }`}
                       >

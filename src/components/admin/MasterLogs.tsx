@@ -1,18 +1,50 @@
 import React, { useState } from 'react';
 import { useApp } from '../../AppContext';
+import { parseDbDate } from '../../utils/shiftTime';
 import { Search, Filter, Download, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import SubmissionDetailModal from '../shared/SubmissionDetailModal';
+import { getLocalTodayStr } from '../../utils/shiftTime';
 import { translations } from '../../i18n';
 import type { Submission } from '../../types';
 
+import { api } from '../../api';
+
 const MasterLogs: React.FC = () => {
-  const { submissions, users, forms, schedules, language } = useApp();
+  const { users, forms, schedules, language } = useApp();
   const t = translations[language];
+  
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterShift, setFilterShift] = useState('All');
   const [filterDept, setFilterDept] = useState<'All' | 'IMAGING' | 'MRI'>('All');
   const [filterDate, setFilterDate] = useState('');
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+
+  React.useEffect(() => {
+    let ignore = false;
+    const fetchLogs = async () => {
+      setIsLoading(true);
+      try {
+        const res = await api.submissions.getAll(page, 20);
+        if (!ignore) {
+          setSubmissions(res.data);
+          setTotalPages(res.totalPages);
+          setTotalRecords(res.total);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    };
+    fetchLogs();
+    return () => { ignore = true; };
+  }, [page]);
 
   const filteredSubmissions = submissions.filter(sub => {
     const staff = users.find(u => u.id === sub.staffId);
@@ -43,7 +75,7 @@ const MasterLogs: React.FC = () => {
       const staff = users.find(u => u.id === sub.staffId);
       const form = forms.find(f => f.id === sub.formId);
       return [
-        new Date(sub.submittedAt).toLocaleString(),
+        parseDbDate(sub.submittedAt).toLocaleString('en-GB', { hour12: false }),
         staff?.name,
         staff?.department,
         form?.title,
@@ -56,7 +88,7 @@ const MasterLogs: React.FC = () => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `xray_logs_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `xray_logs_${getLocalTodayStr()}.csv`;
     link.click();
   };
 
@@ -155,8 +187,8 @@ const MasterLogs: React.FC = () => {
                 return (
                   <tr key={sub.id} className="hover:bg-blue-50/30 transition-colors group">
                     <td className="px-8 py-6">
-                      <p className="text-sm text-gray-800 font-bold">{new Date(sub.submittedAt).toLocaleDateString('en-GB')}</p>
-                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-tighter">{new Date(sub.submittedAt).toLocaleTimeString()}</p>
+                      <p className="text-sm text-gray-800 font-bold">{parseDbDate(sub.submittedAt).toLocaleDateString('en-GB')}</p>
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-tighter">{parseDbDate(sub.submittedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}</p>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center space-x-3">
@@ -209,6 +241,29 @@ const MasterLogs: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+      
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <p className="text-xs font-bold text-gray-500">
+          Showing page {page} of {totalPages} ({totalRecords} total records)
+        </p>
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1 || isLoading}
+            className="px-4 py-2 border-2 border-gray-100 rounded-xl text-xs font-black uppercase tracking-widest text-gray-600 disabled:opacity-50 hover:bg-gray-50 transition-all"
+          >
+            Previous
+          </button>
+          <button 
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages || isLoading}
+            className="px-4 py-2 border-2 border-gray-100 rounded-xl text-xs font-black uppercase tracking-widest text-gray-600 disabled:opacity-50 hover:bg-gray-50 transition-all"
+          >
+            Next
+          </button>
         </div>
       </div>
 

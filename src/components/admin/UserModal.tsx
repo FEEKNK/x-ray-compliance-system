@@ -1,5 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { useApp } from '../../AppContext';
 import type { User, Role } from '../../types';
 
 import { translations } from '../../i18n';
@@ -14,6 +15,7 @@ interface UserModalProps {
 }
 
 const UserModal: React.FC<UserModalProps> = ({ editingUser, formData, setFormData, onSave, onClose, t }) => {
+  const { settings } = useApp();
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 shadow-2xl">
@@ -55,8 +57,9 @@ const UserModal: React.FC<UserModalProps> = ({ editingUser, formData, setFormDat
                     className="w-full border-2 border-gray-50 rounded-xl p-3 bg-gray-50 font-bold text-gray-700 outline-none focus:border-blue-500 transition-all appearance-none"
                   >
                     <option value="">Select Dept...</option>
-                    <option value="IMAGING">IMAGING</option>
-                    <option value="MRI">MRI</option>
+                    {(settings?.departments || []).map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
                   </select>
                 </div>
                 <div>

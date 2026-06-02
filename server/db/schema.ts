@@ -35,6 +35,7 @@ export const schedules = pgTable("schedules", {
 	location: text(),
 	supervisorId: uuid("supervisor_id").notNull(),
 	status: text().notNull(),
+	slaAlertSent: boolean("sla_alert_sent").default(false).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.staffId],
@@ -86,6 +87,7 @@ export const users = pgTable("users", {
 	department: text().notNull(),
 	email: text().notNull(),
 	role: text().notNull(),
+	pinHash: text("pin_hash"),
 });
 
 export const alerts = pgTable("alerts", {

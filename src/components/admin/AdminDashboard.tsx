@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../AppContext';
 import { CheckCircle, AlertTriangle, Clock, TrendingUp, ShieldCheck, Megaphone, Send, ShieldAlert, Info, BellRing, MailWarning } from 'lucide-react';
 import { translations } from '../../i18n';
+import { getLocalTodayStr, parseDbDate } from '../../utils/shiftTime';
 
 import type { Shift } from '../../types';
 
@@ -9,9 +10,9 @@ const AdminDashboard: React.FC = () => {
   const { schedules, getCompletionRate, users, forms, announcements, addAnnouncement, alerts, addAlert, markAlertAsRead, language, settings, submissions } = useApp();
   const t = translations[language];
   const [newAnnouncement, setNewAnnouncement] = useState('');
-  const [selectedDept, setSelectedDept] = useState<'IMAGING' | 'MRI'>('IMAGING');
+  const [selectedDept, setSelectedDept] = useState<string>(settings?.departments?.[0] || 'IMAGING');
   
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalTodayStr();
   const rate = getCompletionRate(today, selectedDept);
   
   const dailySchedules = schedules.filter(s => {
@@ -21,10 +22,11 @@ const AdminDashboard: React.FC = () => {
   const pending = dailySchedules.filter(s => s.status === 'Pending').length;
   const completed = dailySchedules.filter(s => s.status === 'Completed').length;
 
-  // Dynamic Critical Alerts from Submissions
-  const criticalSubmissions = submissions.filter(sub => 
-    Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert')
-  ).length;
+  // Dynamic Critical Alerts from Submissions (Filtered for today and selected department)
+  const criticalSubmissions = submissions.filter(sub => {
+    const isDaily = dailySchedules.some(s => s.id === sub.scheduleId);
+    return isDaily && Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert');
+  }).length;
 
   const formCoverage = forms
     .filter(f => f.department === selectedDept)
@@ -85,7 +87,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* Department Selector */}
       <div className="flex bg-white p-2 rounded-2xl border border-gray-100 shadow-sm w-fit">
-        {(['IMAGING', 'MRI'] as const).map((dept) => (
+        {(settings?.departments || []).map((dept) => (
           <button
             key={dept}
             onClick={() => setSelectedDept(dept)}
@@ -199,7 +201,7 @@ const AdminDashboard: React.FC = () => {
                           </div>
                           <div>
                              <p className="text-xs font-bold text-red-900 leading-tight">{alert.message}</p>
-                             <p className="text-[9px] font-medium text-red-500 mt-1 uppercase tracking-tighter">{new Date(alert.timestamp).toLocaleTimeString()}</p>
+                             <p className="text-[9px] font-medium text-red-500 mt-1 uppercase tracking-tighter">{parseDbDate(alert.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}</p>
                           </div>
                        </div>
                        {!alert.isRead && (
@@ -351,6 +353,7 @@ const AdminDashboard: React.FC = () => {
     </div>
   );
 };
+
 
 const StatCard: React.FC<{ title: string, value: string | number, icon: React.ReactNode, color: string, bg: string }> = ({ title, value, icon, color, bg }) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">

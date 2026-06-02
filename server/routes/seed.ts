@@ -4,6 +4,7 @@ import { users, forms, schedules, bundles, config } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
+import bcrypt from 'bcryptjs';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const router = Router();
 router.post('/', async (_req, res) => {
   try {
     // Read db.json from the src/data directory
-    const dbJsonPath = path.resolve(__dirname, '../../src/data/db.json');
+    const dbJsonPath = path.resolve(process.cwd(), 'src/data/db.json');
     if (!fs.existsSync(dbJsonPath)) {
       return res.status(404).json({ error: 'db.json not found at ' + dbJsonPath });
     }
@@ -26,6 +27,7 @@ router.post('/', async (_req, res) => {
       // Clear existing users first
       await db.delete(users);
       for (const user of data.users) {
+        const pinHash = await bcrypt.hash(user.employeeId, 10);
         await db.insert(users).values({
           id: user.id,
           employeeId: user.employeeId,
@@ -33,6 +35,7 @@ router.post('/', async (_req, res) => {
           department: user.department,
           email: user.email,
           role: user.role,
+          pinHash,
         }).onConflictDoNothing();
       }
       results.users = data.users.length;

@@ -7,10 +7,10 @@ import {
   ClipboardList,
   Users,
   Settings as SettingsIcon,
-  BookOpen,
   LogOut,
   TrendingUp,
-  Layers
+  Layers,
+  ShieldCheck
 } from 'lucide-react';
 import logo from '../../assets/logo.svg';
 import type { Role } from '../../types';
@@ -27,7 +27,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
 
   const adminItems = [
     { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard },
-    { id: 'monthly', label: 'Quality Dashboard', icon: TrendingUp },
+    { id: 'monthly', label: t.qualityDashboard, icon: TrendingUp },
+    { id: 'quality', label: t.qualityMatrix, icon: ShieldCheck },
     { id: 'forms', label: t.formBuilder, icon: FileEdit },
     { id: 'scheduling', label: t.scheduling, icon: Calendar },
     { id: 'bundles', label: t.formGroups, icon: Layers },
@@ -41,9 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
     { id: 'history', label: t.myHistory, icon: ClipboardList },
   ];
 
-  const commonItems = [
-    { id: 'guide', label: 'System Guide', icon: BookOpen },
-  ];
+  const commonItems: { id: string; label: string; icon: React.ElementType }[] = [];
 
   const items = [...(role === 'ADMIN' ? adminItems : staffItems), ...commonItems];
 

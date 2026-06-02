@@ -1,6 +1,9 @@
 // API Client — centralized fetch functions for all backend endpoints
 import type { User, DynamicForm, Schedule, Submission, ProtocolBundle, Alert, SystemSettings } from './types';
 
+// Get token from localStorage
+const getToken = () => localStorage.getItem('xray_jwt_token');
+
 const BASE = '/api';
 
 async function handleResponse<T>(res: Response): Promise<T> {
@@ -12,14 +15,31 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 function jsonHeaders(): HeadersInit {
-  return { 'Content-Type': 'application/json' };
+  const token = getToken();
+  return { 
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
 }
 
 export const api = {
+  // ─── Auth ─────────────────────────────────────────
+  auth: {
+    login: (userId: string, pin: string): Promise<{ token: string, user: User }> =>
+      fetch(`${BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, pin })
+      }).then(r => handleResponse(r)),
+  },
+
   // ─── Users ────────────────────────────────────────
   users: {
+    getPublic: (): Promise<Partial<User>[]> =>
+      fetch(`${BASE}/users/public`).then(r => handleResponse(r)),
+
     getAll: (): Promise<User[]> =>
-      fetch(`${BASE}/users`).then(r => handleResponse(r)),
+      fetch(`${BASE}/users`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
 
     create: (user: Partial<User>): Promise<User> =>
       fetch(`${BASE}/users`, {
@@ -36,13 +56,13 @@ export const api = {
       }).then(r => handleResponse(r)),
 
     delete: (id: string): Promise<{ success: boolean }> =>
-      fetch(`${BASE}/users/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
+      fetch(`${BASE}/users/${id}`, { method: 'DELETE', headers: jsonHeaders() }).then(r => handleResponse(r)),
   },
 
   // ─── Forms ────────────────────────────────────────
   forms: {
     getAll: (): Promise<DynamicForm[]> =>
-      fetch(`${BASE}/forms`).then(r => handleResponse(r)),
+      fetch(`${BASE}/forms`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
 
     create: (form: Partial<DynamicForm>): Promise<DynamicForm> =>
       fetch(`${BASE}/forms`, {
@@ -59,13 +79,13 @@ export const api = {
       }).then(r => handleResponse(r)),
 
     delete: (id: string): Promise<{ success: boolean }> =>
-      fetch(`${BASE}/forms/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
+      fetch(`${BASE}/forms/${id}`, { method: 'DELETE', headers: jsonHeaders() }).then(r => handleResponse(r)),
   },
 
   // ─── Schedules ────────────────────────────────────
   schedules: {
     getAll: (): Promise<Schedule[]> =>
-      fetch(`${BASE}/schedules`).then(r => handleResponse(r)),
+      fetch(`${BASE}/schedules`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
 
     create: (schedule: Partial<Schedule> | Partial<Schedule>[]): Promise<Schedule | Schedule[]> =>
       fetch(`${BASE}/schedules`, {
@@ -82,7 +102,7 @@ export const api = {
       }).then(r => handleResponse(r)),
 
     delete: (id: string): Promise<{ success: boolean }> =>
-      fetch(`${BASE}/schedules/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
+      fetch(`${BASE}/schedules/${id}`, { method: 'DELETE', headers: jsonHeaders() }).then(r => handleResponse(r)),
 
     bulkDelete: (ids: string[]): Promise<{ success: boolean }> =>
       fetch(`${BASE}/schedules/bulk-delete`, {
@@ -94,8 +114,11 @@ export const api = {
 
   // ─── Submissions ──────────────────────────────────
   submissions: {
-    getAll: (): Promise<Submission[]> =>
-      fetch(`${BASE}/submissions`).then(r => handleResponse(r)),
+    getAll: (page = 1, limit = 50): Promise<{ data: Submission[], total: number, page: number, totalPages: number }> =>
+      fetch(`${BASE}/submissions?page=${page}&limit=${limit}`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
+
+    getByScheduleId: (scheduleId: string): Promise<Submission> =>
+      fetch(`${BASE}/submissions/schedule/${scheduleId}`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
 
     create: (submission: Partial<Submission>): Promise<Submission> =>
       fetch(`${BASE}/submissions`, {
@@ -103,12 +126,16 @@ export const api = {
         headers: jsonHeaders(),
         body: JSON.stringify(submission),
       }).then(r => handleResponse(r)),
+
+    delete: (id: string): Promise<{ success: boolean }> =>
+      fetch(`${BASE}/submissions/${id}`, { method: 'DELETE', headers: jsonHeaders() }).then(r => handleResponse(r)),
   },
+
 
   // ─── Bundles ──────────────────────────────────────
   bundles: {
     getAll: (): Promise<ProtocolBundle[]> =>
-      fetch(`${BASE}/bundles`).then(r => handleResponse(r)),
+      fetch(`${BASE}/bundles`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
 
     create: (bundle: Partial<ProtocolBundle>): Promise<ProtocolBundle> =>
       fetch(`${BASE}/bundles`, {
@@ -125,13 +152,13 @@ export const api = {
       }).then(r => handleResponse(r)),
 
     delete: (id: string): Promise<{ success: boolean }> =>
-      fetch(`${BASE}/bundles/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
+      fetch(`${BASE}/bundles/${id}`, { method: 'DELETE', headers: jsonHeaders() }).then(r => handleResponse(r)),
   },
 
   // ─── Alerts ───────────────────────────────────────
   alerts: {
     getAll: (): Promise<Alert[]> =>
-      fetch(`${BASE}/alerts`).then(r => handleResponse(r)),
+      fetch(`${BASE}/alerts`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
 
     create: (alert: Partial<Alert>): Promise<Alert> =>
       fetch(`${BASE}/alerts`, {
@@ -141,7 +168,7 @@ export const api = {
       }).then(r => handleResponse(r)),
 
     markAsRead: (id: string): Promise<Alert> =>
-      fetch(`${BASE}/alerts/${id}/read`, { method: 'PATCH' }).then(r => handleResponse(r)),
+      fetch(`${BASE}/alerts/${id}/read`, { method: 'PATCH', headers: jsonHeaders() }).then(r => handleResponse(r)),
   },
 
   // ─── Config ───────────────────────────────────────
@@ -156,15 +183,23 @@ export const api = {
         body: JSON.stringify({ settings }),
       }).then(r => handleResponse(r)),
 
-    addAnnouncement: (text: string): Promise<{ success: boolean }> =>
+    addAnnouncement: (text: string): Promise<string[]> =>
       fetch(`${BASE}/config/announcements`, {
         method: 'POST',
         headers: jsonHeaders(),
         body: JSON.stringify({ text }),
-      }).then(r => handleResponse(r)),
+      }).then(r => handleResponse<{ announcements: string[] }>(r).then(d => d.announcements)),
   },
 
   // ─── Seed ─────────────────────────────────────────
   seed: (): Promise<{ success: boolean }> =>
     fetch(`${BASE}/seed`, { method: 'POST' }).then(r => handleResponse(r)),
+
+  // ─── Export Data ──────────────────────────────────
+  exportData: (): Promise<unknown> =>
+    fetch(`${BASE}/export-data`, { method: 'GET', headers: jsonHeaders() }).then(r => handleResponse(r)),
+
+  // ─── Reset Data ───────────────────────────────────
+  resetData: (): Promise<{ success: boolean; message: string }> =>
+    fetch(`${BASE}/reset-data`, { method: 'POST' }).then(r => handleResponse(r)),
 };

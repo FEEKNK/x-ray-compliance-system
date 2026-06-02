@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Image as ImageIcon, Printer } from 'lucide-react';
 import { useApp } from '../../AppContext';
+import { parseDbDate } from '../../utils/shiftTime';
 import type { Submission } from '../../types';
 
 interface SubmissionDetailModalProps {
@@ -54,7 +55,7 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({ submissio
             </div>
             <div>
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Submission Time</label>
-              <p className="font-bold text-gray-800">{new Date(submission.submittedAt).toLocaleString()}</p>
+              <p className="font-bold text-gray-800">{parseDbDate(submission.submittedAt).toLocaleString('en-GB', { hour12: false })}</p>
             </div>
             <div>
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Integrity Status</label>

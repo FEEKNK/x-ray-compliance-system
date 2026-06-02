@@ -1,15 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../AppContext';
-import { Building2, Mail, Save, RefreshCw, Trash2, ShieldAlert, Clock } from 'lucide-react';
+import { Building2, Mail, Save, RefreshCw, Trash2, ShieldAlert, Clock, Loader2, CheckCircle, DatabaseBackup, ClockAlert, Plus, X, Layers } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { Shift, SystemSettings } from '../../types';
 
 const Settings: React.FC = () => {
-  const { settings, updateSettings, resetDatabase, clearLogs, language } = useApp();
+  const { settings, updateSettings, resetDatabase, clearLogs, language, resetData, exportData } = useApp();
   const t = translations[language];
 
   const [localSettings, setLocalSettings] = useState<SystemSettings>(settings);
   const [isTestingEmail, setIsTestingEmail] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [newDept, setNewDept] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Sync localSettings whenever global settings finish loading from the server
+  useEffect(() => {
+    let ignore = false;
+    if (settings && Object.keys(settings).length > 0) {
+      Promise.resolve().then(() => {
+        if (!ignore) setLocalSettings(settings);
+      });
+    }
+    return () => { ignore = true; };
+  }, [settings]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +60,41 @@ const Settings: React.FC = () => {
       setIsTestingEmail(false);
     }
   };
+
+  const handleResetData = async () => {
+    setIsResetting(true);
+    try {
+      await resetData();
+      setResetSuccess(true);
+      setTimeout(() => setResetSuccess(false), 3000);
+    } finally {
+      setIsResetting(false);
+      setShowResetConfirm(false);
+    }
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await exportData();
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Wait until all nested settings objects have loaded from the server
+  const isLoaded = localSettings?.slaHours && localSettings?.shifts && localSettings?.departments;
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex flex-col items-center space-y-3 text-gray-400">
+          <div className="w-8 h-8 border-4 border-gray-200 border-t-[#00468B] rounded-full animate-spin" />
+          <span className="text-xs font-bold uppercase tracking-widest">Loading Settings...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -102,6 +153,94 @@ const Settings: React.FC = () => {
                     </button>
                   </div>
                 </div>
+                
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center">
+                    <Mail size={12} className="mr-1.5" />
+                    Escalation Email (Level 2 Alert)
+                  </label>
+                  <input 
+                    type="email" 
+                    value={localSettings.escalationEmail}
+                    onChange={(e) => setLocalSettings({...localSettings, escalationEmail: e.target.value})}
+                    className="w-full border-2 border-gray-50 rounded-xl p-4 bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none transition-all"
+                    placeholder="director@hospital.com"
+                  />
+                </div>
+              </div>
+              
+              <div className="pt-4 border-t border-gray-50">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                  <Layers size={12} className="mr-1.5" />
+                  Department Configurations
+                </label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {(localSettings?.departments || []).map(dept => (
+                    <span key={dept} className="bg-[#00468B] text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2">
+                      {dept}
+                      <button type="button" onClick={() => setLocalSettings({
+                        ...localSettings,
+                        departments: (localSettings?.departments || []).filter(d => d !== dept)
+                      })} className="hover:text-red-300">
+                        <X size={14} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex space-x-2">
+                  <input 
+                    type="text" 
+                    value={newDept}
+                    onChange={e => setNewDept(e.target.value.toUpperCase())}
+                    className="flex-1 border-2 border-gray-50 rounded-xl p-3 bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none transition-all text-sm"
+                    placeholder="Add new department (e.g. CT SCAN)"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newDept && !localSettings.departments.includes(newDept)) {
+                          setLocalSettings({...localSettings, departments: [...localSettings.departments, newDept]});
+                          setNewDept('');
+                        }
+                      }
+                    }}
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      if (newDept && !localSettings.departments.includes(newDept)) {
+                        setLocalSettings({...localSettings, departments: [...localSettings.departments, newDept]});
+                        setNewDept('');
+                      }
+                    }}
+                    className="bg-gray-100 text-gray-600 px-4 rounded-xl font-bold hover:bg-gray-200 transition-all flex items-center justify-center"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-50">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                  <ClockAlert size={12} className="mr-1.5" />
+                  SLA Alert Limits (Hours)
+                </label>
+                <div className="grid grid-cols-3 gap-4">
+                  {(['Morning', 'Afternoon', 'Night'] as Shift[]).map(s => (
+                    <div key={`sla-${s}`}>
+                       <label className="block text-[10px] font-black text-[#00468B] uppercase mb-1">{s}</label>
+                       <input 
+                        type="number"
+                        min="1" max="12"
+                        value={localSettings.slaHours[s]}
+                        onChange={(e) => setLocalSettings({
+                          ...localSettings, 
+                          slaHours: { ...localSettings.slaHours, [s]: Number(e.target.value) }
+                        })}
+                        className="w-full border-2 border-gray-50 rounded-xl p-3 bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none transition-all text-center"
+                       />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="pt-4">
@@ -127,6 +266,7 @@ const Settings: React.FC = () => {
                   ))}
                 </div>
               </div>
+
             </div>
 
             <button 
@@ -152,6 +292,15 @@ const Settings: React.FC = () => {
 
               <div className="space-y-3 pt-2">
                  <button 
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  className="w-full bg-blue-50 text-[#00468B] py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center space-x-2"
+                 >
+                    {isExporting ? <Loader2 size={14} className="animate-spin" /> : <DatabaseBackup size={14} />}
+                    <span>Export Full Backup</span>
+                 </button>
+
+                 <button 
                   onClick={() => {
                     if (confirm('Permanently clear all submission records? Existing schedules will be reset to Pending.')) {
                       clearLogs();
@@ -161,6 +310,14 @@ const Settings: React.FC = () => {
                  >
                     <Trash2 size={14} />
                     <span>{t.clearLogs}</span>
+                 </button>
+
+                 <button
+                  onClick={() => setShowResetConfirm(true)}
+                  className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow hover:bg-orange-600 transition-all flex items-center justify-center space-x-2"
+                 >
+                    <Trash2 size={14} />
+                    <span>ล้างข้อมูลทั้งหมด</span>
                  </button>
 
                  <button 
@@ -178,6 +335,63 @@ const Settings: React.FC = () => {
            </div>
         </div>
       </div>
+      {/* Reset Confirm Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center">
+                <Trash2 size={30} className="text-orange-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">ยืนยันการล้างข้อมูลทั้งหมด</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  ระบบจะ<strong className="text-red-600">ลบข้อมูลทั้งหมด</strong>ออกจากฐานข้อมูล ได้แก่
+                </p>
+                <ul className="mt-3 text-sm text-left space-y-2 bg-red-50 rounded-xl p-4">
+                  <li className="flex items-center gap-2 text-red-700 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>ประวัติการตรวจเช็คทั้งหมด (Submissions)</li>
+                  <li className="flex items-center gap-2 text-red-700 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>ตารางงาน / กำหนดการทั้งหมด (Schedules)</li>
+                  <li className="flex items-center gap-2 text-red-700 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>การแจ้งเตือนทั้งหมด (Alerts)</li>
+                </ul>
+                <div className="mt-3 p-3 bg-green-50 rounded-xl text-xs text-green-700 font-semibold">
+                  ✅ ข้อมูลพนักงานและแบบฟอร์มจะยังคงอยู่
+                </div>
+                <p className="mt-3 text-xs text-red-500 font-bold">การดำเนินการนี้ไม่สามารถย้อนกลับได้</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                disabled={isResetting}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-100 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all disabled:opacity-50"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={handleResetData}
+                disabled={isResetting}
+                className="flex-1 py-3 rounded-xl bg-orange-500 text-white font-bold text-sm hover:bg-orange-600 transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
+              >
+                {isResetting ? (
+                  <><Loader2 size={16} className="animate-spin" /> กำลังล้างข้อมูล...</>
+                ) : (
+                  <><Trash2 size={16} /> ยืนยันล้างข้อมูล</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Toast */}
+      {resetSuccess && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm">
+            <CheckCircle size={20} />
+            ล้างข้อมูลสำเร็จ! ระบบพร้อมใช้งาน
+          </div>
+        </div>
+      )}
     </div>
   );
 };

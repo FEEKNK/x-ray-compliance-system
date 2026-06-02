@@ -10,11 +10,11 @@ import MasterLogs from './components/admin/MasterLogs';
 import UserManagement from './components/admin/UserManagement';
 import StaffHistory from './components/staff/StaffHistory';
 import Settings from './components/shared/Settings';
-import SystemGuide from './components/shared/SystemGuide';
 import LandingPage from './components/shared/LandingPage';
 import BottomNav from './components/layout/BottomNav';
 import MonthlyDashboard from './components/admin/MonthlyDashboard';
 import BundleManager from './components/admin/BundleManager';
+import QualityDashboard from './components/admin/QualityDashboard';
 import { LogOut, UserCircle } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -38,19 +38,18 @@ const AppContent: React.FC = () => {
             <>
               {activeTab === 'dashboard' && <AdminDashboard />}
               {activeTab === 'monthly' && <MonthlyDashboard />}
+              {activeTab === 'quality' && <QualityDashboard />}
               {activeTab === 'forms' && <FormBuilder />}
               {activeTab === 'scheduling' && <Scheduler />}
               {activeTab === 'bundles' && <BundleManager />}
               {activeTab === 'master-logs' && <MasterLogs />}
               {activeTab === 'users' && <UserManagement />}
               {activeTab === 'settings' && <Settings />}
-              {activeTab === 'guide' && <SystemGuide />}
             </>
           ) : (
             <>
               {activeTab === 'dashboard' && <StaffDashboard />}
               {activeTab === 'history' && <StaffHistory />}
-              {activeTab === 'guide' && <SystemGuide />}
               {activeTab === 'profile' && (
                 <div className="max-w-md mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
                   <div className="text-center pt-10">
@@ -79,7 +78,7 @@ const AppContent: React.FC = () => {
         </main>
 
         {/* Bottom Nav for Mobile */}
-        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} role={currentUser.role} />
+        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} role={currentUser.role} onLogout={() => setCurrentUser(null)} />
       </div>
     </div>
   );

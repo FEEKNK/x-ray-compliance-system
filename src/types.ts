@@ -15,9 +15,10 @@ export interface QuestionBlock {
   type: 'text' | 'number' | 'yesno' | 'composite' | 'select' | 'date';
   required: boolean;
   options?: string[];
+  allowCustomInput?: boolean;
   config?: {
-    withPhoto?: boolean;
     photoRequired?: boolean;
+    autoFillToday?: boolean;
   };
 }
 
@@ -29,7 +30,7 @@ export interface DynamicForm {
   isActive: boolean;
   createdAt: string;
   shifts?: Shift[];
-  department?: 'MRI' | 'IMAGING';
+  department?: string;
 }
 
 export type Shift = 'Morning' | 'Afternoon' | 'Night';
@@ -58,6 +59,13 @@ export interface Submission {
 export interface SystemSettings {
   hospitalName: string;
   supervisorEmail: string;
+  escalationEmail: string;
+  departments: string[];
+  slaHours: {
+    Morning: number;
+    Afternoon: number;
+    Night: number;
+  };
   shifts: {
     Morning: string;
     Afternoon: string;
@@ -78,11 +86,13 @@ export interface Alert {
 export interface ProtocolBundle {
   id: string;
   name: string;
-  department: 'MRI' | 'IMAGING';
+  department: string;
   formIds: string[];
 }
 
 export interface AppContextType {
+  isLoading: boolean;
+  loadError: string | null;
   currentUser: User | null;
   users: User[];
   forms: DynamicForm[];
@@ -104,8 +114,9 @@ export interface AppContextType {
   deleteSchedule: (id: string) => void;
   bulkDeleteSchedules: (ids: string[]) => void;
   submitForm: (submission: Submission) => void;
+  deleteSubmission: (id: string) => void;
   getStaffSchedule: (staffId: string, date: string) => Schedule[];
-  getCompletionRate: (date: string, department?: 'MRI' | 'IMAGING') => number;
+  getCompletionRate: (date: string, department?: string) => number;
   announcements: string[];
   addAnnouncement: (text: string) => void;
   addAlert: (alert: Omit<Alert, 'id' | 'isRead' | 'timestamp'>) => void;
@@ -115,6 +126,8 @@ export interface AppContextType {
   settings: SystemSettings;
   updateSettings: (settings: SystemSettings) => void;
   resetDatabase: () => void;
+  resetData: () => Promise<void>;
+  exportData: () => Promise<void>;
   clearLogs: () => void;
 }
 

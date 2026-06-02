@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../AppContext';
+import { parseDbDate } from '../../utils/shiftTime';
 import { ClipboardList, Clock, CheckCircle2, Search, Pencil, Lock } from 'lucide-react';
 import SubmissionDetailModal from '../shared/SubmissionDetailModal';
 import { translations } from '../../i18n';
@@ -38,6 +39,7 @@ const StaffHistory: React.FC = () => {
     submitForm(data);
     setEditingSchedule(null);
   };
+
 
   if (editingSchedule) {
     return (
@@ -110,7 +112,7 @@ const StaffHistory: React.FC = () => {
                   <h3 className="font-bold text-gray-800 group-hover:text-[#00468B] transition-colors truncate">{form?.title}</h3>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <span className="flex items-center text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                      <Clock size={12} className="mr-1" /> {new Date(sub.submittedAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
+                      <Clock size={12} className="mr-1" /> {parseDbDate(sub.submittedAt).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short', hour12: false })}
                     </span>
                     <span className={`flex items-center text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
                       hasAlert ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50'
@@ -136,7 +138,7 @@ const StaffHistory: React.FC = () => {
               {canEdit && (
                 <button
                   onClick={(e) => { e.stopPropagation(); handleEditClick(sub); }}
-                  className="ml-4 shrink-0 flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-[#00468B] rounded-xl text-xs font-bold hover:bg-[#00468B] hover:text-white transition-all active:scale-95"
+                  className="ml-2 shrink-0 flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-[#00468B] rounded-xl text-xs font-bold hover:bg-[#00468B] hover:text-white transition-all active:scale-95"
                 >
                   <Pencil size={14} />
                   แก้ไข

@@ -1,6 +1,13 @@
 import type { Shift } from '../types';
 
 /**
+ * Get current local date string in YYYY-MM-DD format
+ */
+export function getLocalTodayStr(dateObj = new Date()): string {
+  return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+}
+
+/**
  * Shift start hours (24h)
  */
 export const SHIFT_START: Record<Shift, number> = {
@@ -114,3 +121,8 @@ export function getShiftStatus(scheduleDate: string, shift: Shift, now?: Date) {
     isLocked: currentTime >= deadline,
   };
 }
+
+export const parseDbDate = (dateStr: string) => {
+  if (!dateStr) return new Date();
+  return new Date(dateStr.endsWith('Z') ? dateStr : dateStr.replace(' ', 'T') + 'Z');
+};
