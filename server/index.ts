@@ -35,7 +35,7 @@ app.use(cors({
   origin: process.env.CLIENT_URL || ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true
 }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
 
 // ============================================
 // Register API Routes
@@ -173,6 +173,44 @@ app.get('/api/export-data', authenticateToken, async (_req, res) => {
   } catch (error) {
     console.error('Error exporting data:', error);
     res.status(500).json({ error: 'Failed to export data' });
+  }
+});
+
+// ============================================
+// Import Data API
+// ============================================
+app.post('/api/import-data', authenticateToken, async (req, res) => {
+  try {
+    const payload = req.body;
+    if (!payload || !payload.users || !payload.forms || !payload.config) {
+      return res.status(400).json({ error: 'Invalid backup file format' });
+    }
+
+    // Wrap in a single transaction if possible (Drizzle supports SQLite transactions)
+    await db.transaction(async (tx) => {
+      // 1. Delete all existing data in reverse dependency order
+      await tx.delete(alerts);
+      await tx.delete(submissions);
+      await tx.delete(schedules);
+      await tx.delete(bundles);
+      await tx.delete(forms);
+      await tx.delete(users);
+      await tx.delete(config);
+
+      // 2. Insert imported data
+      if (payload.users?.length) await tx.insert(users).values(payload.users);
+      if (payload.forms?.length) await tx.insert(forms).values(payload.forms);
+      if (payload.bundles?.length) await tx.insert(bundles).values(payload.bundles);
+      if (payload.schedules?.length) await tx.insert(schedules).values(payload.schedules);
+      if (payload.submissions?.length) await tx.insert(submissions).values(payload.submissions);
+      if (payload.alerts?.length) await tx.insert(alerts).values(payload.alerts);
+      if (payload.config?.length) await tx.insert(config).values(payload.config);
+    });
+
+    res.json({ success: true, message: 'Database imported successfully' });
+  } catch (error) {
+    console.error('Error importing data:', error);
+    res.status(500).json({ error: 'Failed to import data: ' + (error instanceof Error ? error.message : String(error)) });
   }
 });
 

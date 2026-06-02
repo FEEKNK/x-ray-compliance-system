@@ -208,4 +208,12 @@ export const api = {
   // ─── Reset Data ───────────────────────────────────
   resetData: (): Promise<{ success: boolean; message: string }> =>
     fetch(`${BASE}/reset-data`, { method: 'POST' }).then(r => handleResponse(r)),
+
+  // ─── Import Data ──────────────────────────────────
+  importData: (payload: any): Promise<{ success: boolean; message: string }> =>
+    fetch(`${BASE}/import-data`, {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify(payload)
+    }).then(r => handleResponse(r)),
 };

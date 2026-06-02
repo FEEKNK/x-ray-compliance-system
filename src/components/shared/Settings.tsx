@@ -15,6 +15,8 @@ const Settings: React.FC = () => {
   const [resetSuccess, setResetSuccess] = useState(false);
   const [newDept, setNewDept] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync localSettings whenever global settings finish loading from the server
   useEffect(() => {
@@ -79,6 +81,37 @@ const Settings: React.FC = () => {
       await exportData();
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!confirm('CRITICAL WARNING: This will permanently DELETE your current database and replace it with the backup file. Are you absolutely sure you want to proceed?')) {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      
+      const { api } = await import('../../api');
+      await api.importData(payload);
+      
+      setResetSuccess(true);
+      setTimeout(() => {
+        setResetSuccess(false);
+        window.location.reload();
+      }, 2000);
+    } catch (err) {
+      console.error('Import failed:', err);
+      alert('Failed to import backup: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -318,13 +351,33 @@ const Settings: React.FC = () => {
 
               <div className="space-y-3 pt-2">
                  <button 
+                  type="button"
                   onClick={handleExport}
-                  disabled={isExporting}
+                  disabled={isExporting || isImporting}
                   className="w-full bg-blue-50 text-[#00468B] py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center space-x-2"
                  >
                     {isExporting ? <Loader2 size={14} className="animate-spin" /> : <DatabaseBackup size={14} />}
                     <span>Export Full Backup</span>
                  </button>
+
+                 <div>
+                   <input 
+                     type="file" 
+                     accept=".json" 
+                     className="hidden" 
+                     ref={fileInputRef} 
+                     onChange={handleImport} 
+                   />
+                   <button 
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isExporting || isImporting}
+                    className="w-full bg-purple-50 text-purple-700 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-purple-100 transition-all flex items-center justify-center space-x-2"
+                   >
+                      {isImporting ? <Loader2 size={14} className="animate-spin" /> : <DatabaseBackup size={14} className="rotate-180" />}
+                      <span>Import Full Backup</span>
+                   </button>
+                 </div>
 
                  <button 
                   onClick={() => {
