@@ -293,7 +293,6 @@ const QualityDashboard: React.FC = () => {
 
       if (form.description) {
         rows.push({});
-        rows.push({ 'รายการตรวจเช็ค': 'คำชี้แจง / รายละเอียด:' });
         rows.push({ 'รายการตรวจเช็ค': form.description });
       }
 
@@ -438,11 +437,6 @@ const QualityDashboard: React.FC = () => {
       let currentY = finalY + 8;
       
       if (form.description) {
-        doc.setFontSize(8);
-        doc.setTextColor(50);
-        doc.text('คำชี้แจง / รายละเอียด:', 10, currentY);
-        currentY += 4;
-        
         doc.setFontSize(7);
         doc.setTextColor(80);
         const lines = doc.splitTextToSize(form.description, pageW - 20);
