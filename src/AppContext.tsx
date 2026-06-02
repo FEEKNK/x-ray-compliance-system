@@ -97,7 +97,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           supervisorEmail: "supervisor@hospital.com",
           escalationEmail: "director@hospital.com",
           departments: ["IMAGING", "MRI"],
-          slaHours: { Morning: 3, Afternoon: 2, Night: 2 },
+          slaHours: { Morning: 1.5, Afternoon: 1.5, Night: 1.5 },
           shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00" },
         };
         const mergedSettings: SystemSettings = { ...defaultSettings, ...(configData.settings as Partial<SystemSettings>) };

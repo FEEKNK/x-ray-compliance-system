@@ -230,7 +230,8 @@ const Settings: React.FC = () => {
                        <label className="block text-[10px] font-black text-[#00468B] uppercase mb-1">{s}</label>
                        <input 
                         type="number"
-                        min="1" max="12"
+                        step="0.5"
+                        min="0.5" max="12"
                         value={localSettings.slaHours[s]}
                         onChange={(e) => setLocalSettings({
                           ...localSettings, 

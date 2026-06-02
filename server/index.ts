@@ -183,6 +183,7 @@ setInterval(async () => {
   try {
     const now = new Date();
     const currentHour = now.getHours();
+    const currentDecimalHour = currentHour + (now.getMinutes() / 60);
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     
     // Fetch config first to get SLA hours and emails
@@ -190,7 +191,7 @@ setInterval(async () => {
     const settings = sysConfig[0]?.settings as Record<string, unknown> | undefined;
     const supervisorEmail = (settings?.supervisorEmail as string | undefined) || process.env.SUPERVISOR_EMAIL;
     const escalationEmail = (settings?.escalationEmail as string | undefined);
-    const slaHours = (settings?.slaHours as { Morning: number, Afternoon: number, Night: number }) || { Morning: 3, Afternoon: 2, Night: 2 };
+    const slaHours = (settings?.slaHours as { Morning: number, Afternoon: number, Night: number }) || { Morning: 1.5, Afternoon: 1.5, Night: 1.5 };
     
     let targetShift = '';
     let isEscalated = false;
@@ -200,15 +201,15 @@ setInterval(async () => {
     const aLimit = 16 + slaHours.Afternoon;
     const nLimit = 0 + slaHours.Night;
 
-    if (currentHour >= mLimit && currentHour < 16) {
+    if (currentDecimalHour >= mLimit && currentDecimalHour < 16) {
       targetShift = 'Morning';
-      if (currentHour >= mLimit + 2) isEscalated = true; // Escalate if 2 hours past SLA
-    } else if (currentHour >= aLimit && currentHour < 24) {
+      if (currentDecimalHour >= mLimit + 2) isEscalated = true; // Escalate if 2 hours past SLA
+    } else if (currentDecimalHour >= aLimit && currentDecimalHour < 24) {
       targetShift = 'Afternoon';
-      if (currentHour >= aLimit + 2) isEscalated = true;
-    } else if (currentHour >= nLimit && currentHour < 8) {
+      if (currentDecimalHour >= aLimit + 2) isEscalated = true;
+    } else if (currentDecimalHour >= nLimit && currentDecimalHour < 8) {
       targetShift = 'Night';
-      if (currentHour >= nLimit + 2) isEscalated = true;
+      if (currentDecimalHour >= nLimit + 2) isEscalated = true;
     }
 
     if (!targetShift) return; // Not time to alert yet
