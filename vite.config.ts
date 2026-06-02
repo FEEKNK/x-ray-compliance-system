@@ -20,5 +20,8 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
+  },
+  build: {
+    chunkSizeWarningLimit: 1600,
   }
 })
