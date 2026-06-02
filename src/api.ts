@@ -8,6 +8,12 @@ const BASE = '/api';
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      localStorage.removeItem('xray_jwt_token');
+      localStorage.removeItem('xray_currentUser');
+      window.location.href = '/';
+      return {} as T; // Return empty object since we are redirecting
+    }
     const errorBody = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(errorBody.error || `API error: ${res.status}`);
   }
