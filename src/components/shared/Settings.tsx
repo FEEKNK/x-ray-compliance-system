@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../AppContext';
-import { Building2, Mail, Save, RefreshCw, Trash2, ShieldAlert, Clock, Loader2, CheckCircle, DatabaseBackup, ClockAlert, Plus, X, Layers } from 'lucide-react';
+import { Building2, Mail, Save, RefreshCw, Trash2, ShieldAlert, Clock, Loader2, CheckCircle, DatabaseBackup, ClockAlert, Plus, X, Layers, Lock } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { Shift, SystemSettings } from '../../types';
 
@@ -236,6 +236,31 @@ const Settings: React.FC = () => {
                         onChange={(e) => setLocalSettings({
                           ...localSettings, 
                           slaHours: { ...localSettings.slaHours, [s]: Number(e.target.value) }
+                        })}
+                        className="w-full border-2 border-gray-50 rounded-xl p-3 bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none transition-all text-center"
+                       />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-50">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                  <Lock size={12} className="mr-1.5" />
+                  Form Lock Limits (Hours after shift start)
+                </label>
+                <div className="grid grid-cols-3 gap-4">
+                  {(['Morning', 'Afternoon', 'Night'] as Shift[]).map(s => (
+                    <div key={`lock-${s}`}>
+                       <label className="block text-[10px] font-black text-[#00468B] uppercase mb-1">{s}</label>
+                       <input 
+                        type="number"
+                        step="0.5"
+                        min="0.5" max="24"
+                        value={localSettings.lockoutHours[s]}
+                        onChange={(e) => setLocalSettings({
+                          ...localSettings, 
+                          lockoutHours: { ...localSettings.lockoutHours, [s]: Number(e.target.value) }
                         })}
                         className="w-full border-2 border-gray-50 rounded-xl p-3 bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none transition-all text-center"
                        />

@@ -98,11 +98,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           escalationEmail: "director@hospital.com",
           departments: ["IMAGING", "MRI"],
           slaHours: { Morning: 1.5, Afternoon: 1.5, Night: 1.5 },
+          lockoutHours: { Morning: 3, Afternoon: 2, Night: 2 },
           shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00" },
         };
         const mergedSettings: SystemSettings = { ...defaultSettings, ...(configData.settings as Partial<SystemSettings>) };
         // Also deep-merge nested objects so old rows without slaHours/shifts still work
         if (!(configData.settings as SystemSettings)?.slaHours) mergedSettings.slaHours = defaultSettings.slaHours;
+        if (!(configData.settings as SystemSettings)?.lockoutHours) mergedSettings.lockoutHours = defaultSettings.lockoutHours;
         if (!(configData.settings as SystemSettings)?.shifts) mergedSettings.shifts = defaultSettings.shifts;
         if (!(configData.settings as SystemSettings)?.departments) mergedSettings.departments = defaultSettings.departments;
         setSettings(mergedSettings);

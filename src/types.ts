@@ -66,6 +66,11 @@ export interface SystemSettings {
     Afternoon: number;
     Night: number;
   };
+  lockoutHours: {
+    Morning: number;
+    Afternoon: number;
+    Night: number;
+  };
   shifts: {
     Morning: string;
     Afternoon: string;

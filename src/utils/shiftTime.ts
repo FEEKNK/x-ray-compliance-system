@@ -17,10 +17,9 @@ export const SHIFT_START: Record<Shift, number> = {
 };
 
 /**
- * Submission window duration in hours (how long staff can submit)
- * Morning = 3h, Afternoon/Night = 2h
+ * Fallback lockout limits if settings are missing
  */
-export const SUBMIT_WINDOW_HOURS: Record<Shift, number> = {
+export const DEFAULT_LOCKOUT_HOURS: Record<Shift, number> = {
   Morning: 3,
   Afternoon: 2,
   Night: 2,
@@ -40,14 +39,20 @@ export const ALERT_AFTER_HOURS: Record<Shift, number> = {
  * Get the deadline (Date) by which a form must be submitted for a given schedule date+shift.
  * After this time, the form is LOCKED and cannot be submitted.
  */
-export function getSubmitDeadline(scheduleDate: string, shift: Shift): Date {
+export function getSubmitDeadline(scheduleDate: string, shift: Shift, lockoutHours?: Record<Shift, number>): Date {
   const [year, month, day] = scheduleDate.split('-').map(Number);
   const startHour = SHIFT_START[shift];
-  const windowHours = SUBMIT_WINDOW_HOURS[shift];
+  const windowHours = lockoutHours ? lockoutHours[shift] : DEFAULT_LOCKOUT_HOURS[shift];
 
   // For Night shift, deadline is next day 02:00
   const deadline = new Date(year, month - 1, day, startHour, 0, 0, 0);
   deadline.setHours(deadline.getHours() + windowHours);
+  
+  // Also support decimal hours
+  if (!Number.isInteger(windowHours)) {
+    deadline.setMinutes(deadline.getMinutes() + (windowHours % 1) * 60);
+  }
+  
   return deadline;
 }
 
@@ -67,9 +72,9 @@ export function getAlertTime(scheduleDate: string, shift: Shift): Date {
 /**
  * Check if a form submission is still allowed (not yet locked).
  */
-export function isSubmitAllowed(scheduleDate: string, shift: Shift): boolean {
+export function isSubmitAllowed(scheduleDate: string, shift: Shift, lockoutHours?: Record<Shift, number>): boolean {
   const now = new Date();
-  const deadline = getSubmitDeadline(scheduleDate, shift);
+  const deadline = getSubmitDeadline(scheduleDate, shift, lockoutHours);
   return now < deadline;
 }
 
@@ -85,13 +90,13 @@ export function isAlertTime(scheduleDate: string, shift: Shift): boolean {
 /**
  * Get a human-readable countdown string until lock or description of lock status.
  */
-export function getLockStatus(scheduleDate: string, shift: Shift): {
+export function getLockStatus(scheduleDate: string, shift: Shift, lockoutHours?: Record<Shift, number>): {
   isLocked: boolean;
   label: string;
   minutesLeft?: number;
 } {
   const now = new Date();
-  const deadline = getSubmitDeadline(scheduleDate, shift);
+  const deadline = getSubmitDeadline(scheduleDate, shift, lockoutHours);
   const diff = deadline.getTime() - now.getTime();
 
   if (diff <= 0) {
@@ -111,10 +116,10 @@ export function getLockStatus(scheduleDate: string, shift: Shift): {
 /**
  * Composite status for a given schedule+shift, optionally passing in a custom 'now'.
  */
-export function getShiftStatus(scheduleDate: string, shift: Shift, now?: Date) {
+export function getShiftStatus(scheduleDate: string, shift: Shift, now?: Date, lockoutHours?: Record<Shift, number>) {
   const currentTime = now ?? new Date();
   const alertTime = getAlertTime(scheduleDate, shift);
-  const deadline = getSubmitDeadline(scheduleDate, shift);
+  const deadline = getSubmitDeadline(scheduleDate, shift, lockoutHours);
 
   return {
     isAlertTime: currentTime >= alertTime,

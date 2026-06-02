@@ -16,14 +16,14 @@ import { translations } from '../../i18n';
 import { getLockStatus, getSubmitDeadline, getLocalTodayStr } from '../../utils/shiftTime';
 
 /** Live countdown: re-renders every second until deadline */
-function useCountdown(scheduleDate: string, shift: import('../../types').Shift) {
+function useCountdown(scheduleDate: string, shift: import('../../types').Shift, lockoutHours?: Record<string, number>) {
   const [now, setNow] = React.useState(() => new Date());
   React.useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const deadline = getSubmitDeadline(scheduleDate, shift);
+  const deadline = getSubmitDeadline(scheduleDate, shift, lockoutHours);
   const diffMs = deadline.getTime() - now.getTime();
   const isLocked = diffMs <= 0;
   const totalSec = Math.max(0, Math.floor(diffMs / 1000));
@@ -172,9 +172,11 @@ interface ScheduleCardProps {
 }
 
 const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit, fullWidth = false }) => {
+  const { settings } = useApp();
+  const lockoutHours = settings?.lockoutHours as Record<string, number> | undefined;
   const isCompleted = s.status === 'Completed';
-  const lockStatus = getLockStatus(s.date, s.shift);
-  const cd = useCountdown(s.date, s.shift);
+  const lockStatus = getLockStatus(s.date, s.shift, lockoutHours);
+  const cd = useCountdown(s.date, s.shift, lockoutHours);
 
   return (
     <div 
