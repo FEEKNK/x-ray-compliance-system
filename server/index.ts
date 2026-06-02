@@ -8,10 +8,14 @@ import { fileURLToPath } from 'url';
 // Load the environment variables from the root directory
 dotenv.config({ path: '../.env' });
 
+console.log('[Startup] Loading database schema...');
+
 import { db } from './db';
 import { schedules, forms, users, config, submissions, alerts, bundles } from './db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { authenticateToken } from './middleware/auth';
+
+console.log('[Startup] Setting up Express app...');
 
 // Import route handlers
 import usersRouter from './routes/users';
@@ -310,10 +314,24 @@ app.use((_req, res) => {
 // ============================================
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('Unhandled error:', err);
+  console.error('[Global Error]', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+try {
+  if (!process.env.DATABASE_URL) {
+    console.error('❌ CRITICAL ERROR: DATABASE_URL environment variable is missing!');
+    process.exit(1);
+  }
+  
+  if (!process.env.JWT_SECRET) {
+    console.warn('⚠️ WARNING: JWT_SECRET environment variable is missing, using fallback.');
+  }
+
+  app.listen(PORT, () => {
+    console.log(`✅ Server is running on port ${PORT}`);
+  });
+} catch (e) {
+  console.error('❌ CRITICAL ERROR during startup:', e);
+  process.exit(1);
+}
