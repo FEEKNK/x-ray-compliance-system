@@ -14,7 +14,7 @@ const StaffHistory: React.FC = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filterDate, setFilterDate] = React.useState('');
   const [selectedSubmission, setSelectedSubmission] = React.useState<Submission | null>(null);
-  const [editingSchedule, setEditingSchedule] = useState<{ schedule: Schedule; form: DynamicForm } | null>(null);
+  const [editingSchedule, setEditingSchedule] = useState<{ schedule: Schedule; form: DynamicForm, submission: Submission } | null>(null);
 
   const mySubmissions = submissions
     .filter(s => s.staffId === currentUser?.id)
@@ -32,7 +32,7 @@ const StaffHistory: React.FC = () => {
     const form = forms.find(f => f.id === sub.formId);
     if (!form) return;
     if (!isSubmitAllowed(schedule.date, schedule.shift)) return; // locked
-    setEditingSchedule({ schedule, form });
+    setEditingSchedule({ schedule, form, submission: sub });
   };
 
   const handleEditSubmit = (data: Submission) => {
@@ -47,6 +47,7 @@ const StaffHistory: React.FC = () => {
         <FormRenderer
           form={editingSchedule.form}
           schedule={editingSchedule.schedule}
+          initialSubmission={editingSchedule.submission}
           onCancel={() => setEditingSchedule(null)}
           onSubmit={handleEditSubmit}
         />

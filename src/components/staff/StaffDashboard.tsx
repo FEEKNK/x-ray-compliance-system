@@ -244,11 +244,12 @@ const TrendingUpIcon = ({ className }: { className?: string }) => (
 interface FormRendererProps {
   form: DynamicForm;
   schedule: Schedule;
+  initialSubmission?: Submission;
   onCancel: () => void;
   onSubmit: (submission: Submission) => void;
 }
 
-export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCancel, onSubmit }) => {
+export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, initialSubmission, onCancel, onSubmit }) => {
   const { language } = useApp();
   const t = translations[language];
   const [existingSubmission, setExistingSubmission] = useState<Submission | null>(null);
@@ -258,6 +259,12 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCa
   const [isLoading, setIsLoading] = useState(true);
 
   React.useEffect(() => {
+    if (initialSubmission) {
+      setExistingSubmission(initialSubmission);
+      setFormData(initialSubmission.data);
+      setIsLoading(false);
+      return;
+    }
     api.submissions.getByScheduleId(schedule.id)
       .then(sub => {
         setExistingSubmission(sub);
@@ -274,7 +281,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, onCa
         setFormData(initialData);
       })
       .finally(() => setIsLoading(false));
-  }, [schedule.id, form.questions]);
+  }, [schedule.id, form.questions, initialSubmission]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

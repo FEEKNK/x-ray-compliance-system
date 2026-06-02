@@ -331,9 +331,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     // Sync with API
-    api.submissions.create(submission).catch(err => {
-      console.error('Failed to create submission:', err);
-    });
+    api.submissions.create(submission)
+      .then(saved => {
+        setSubmissions(prev => prev.map(s => s.id === submission.id ? saved : s));
+      })
+      .catch(err => {
+        console.error('Failed to create submission:', err);
+      });
   }, [users, forms, addAlert]);
 
   const deleteSubmission = useCallback(async (id: string) => {
