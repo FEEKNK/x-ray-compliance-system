@@ -291,6 +291,12 @@ const QualityDashboard: React.FC = () => {
       });
       rows.push(sigRow);
 
+      if (form.description) {
+        rows.push({});
+        rows.push({ 'รายการตรวจเช็ค': 'คำชี้แจง / รายละเอียด:' });
+        rows.push({ 'รายการตรวจเช็ค': form.description });
+      }
+
       const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: true });
       // Set column widths
       ws['!cols'] = [{ wch: 30 }, ...daysArray.map(() => ({ wch: 6 }))];
@@ -428,10 +434,26 @@ const QualityDashboard: React.FC = () => {
 
       // Footer
       const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY || 180;
+      
+      let currentY = finalY + 8;
+      
+      if (form.description) {
+        doc.setFontSize(8);
+        doc.setTextColor(50);
+        doc.text('คำชี้แจง / รายละเอียด:', 10, currentY);
+        currentY += 4;
+        
+        doc.setFontSize(7);
+        doc.setTextColor(80);
+        const lines = doc.splitTextToSize(form.description, pageW - 20);
+        doc.text(lines, 10, currentY);
+        currentY += (lines.length * 4) + 2;
+      }
+
       doc.setFontSize(6);
       doc.setTextColor(150);
-      doc.text(`Generated: ${new Date().toLocaleString('en-GB', { hour12: false })}  |  ${hospitalName}`, 10, finalY + 5);
-      doc.text(`Page 1`, pageW - 15, finalY + 5);
+      doc.text(`Generated: ${new Date().toLocaleString('en-GB', { hour12: false })}  |  ${hospitalName}`, 10, currentY + 5);
+      doc.text(`Page 1`, pageW - 15, currentY + 5);
 
       doc.save(`${form.title}_${selectedMonthStr}.pdf`);
     } catch (err) {
