@@ -48,7 +48,7 @@ app.use('/api/submissions', authenticateToken, submissionsRouter);
 app.use('/api/bundles', authenticateToken, bundlesRouter);
 app.use('/api/alerts', authenticateToken, alertsRouter);
 app.use('/api/config', configRouter);
-app.use('/api/seed', seedRouter);
+app.use('/api/seed', authenticateToken, seedRouter);
 
 // ============================================
 // Existing Endpoints
@@ -62,13 +62,14 @@ app.get('/api/health', (req, res) => {
 // ============================================
 // Reset Data — wipe submissions, schedules, alerts (keep users & forms)
 // ============================================
-app.post('/api/reset-data', async (_req, res) => {
+app.post('/api/reset-data', authenticateToken, async (_req, res) => {
   try {
     // Delete in FK-safe order: submissions before schedules
     await db.delete(submissions);
     await db.delete(schedules);
     await db.delete(alerts);
-    res.json({ success: true, message: 'All submissions, schedules, and alerts have been cleared.' });
+    await db.delete(bundles);
+    res.json({ success: true, message: 'All submissions, schedules, alerts, and bundles have been cleared.' });
   } catch (error) {
     console.error('Error resetting data:', error);
     res.status(500).json({ error: 'Failed to reset data' });
@@ -186,26 +187,23 @@ app.post('/api/import-data', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Invalid backup file format' });
     }
 
-    // Wrap in a single transaction if possible (Drizzle supports SQLite transactions)
-    await db.transaction(async (tx) => {
-      // 1. Delete all existing data in reverse dependency order
-      await tx.delete(alerts);
-      await tx.delete(submissions);
-      await tx.delete(schedules);
-      await tx.delete(bundles);
-      await tx.delete(forms);
-      await tx.delete(users);
-      await tx.delete(config);
+    // 1. Delete all existing data in reverse dependency order
+    await db.delete(alerts);
+    await db.delete(submissions);
+    await db.delete(schedules);
+    await db.delete(bundles);
+    await db.delete(forms);
+    await db.delete(users);
+    await db.delete(config);
 
-      // 2. Insert imported data
-      if (payload.users?.length) await tx.insert(users).values(payload.users);
-      if (payload.forms?.length) await tx.insert(forms).values(payload.forms);
-      if (payload.bundles?.length) await tx.insert(bundles).values(payload.bundles);
-      if (payload.schedules?.length) await tx.insert(schedules).values(payload.schedules);
-      if (payload.submissions?.length) await tx.insert(submissions).values(payload.submissions);
-      if (payload.alerts?.length) await tx.insert(alerts).values(payload.alerts);
-      if (payload.config?.length) await tx.insert(config).values(payload.config);
-    });
+    // 2. Insert imported data
+    if (payload.users?.length) await db.insert(users).values(payload.users);
+    if (payload.forms?.length) await db.insert(forms).values(payload.forms);
+    if (payload.bundles?.length) await db.insert(bundles).values(payload.bundles);
+    if (payload.schedules?.length) await db.insert(schedules).values(payload.schedules);
+    if (payload.submissions?.length) await db.insert(submissions).values(payload.submissions);
+    if (payload.alerts?.length) await db.insert(alerts).values(payload.alerts);
+    if (payload.config?.length) await db.insert(config).values(payload.config);
 
     res.json({ success: true, message: 'Database imported successfully' });
   } catch (error) {

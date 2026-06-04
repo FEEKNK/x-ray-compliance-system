@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
       .limit(limit)
       .offset(offset);
 
-    const [{ count }] = await db.select({ count: db.$count(submissions) }).from(submissions);
+    const totalCount = await db.$count(submissions);
 
     const mapped = allSubmissions.map(s => ({
       id: s.id,
@@ -32,9 +32,9 @@ router.get('/', async (req, res) => {
     
     res.json({
       data: mapped,
-      total: count,
+      total: totalCount,
       page,
-      totalPages: Math.ceil(count / limit)
+      totalPages: Math.ceil(totalCount / limit)
     });
   } catch (error) {
     console.error('Error fetching submissions:', error);

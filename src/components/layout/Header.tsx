@@ -1,15 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../AppContext';
-import { Clock, User as UserIcon } from 'lucide-react';
+import { Clock, User as UserIcon, AlertTriangle } from 'lucide-react';
+
+// Decode JWT payload (no external library needed)
+const getTokenExpiryMs = (): number | null => {
+  try {
+    const token = localStorage.getItem('xray_jwt_token');
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp ? payload.exp * 1000 : null; // convert to ms
+  } catch {
+    return null;
+  }
+};
 
 const Header: React.FC = () => {
   const { currentUser, users, setCurrentUser, language, setLanguage } = useApp();
   const [time, setTime] = useState(new Date());
+  const [minsLeft, setMinsLeft] = useState<number | null>(null);
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
+    const timer = setInterval(() => {
+      const now = new Date();
+      setTime(now);
+
+      // Check token expiry every tick
+      const expiryMs = getTokenExpiryMs();
+      if (expiryMs) {
+        const remaining = Math.floor((expiryMs - now.getTime()) / 60000);
+        if (remaining <= 0) {
+          // Token expired — force logout
+          setCurrentUser(null);
+        } else {
+          setMinsLeft(remaining);
+        }
+      }
+    }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [setCurrentUser]);
 
   const getActiveShift = () => {
     const hour = time.getHours();
@@ -19,9 +47,22 @@ const Header: React.FC = () => {
   };
 
   const currentShift = getActiveShift();
+  const showExpiryWarning = minsLeft !== null && minsLeft <= 30;
 
   return (
     <header className="bg-white border-b border-gray-100 shrink-0 shadow-sm z-30 sticky top-0">
+      {/* Token expiry warning banner */}
+      {showExpiryWarning && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex items-center justify-center space-x-2">
+          <AlertTriangle size={13} className="text-amber-500 shrink-0" />
+          <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest">
+            {language === 'TH'
+              ? `⚠️ Session จะหมดอายุในอีก ${minsLeft} นาที — กรุณาบันทึกงานแล้ว Login ใหม่`
+              : `⚠️ Session expires in ${minsLeft} min — Please save your work and log in again`}
+          </p>
+        </div>
+      )}
+
       {/* Main header row */}
       <div className="h-14 md:h-20 flex items-center justify-between px-4 md:px-8">
         <div className="flex items-center space-x-3">
@@ -109,4 +150,4 @@ const Header: React.FC = () => {
   );
 };
 
-export default Header;
+export default Header;

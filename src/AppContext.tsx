@@ -314,28 +314,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
 
-    // Environmental Alerts (Temp: 18-24, Humidity: 45-65)
-    const temp = parseFloat(String(submission.data['q3']));
-    const humidity = parseFloat(String(submission.data['q5'] || submission.data['q6']));
-    
-    let envAlert = '';
-    if (!isNaN(temp) && (temp < 18 || temp > 24)) {
-      envAlert += `อุณหภูมิ (${temp}°C) ไม่อยู่ในเกณฑ์ 18-24°C. `;
-    }
-    if (!isNaN(humidity) && (humidity < 45 || humidity > 65)) {
-      envAlert += `ความชื้น (${humidity}%RH) ไม่อยู่ในเกณฑ์ 45-65%RH. `;
-    }
-
-    if (envAlert) {
-      const form = forms.find(f => f.id === submission.formId);
-      addAlert({
-        type: 'Critical Failure',
-        message: `⚠️ ALERT [${form?.title}]: ${envAlert} กรุณาปรับอุณหภูมิ/ความชื้น และตรวจเช็คใหม่ใน 1 ชม. หากยังไม่ปกติให้แจ้งช่างทันที`,
-        staffId: submission.staffId,
-        formId: submission.formId
-      });
-    }
-
     // Sync with API
     api.submissions.create(submission)
       .then(saved => {
@@ -445,12 +423,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // ============================================
   // Utility Functions
   // ============================================
-  const resetDatabase = useCallback(() => {
+  const resetDatabase = useCallback(async () => {
+    try {
+      await api.seed();
+    } catch (e) {
+      console.error(e);
+    }
     localStorage.clear();
-    // Re-seed from db.json and reload
-    api.seed()
-      .then(() => window.location.reload())
-      .catch(() => window.location.reload());
+    window.location.reload();
   }, []);
 
   const resetData = useCallback(async () => {
@@ -459,13 +439,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSubmissions([]);
     setSchedules([]);
     setAlerts([]);
+    setBundles([]);
   }, []);
 
-  const clearLogs = useCallback(() => {
+  const clearLogs = useCallback(async () => {
+    // Sync with server — actually delete from DB
+    await api.resetData();
     setSubmissions([]);
-    setSchedules(prev => prev.map(s => ({ ...s, status: 'Pending' as const })));
+    setSchedules([]);
     setAlerts([]);
-    // Note: This is a client-side clear; a full server-side clear would need additional endpoints
   }, []);
 
   const exportData = useCallback(async () => {

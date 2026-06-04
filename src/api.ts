@@ -199,7 +199,7 @@ export const api = {
 
   // ─── Seed ─────────────────────────────────────────
   seed: (): Promise<{ success: boolean }> =>
-    fetch(`${BASE}/seed`, { method: 'POST' }).then(r => handleResponse(r)),
+    fetch(`${BASE}/seed`, { method: 'POST', headers: jsonHeaders() }).then(r => handleResponse(r)),
 
   // ─── Export Data ──────────────────────────────────
   exportData: (): Promise<unknown> =>
@@ -207,7 +207,7 @@ export const api = {
 
   // ─── Reset Data ───────────────────────────────────
   resetData: (): Promise<{ success: boolean; message: string }> =>
-    fetch(`${BASE}/reset-data`, { method: 'POST' }).then(r => handleResponse(r)),
+    fetch(`${BASE}/reset-data`, { method: 'POST', headers: jsonHeaders() }).then(r => handleResponse(r)),
 
   // ─── Import Data ──────────────────────────────────
   importData: (payload: unknown): Promise<{ success: boolean; message: string }> =>

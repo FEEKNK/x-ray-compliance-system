@@ -6,7 +6,7 @@ import type { Shift, SystemSettings } from '../../types';
 import { api } from '../../api';
 
 const Settings: React.FC = () => {
-  const { settings, updateSettings, resetDatabase, clearLogs, language, resetData, exportData } = useApp();
+  const { settings, updateSettings, resetDatabase, language, resetData, exportData } = useApp();
   const t = translations[language];
 
   const [localSettings, setLocalSettings] = useState<SystemSettings>(settings);
@@ -339,22 +339,21 @@ const Settings: React.FC = () => {
         </div>
 
         <div className="md:col-span-1 space-y-6">
-           <div className="bg-red-50 rounded-3xl p-8 border-2 border-red-100 shadow-sm space-y-6">
-              <div className="flex items-center space-x-3 text-red-600">
-                 <ShieldAlert size={24} />
-                 <h3 className="font-black text-xs uppercase tracking-widest">{t.databaseMaintenance}</h3>
+           {/* Backup & Restore Section */}
+           <div className="bg-blue-50/50 rounded-3xl p-6 border-2 border-blue-100 shadow-sm space-y-4">
+              <div className="flex items-center space-x-3 text-[#00468B]">
+                 <DatabaseBackup size={20} />
+                 <h3 className="font-black text-xs uppercase tracking-widest">Backup & Restore</h3>
               </div>
-
-              <p className="text-xs text-red-800/60 font-medium leading-relaxed">
-                Warning: These actions are destructive and cannot be undone. 
+              <p className="text-xs text-blue-800/60 font-medium leading-relaxed">
+                Save or restore your system data.
               </p>
-
               <div className="space-y-3 pt-2">
                  <button 
                   type="button"
                   onClick={handleExport}
                   disabled={isExporting || isImporting}
-                  className="w-full bg-blue-50 text-[#00468B] py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center space-x-2"
+                  className="w-full bg-white text-[#00468B] py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest border border-blue-200 hover:bg-blue-50 transition-all flex items-center justify-center space-x-2 shadow-sm"
                  >
                     {isExporting ? <Loader2 size={14} className="animate-spin" /> : <DatabaseBackup size={14} />}
                     <span>Export Full Backup</span>
@@ -372,28 +371,28 @@ const Settings: React.FC = () => {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isExporting || isImporting}
-                    className="w-full bg-purple-50 text-purple-700 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-purple-100 transition-all flex items-center justify-center space-x-2"
+                    className="w-full bg-[#00468B] text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-[#003569] transition-all flex items-center justify-center space-x-2 shadow-sm"
                    >
                       {isImporting ? <Loader2 size={14} className="animate-spin" /> : <DatabaseBackup size={14} className="rotate-180" />}
                       <span>Import Full Backup</span>
                    </button>
                  </div>
+              </div>
+           </div>
 
-                 <button 
-                  onClick={() => {
-                    if (confirm('Permanently clear all submission records? Existing schedules will be reset to Pending.')) {
-                      clearLogs();
-                    }
-                  }}
-                  className="w-full bg-white text-red-600 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest border border-red-200 hover:bg-red-100 transition-all flex items-center justify-center space-x-2"
-                 >
-                    <Trash2 size={14} />
-                    <span>{t.clearLogs}</span>
-                 </button>
-
+           {/* Danger Zone Section */}
+           <div className="bg-red-50 rounded-3xl p-6 border-2 border-red-100 shadow-sm space-y-4">
+              <div className="flex items-center space-x-3 text-red-600">
+                 <ShieldAlert size={20} />
+                 <h3 className="font-black text-xs uppercase tracking-widest">Danger Zone</h3>
+              </div>
+              <p className="text-xs text-red-800/60 font-medium leading-relaxed">
+                Warning: Destructive actions. Cannot be undone. 
+              </p>
+              <div className="space-y-3 pt-2">
                  <button
                   onClick={() => setShowResetConfirm(true)}
-                  className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow hover:bg-orange-600 transition-all flex items-center justify-center space-x-2"
+                  className="w-full bg-white text-orange-600 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest border border-orange-200 hover:bg-orange-50 transition-all flex items-center justify-center space-x-2 shadow-sm"
                  >
                     <Trash2 size={14} />
                     <span>ล้างข้อมูลทั้งหมด</span>
@@ -405,7 +404,7 @@ const Settings: React.FC = () => {
                       resetDatabase();
                     }
                   }}
-                  className="w-full bg-red-600 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg hover:bg-red-700 transition-all flex items-center justify-center space-x-2"
+                  className="w-full bg-red-600 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm hover:bg-red-700 transition-all flex items-center justify-center space-x-2"
                  >
                     <RefreshCw size={14} />
                     <span>{t.resetDatabase}</span>
@@ -431,6 +430,7 @@ const Settings: React.FC = () => {
                   <li className="flex items-center gap-2 text-red-700 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>ประวัติการตรวจเช็คทั้งหมด (Submissions)</li>
                   <li className="flex items-center gap-2 text-red-700 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>ตารางงาน / กำหนดการทั้งหมด (Schedules)</li>
                   <li className="flex items-center gap-2 text-red-700 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>การแจ้งเตือนทั้งหมด (Alerts)</li>
+                  <li className="flex items-center gap-2 text-red-700 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>การจัดกลุ่มแบบฟอร์ม (Bundles)</li>
                 </ul>
                 <div className="mt-3 p-3 bg-green-50 rounded-xl text-xs text-green-700 font-semibold">
                   ✅ ข้อมูลพนักงานและแบบฟอร์มจะยังคงอยู่
