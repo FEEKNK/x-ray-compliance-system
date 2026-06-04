@@ -262,6 +262,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, init
 
   React.useEffect(() => {
     if (initialSubmission) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExistingSubmission(initialSubmission);
       setFormData(initialSubmission.data);
       setIsLoading(false);

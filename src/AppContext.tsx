@@ -60,10 +60,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         let schedulesData: Schedule[] = [];
         let bundlesData: ProtocolBundle[] = [];
         let alertsData: Alert[] = [];
-        let configData: { settings: SystemSettings; announcements: string[] } | undefined;
 
         // Config is needed for LandingPage (hospitalName)
-        configData = await api.config.get();
+        const configData = await api.config.get();
 
         if (hasToken) {
           [

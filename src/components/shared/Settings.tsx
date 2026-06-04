@@ -3,6 +3,7 @@ import { useApp } from '../../AppContext';
 import { Building2, Mail, Save, RefreshCw, Trash2, ShieldAlert, Clock, Loader2, CheckCircle, DatabaseBackup, ClockAlert, Plus, X, Layers, Lock } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { Shift, SystemSettings } from '../../types';
+import { api } from '../../api';
 
 const Settings: React.FC = () => {
   const { settings, updateSettings, resetDatabase, clearLogs, language, resetData, exportData } = useApp();
@@ -98,7 +99,6 @@ const Settings: React.FC = () => {
       const text = await file.text();
       const payload = JSON.parse(text);
       
-      const { api } = await import('../../api');
       await api.importData(payload);
       
       setResetSuccess(true);

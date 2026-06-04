@@ -32,11 +32,26 @@
 
 ---
 
-## 3. Next Steps (แผนการพัฒนาในอนาคต)
+## 3. Technology Stack (เทคโนโลยีที่ใช้)
+- **Frontend:** React 19, Vite, Tailwind CSS v4, Lucide React, Recharts
+- **Backend:** Node.js, Express 5, TypeScript
+- **Database:** PostgreSQL (Neon Database) พร้อม Drizzle ORM
+- **Security:** JWT Authentication, Bcrypt Password & PIN Hashing
+
+---
+
+## 4. Database & Deployment (การติดตั้งและฐานข้อมูล)
+ระบบนี้ถูกออกแบบให้เป็น **Full-Stack Application** ที่รองรับการนำไปติดตั้งใช้งานจริงในโรงพยาบาล (On-Premise / Intranet):
+- **Database Flexibility:** ผ่านการใช้ Drizzle ORM ทำให้ระบบไม่ได้ยึดติดกับ Database ใดเป็นพิเศษ สามารถสลับไปใช้ Database ที่โรงพยาบาลมีอยู่แล้วได้ เช่น **PostgreSQL (แนะนำ), MySQL, หรือ SQL Server** โดยการแก้ค่า Configuration เพียงเล็กน้อย
+- **Security First:** สามารถติดตั้งและรันบนระบบปิด (Closed Network) ของโรงพยาบาลเพื่อความปลอดภัยของข้อมูลบุคลากรและมาตรฐานสาธารณสุข
+
+---
+
+## 5. Next Steps (แผนการพัฒนาในอนาคต)
 
 1.  **QR Code Integration:** ติดตั้ง QR Code ประจำตัวเครื่องแพทย์ เพื่อให้เจ้าหน้าที่ใช้มือถือสแกนแล้วเปิดแบบฟอร์มได้ทันทีโดยไม่ต้องค้นหา
-2.  **Advanced Analytics:** ระบบออกรายงานสรุปรายเดือนแบบอัตโนมัติ (Monthly Compliance Report) เพื่อใช้ในการตรวจสอบมาตรฐานโรงพยาบาล
-3.  **Cloud Synchronization:** พัฒนาระบบ Backend (เช่น Supabase หรือ Firebase) เพื่อให้ข้อมูลซิงค์กันแบบ Real-time ระหว่างอุปกรณ์หลายเครื่อง
+2.  **Advanced Analytics:** ระบบออกรายงานสรุปรายเดือนแบบอัตโนมัติ (Monthly Compliance Report) แบบละเอียด เพื่อใช้ในการออดิตหรือตรวจสอบมาตรฐานโรงพยาบาล (JCI, HA)
+3.  **Integration (HIS):** พัฒนา API สำหรับเชื่อมต่อและดึงข้อมูลพื้นฐานจากระบบสารสนเทศหลักของโรงพยาบาล (Hospital Information System)
 
 ---
 **Developed by Gemini CLI Agent**

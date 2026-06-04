@@ -1,7 +1,11 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 
-export const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+interface AuthenticatedRequest extends express.Request {
+  user?: unknown;
+}
+
+export const authenticateToken = (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   
@@ -15,7 +19,7 @@ export const authenticateToken = (req: express.Request, res: express.Response, n
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
-    (req as any).user = user;
+    req.user = user;
     next();
   });
 };

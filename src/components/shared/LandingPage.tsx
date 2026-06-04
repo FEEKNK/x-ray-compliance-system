@@ -46,7 +46,7 @@ const PinPad: React.FC<PinPadProps> = ({ selectedUser, onSuccess, onBack }) => {
       const { token, user } = await api.auth.login(selectedUser.id, pinToCheck);
       localStorage.setItem('xray_jwt_token', token);
       onSuccess(user);
-    } catch (err: any) {
+    } catch {
       setShake(true);
       setError('รหัสไม่ถูกต้อง หรือมีข้อผิดพลาด');
       setTimeout(() => {
