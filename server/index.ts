@@ -219,7 +219,10 @@ app.post('/api/import-data', authenticateToken, async (req, res) => {
 // ============================================
 setInterval(async () => {
   try {
-    const now = new Date();
+    // Ensure we check SLA against Thailand Timezone (UTC+7)
+    const thTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
+    const now = new Date(thTimeString);
+    
     const currentHour = now.getHours();
     const currentDecimalHour = currentHour + (now.getMinutes() / 60);
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -336,6 +339,13 @@ setInterval(async () => {
   }
 }, 30 * 60 * 1000); // Check every 30 minutes
 
+
+// ============================================
+// Fallback for unknown API routes (404)
+// ============================================
+app.all('/api/{*path}', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
+});
 
 // ============================================
 // Serve Frontend in Production
