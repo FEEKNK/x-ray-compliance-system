@@ -38,7 +38,8 @@ const StaffHistory: React.FC = () => {
     const form = forms.find(f => f.id === sub.formId);
     if (!form) return;
     const lockoutHours = settings?.lockoutHours as Record<string, number> | undefined;
-    if (!isSubmitAllowed(schedule.date, schedule.shift, lockoutHours)) return; // locked
+    const shiftsConfig = settings?.shifts as Record<string, string> | undefined;
+    if (!isSubmitAllowed(schedule.date, schedule.shift, lockoutHours, shiftsConfig)) return; // locked
     setEditingSchedule({ schedule, form, submission: sub });
   };
 
@@ -98,7 +99,8 @@ const StaffHistory: React.FC = () => {
           const hasAlert = Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert');
           const schedule = schedules.find(s => s.id === sub.scheduleId);
           const lockoutHours = settings?.lockoutHours as Record<string, number> | undefined;
-          const lockStatus = schedule ? getLockStatus(schedule.date, schedule.shift, lockoutHours) : { isLocked: true, label: '' };
+          const shiftsConfig = settings?.shifts as Record<string, string> | undefined;
+          const lockStatus = schedule ? getLockStatus(schedule.date, schedule.shift, lockoutHours, shiftsConfig) : { isLocked: true, label: '' };
           const canEdit = !lockStatus.isLocked;
 
           return (

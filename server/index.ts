@@ -63,6 +63,96 @@ app.get('/api/health', (req, res) => {
 });
 
 // ============================================
+// Test SLA Alert Now — force-send alert for all pending schedules today
+// ============================================
+app.post('/api/test-sla-now', authenticateToken, async (_req, res) => {
+  try {
+    const thTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
+    const now = new Date(thTimeString);
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    // Fetch config for emails
+    const sysConfig = await db.select().from(config).limit(1);
+    const settings = sysConfig[0]?.settings as Record<string, unknown> | undefined;
+    const supervisorEmail = (settings?.supervisorEmail as string | undefined) || process.env.SUPERVISOR_EMAIL;
+
+    // Get ALL pending schedules today (any shift, ignore slaAlertSent)
+    const pendingSchedules = await db.select()
+      .from(schedules)
+      .where(
+        and(
+          eq(schedules.date, todayStr),
+          eq(schedules.status, 'Pending')
+        )
+      );
+
+    if (pendingSchedules.length === 0) {
+      return res.json({ success: false, message: `ไม่มีตารางงาน Pending วันนี้ (${todayStr}) เลยครับ` });
+    }
+
+    // Group by staffId
+    const staffGroup: Record<string, { staffId: string, shift: string, formIds: string[], scheduleIds: string[] }> = {};
+    for (const s of pendingSchedules) {
+      if (!staffGroup[s.staffId]) staffGroup[s.staffId] = { staffId: s.staffId, shift: s.shift, formIds: [], scheduleIds: [] };
+      if (s.formId) staffGroup[s.staffId].formIds.push(s.formId);
+      staffGroup[s.staffId].scheduleIds.push(s.id);
+    }
+
+    const transporter = getTransporter();
+    const results: string[] = [];
+
+    for (const group of Object.values(staffGroup)) {
+      const staffRes = await db.select().from(users).where(eq(users.id, group.staffId)).limit(1);
+      const staff = staffRes[0];
+      if (!staff) continue;
+
+      const formTitles = await Promise.all(group.formIds.map(async fId => {
+        const fRes = await db.select().from(forms).where(eq(forms.id, fId)).limit(1);
+        return fRes[0]?.title || 'Unknown Form';
+      }));
+
+      const shiftTh = group.shift === 'Morning' ? 'เช้า' : group.shift === 'Afternoon' ? 'บ่าย' : 'ดึก';
+      const toList = [staff.email, supervisorEmail].filter(Boolean).join(',');
+      const listHtml = formTitles.length > 0
+        ? formTitles.map(t => `<li style="padding:5px 0;">${t}</li>`).join('')
+        : '<li style="padding:5px 0;">(ไม่มีแบบฟอร์มระบุ)</li>';
+
+      console.log(`[Test SLA] 👤 Staff: ${staff.name} | email in DB: "${staff.email}" | Supervisor: "${supervisorEmail}"`);
+      console.log(`[Test SLA] 📤 Final toList: "${toList}"`);
+
+      await transporter.sendMail({
+        from: `"Imaging Alert System (TEST)" <${process.env.GMAIL_USER}>`,
+        to: toList,
+        subject: `🧪 [ทดสอบ] แจ้งเตือนคิวงานคงค้าง เวร${shiftTh} — ${staff.name}`,
+        html: `
+          <div style="font-family:sans-serif;color:#333;border:2px dashed #f0ad4e;padding:16px;border-radius:8px;">
+            <p style="color:#f0ad4e;font-weight:bold;margin:0 0 8px;">🧪 นี่คืออีเมลทดสอบระบบ (Test Mode)</p>
+            <h2 style="color:#d9534f;">⚠️ แจ้งเตือนรายการตรวจเช็คคงค้าง</h2>
+            <p>เรียน คุณ ${staff.name}</p>
+            <p>ระบบตรวจพบว่าคุณมีรายการตรวจเช็คที่ <strong>ยังไม่ได้ดำเนินการ</strong> ของเวร${shiftTh} จำนวน ${formTitles.length || '?'} รายการ ดังนี้:</p>
+            <div style="background:#f9f9f9;padding:15px;border-left:4px solid #d9534f;margin:15px 0;">
+              <ul style="margin:0;padding-left:20px;">${listHtml}</ul>
+            </div>
+            <p>กรุณาเข้าสู่ระบบเพื่อดำเนินการตรวจสอบโดยด่วน</p>
+            <hr style="border:0;border-top:1px solid #eee;margin:20px 0;"/>
+            <small style="color:#999;">อีเมลฉบับนี้ถูกส่งจากปุ่ม "ทดสอบส่งแจ้งเตือน" ใน Imaging Compliance System</small>
+          </div>
+        `,
+      });
+
+      results.push(`✅ ส่งถึง ${staff.name} (${toList})`);
+      console.log(`[Test SLA] ✅ Sent to ${staff.name} — ${toList}`);
+    }
+
+    res.json({ success: true, sent: results, total: results.length });
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    console.error('[Test SLA] ❌ Error:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
 // Reset Data — wipe submissions, schedules, alerts (keep users & forms)
 // ============================================
 app.post('/api/reset-data', authenticateToken, async (_req, res) => {
@@ -116,7 +206,18 @@ app.post('/api/test-email', async (req, res) => {
 app.post('/api/send-reminder-email', async (req, res) => {
   try {
     const { staffEmail, staffName, supervisorEmail, formTitle, shift } = req.body;
-    
+
+    // Read SLA hours dynamically from DB config
+    const sysConfig = await db.select().from(config).limit(1);
+    const cfgSettings = sysConfig[0]?.settings as Record<string, unknown> | undefined;
+    const slaHoursCfg = (cfgSettings?.slaHours as { Morning?: number, Afternoon?: number, Night?: number }) || {};
+    const slaLimit = shift === 'Morning'
+      ? (slaHoursCfg.Morning ?? 3)
+      : shift === 'Afternoon'
+        ? (slaHoursCfg.Afternoon ?? 2)
+        : (slaHoursCfg.Night ?? 2);
+    const slaText = slaLimit === 1 ? '1 ชั่วโมง' : `${slaLimit} ชั่วโมง`;
+
     const shiftTh = shift === 'Morning' ? 'เช้า' : shift === 'Afternoon' ? 'บ่าย' : 'ดึก';
     const subject = `⚠️ แจ้งเตือน: กรุณาตรวจเช็ค ${formTitle} (เวร${shiftTh})`;
     
@@ -132,7 +233,7 @@ app.post('/api/send-reminder-email', async (req, res) => {
         <div style="font-family: sans-serif; color: #333;">
           <h2 style="color: #d9534f;">⚠️ แจ้งเตือนคิวงานคงค้าง</h2>
           <p>เรียน คุณ ${staffName || 'พนักงาน'}</p>
-          <p>ระบบตรวจพบว่าคุณยังมีรายการตรวจเช็คที่ยังไม่ได้ดำเนินการผ่านไปแล้ว 1 ชั่วโมงของเวร${shiftTh} ดังนี้:</p>
+          <p>ระบบตรวจพบว่าคุณยังมีรายการตรวจเช็คที่ยังไม่ได้ดำเนินการผ่านไปแล้ว ${slaText} ของเวร${shiftTh} ดังนี้:</p>
           <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #d9534f; margin: 15px 0;">
             <strong>รายการ:</strong> ${formTitle}
           </div>
@@ -216,9 +317,9 @@ app.post('/api/import-data', authenticateToken, async (req, res) => {
 });
 
 // ============================================
-// SLA Alert Background Job
+// SLA Alert Background Job Logic
 // ============================================
-setInterval(async () => {
+const runSLAJob = async () => {
   try {
     // Ensure we check SLA against Thailand Timezone (UTC+7)
     const thTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
@@ -228,31 +329,72 @@ setInterval(async () => {
     const currentDecimalHour = currentHour + (now.getMinutes() / 60);
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     
+    console.log(`[SLA Job] ⏰ Running at ${now.toLocaleTimeString('th-TH')} (${currentDecimalHour.toFixed(2)} decimal) | Date: ${todayStr}`);
+    
     // Fetch config first to get SLA hours and emails
     const sysConfig = await db.select().from(config).limit(1);
     const settings = sysConfig[0]?.settings as Record<string, unknown> | undefined;
     const supervisorEmail = (settings?.supervisorEmail as string | undefined) || process.env.SUPERVISOR_EMAIL;
     const escalationEmail = (settings?.escalationEmail as string | undefined);
     const slaHours = (settings?.slaHours as { Morning: number, Afternoon: number, Night: number }) || { Morning: 1.5, Afternoon: 1.5, Night: 1.5 };
-    
+    console.log(`[SLA Job] 📧 Supervisor: ${supervisorEmail} | SLA: Morning=${slaHours.Morning}h, Afternoon=${slaHours.Afternoon}h, Night=${slaHours.Night}h`);
+
+    // Helper: parse start hour from shift string like "08:00 - 16:00"
+    const parseShiftStartHour = (shiftStr: string | undefined, fallback: number): number => {
+      if (!shiftStr) return fallback;
+      const match = shiftStr.match(/^(\d{1,2}):(\d{2})/);
+      if (!match) return fallback;
+      return parseInt(match[1], 10) + parseInt(match[2], 10) / 60;
+    };
+
+    // Read shift start times from DB config (falls back to 8, 16, 0 if not set)
+    const shiftsConfig = settings?.shifts as { Morning?: string, Afternoon?: string, Night?: string } | undefined;
+    const mStart = parseShiftStartHour(shiftsConfig?.Morning, 8);
+    const aStart = parseShiftStartHour(shiftsConfig?.Afternoon, 16);
+    const nStart = parseShiftStartHour(shiftsConfig?.Night, 0);
+
+    // End of each shift = start of the next shift
+    const mEnd = aStart;
+    const aEnd = 24; // Midnight boundary
+    const nEnd = mStart;
+
+    const mLimit = mStart + slaHours.Morning;
+    const aLimit = aStart + slaHours.Afternoon;
+    const nLimit = nStart + slaHours.Night;
+
     let targetShift = '';
     let isEscalated = false;
-    
-    // Assuming standard shifts start at 8, 16, 0.
-    const mLimit = 8 + slaHours.Morning;
-    const aLimit = 16 + slaHours.Afternoon;
-    const nLimit = 0 + slaHours.Night;
 
-    if (currentDecimalHour >= mLimit && currentDecimalHour < 16) {
+    if (currentDecimalHour >= mLimit && currentDecimalHour < mEnd) {
       targetShift = 'Morning';
-      if (currentDecimalHour >= mLimit + 2) isEscalated = true; // Escalate if 2 hours past SLA
-    } else if (currentDecimalHour >= aLimit && currentDecimalHour < 24) {
+      if (currentDecimalHour >= mLimit + 2) isEscalated = true;
+    } else if (currentDecimalHour >= aLimit && currentDecimalHour < aEnd) {
       targetShift = 'Afternoon';
       if (currentDecimalHour >= aLimit + 2) isEscalated = true;
-    } else if (currentDecimalHour >= nLimit && currentDecimalHour < 8) {
-      targetShift = 'Night';
-      if (currentDecimalHour >= nLimit + 2) isEscalated = true;
+    } else if (nStart === 0) {
+      // Night shift is purely post-midnight (00:00 → mStart)
+      // SLA alert fires only within [nLimit, nEnd)
+      if (currentDecimalHour >= nLimit && currentDecimalHour < nEnd) {
+        targetShift = 'Night';
+        if (currentDecimalHour >= nLimit + 2) isEscalated = true;
+      }
+    } else {
+      // Night shift crosses midnight (nStart→24, then 0→nEnd)
+      const inNightWindow = (currentDecimalHour >= nStart && currentDecimalHour < 24) ||
+                            (currentDecimalHour >= 0 && currentDecimalHour < nEnd);
+      if (inNightWindow) {
+        const hoursPastLimit = currentDecimalHour >= nLimit
+          ? currentDecimalHour - nLimit
+          : (24 - nLimit) + currentDecimalHour;
+        if (hoursPastLimit >= 0) {
+          targetShift = 'Night';
+          if (hoursPastLimit >= 2) isEscalated = true;
+        }
+      }
     }
+
+    console.log(`[SLA Job] 🔍 Shift windows: Morning=${mStart.toFixed(2)}-${mEnd.toFixed(2)} (SLA@${mLimit.toFixed(2)}), Afternoon=${aStart.toFixed(2)}-${aEnd} (SLA@${aLimit.toFixed(2)}), Night=${nStart.toFixed(2)} (SLA@${nLimit.toFixed(2)})`);
+    console.log(`[SLA Job] 🎯 Detected shift: ${targetShift || 'NONE (not in alert window)'}${isEscalated ? ' [ESCALATED]' : ''}`);
 
     if (!targetShift) return; // Not time to alert yet
 
@@ -268,14 +410,14 @@ setInterval(async () => {
         )
       );
 
+    console.log(`[SLA Job] 📋 Pending schedules for ${targetShift}: ${pendingSchedules.length} found`);
     if (pendingSchedules.length === 0) return;
 
-    // Group by staffId
+    // Group by staffId (include schedules without formId so they still trigger alerts)
     const staffGroup: Record<string, { staffId: string, formIds: string[], scheduleIds: string[] }> = {};
     for (const s of pendingSchedules) {
-      if (!s.formId) continue;
       if (!staffGroup[s.staffId]) staffGroup[s.staffId] = { staffId: s.staffId, formIds: [], scheduleIds: [] };
-      staffGroup[s.staffId].formIds.push(s.formId);
+      if (s.formId) staffGroup[s.staffId].formIds.push(s.formId);
       staffGroup[s.staffId].scheduleIds.push(s.id);
     }
 
@@ -303,6 +445,8 @@ setInterval(async () => {
 
       const listHtml = formTitles.map(t => `<li style="padding: 5px 0;">${t}</li>`).join('');
 
+      console.log(`[SLA Job] 📤 Sending to: ${toList} | Forms: ${formTitles.join(', ') || '(no form)'}`);
+
       await transporter.sendMail({
         from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
         to: toList,
@@ -328,17 +472,27 @@ setInterval(async () => {
       await db.update(schedules)
         .set({ slaAlertSent: true })
         .where(inArray(schedules.id, group.scheduleIds));
+      console.log(`[SLA Job] ✅ Email sent & slaAlertSent=true for schedules: ${group.scheduleIds.join(', ')}`);
     }
 
   } catch (err: unknown) {
-    const error = err as Error & { cause?: { message?: string } };
-    if (error?.cause?.message?.includes('fetch failed') || error?.message?.includes('fetch failed')) {
-      console.warn('[SLA Background Job] Network fetch failed (likely transient). Will retry next cycle.');
-    } else {
-      console.error('[SLA Background Job] Error:', error?.message || error);
-    }
+    console.error('[SLA Job] ❌ Error in background job:', err instanceof Error ? err.message : String(err));
   }
-}, 30 * 60 * 1000); // Check every 30 minutes
+};
+
+// Run the job every 1 minute
+setInterval(runSLAJob, 1 * 60 * 1000);
+
+// Endpoint to trigger SLA job immediately (called by frontend when settings are saved)
+app.post('/api/trigger-sla', authenticateToken, async (req, res) => {
+  try {
+    console.log('[API] Manual SLA trigger requested');
+    await runSLAJob();
+    res.json({ success: true, message: 'SLA job triggered immediately' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: String(error) });
+  }
+});
 
 
 // ============================================

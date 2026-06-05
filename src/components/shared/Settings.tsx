@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../AppContext';
-import { Building2, Mail, Save, RefreshCw, Trash2, ShieldAlert, Clock, Loader2, CheckCircle, DatabaseBackup, ClockAlert, Plus, X, Layers, Lock } from 'lucide-react';
+import { Building2, Mail, Save, RefreshCw, Trash2, ShieldAlert, Clock, Loader2, CheckCircle, DatabaseBackup, ClockAlert, Plus, X, Layers, Lock, BellRing } from 'lucide-react';
 import { useUpdateSettings } from '../../hooks/queries';
 import { translations } from '../../i18n';
 import type { Shift, SystemSettings } from '../../types';
@@ -19,6 +19,8 @@ const Settings: React.FC = () => {
   const [newDept, setNewDept] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isSendingTestSLA, setIsSendingTestSLA] = useState(false);
+  const [testSLAResult, setTestSLAResult] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync localSettings whenever global settings finish loading from the server
@@ -32,10 +34,25 @@ const Settings: React.FC = () => {
     return () => { ignore = true; };
   }, [settings]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings(localSettings);
-    alert('System settings updated successfully.');
+    try {
+      await updateSettings(localSettings);
+      
+      // Trigger SLA check immediately in the background without waiting 1 minute
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch('/api/trigger-sla', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).catch(err => console.error('Failed to trigger SLA check immediately', err));
+      }
+
+      alert('System settings updated successfully. SLA limits applied and checked immediately.');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update system settings.');
+    }
   };
 
   const handleTestEmail = async () => {
@@ -380,6 +397,47 @@ const Settings: React.FC = () => {
                    </button>
                  </div>
               </div>
+           </div>
+
+           {/* Test SLA Alert Section */}
+           <div className="bg-amber-50 rounded-3xl p-6 border-2 border-amber-200 shadow-sm space-y-4">
+              <div className="flex items-center space-x-3 text-amber-700">
+                 <BellRing size={20} />
+                 <h3 className="font-black text-xs uppercase tracking-widest">ทดสอบแจ้งเตือน SLA</h3>
+              </div>
+              <p className="text-xs text-amber-800/70 font-medium leading-relaxed">
+                ส่งอีเมลแจ้งเตือนทันทีสำหรับตารางงานที่ยังค้างอยู่วันนี้ โดยไม่ต้องรอเวลา SLA
+              </p>
+              {testSLAResult && (
+                <div className="text-xs font-semibold text-amber-900 bg-amber-100 rounded-xl p-3 whitespace-pre-line">
+                  {testSLAResult}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsSendingTestSLA(true);
+                  setTestSLAResult(null);
+                  try {
+                    const res = await fetch('/api/test-sla-now', { method: 'POST', credentials: 'include' });
+                    const data = await res.json();
+                    if (data.success) {
+                      setTestSLAResult(`✅ ส่งสำเร็จ ${data.total} คน:\n${data.sent.join('\n')}`);
+                    } else {
+                      setTestSLAResult(`⚠️ ${data.message || data.error}`);
+                    }
+                  } catch (e) {
+                    setTestSLAResult('❌ เชื่อมต่อ server ไม่ได้');
+                  } finally {
+                    setIsSendingTestSLA(false);
+                  }
+                }}
+                disabled={isSendingTestSLA}
+                className="w-full bg-amber-500 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-amber-600 transition-all flex items-center justify-center space-x-2 shadow-sm disabled:opacity-60"
+              >
+                {isSendingTestSLA ? <Loader2 size={14} className="animate-spin" /> : <BellRing size={14} />}
+                <span>ส่งแจ้งเตือนทดสอบตอนนี้</span>
+              </button>
            </div>
 
            {/* Danger Zone Section */}

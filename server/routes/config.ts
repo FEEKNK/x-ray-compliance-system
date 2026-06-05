@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS = {
   escalationEmail: "director@hospital.com",
   departments: ["IMAGING", "MRI"],
   slaHours: { Morning: 3, Afternoon: 2, Night: 2 },
+  lockoutHours: { Morning: 3, Afternoon: 2, Night: 2 },
   shifts: {
     Morning: "08:00 - 16:00",
     Afternoon: "16:00 - 00:00",
@@ -38,8 +39,31 @@ async function ensureConfig() {
     const current = (existing[0].settings || {}) as Record<string, unknown>;
     let needsPatch = false;
     const patched = { ...DEFAULT_SETTINGS, ...current };
-    if (!current.slaHours) { patched.slaHours = DEFAULT_SETTINGS.slaHours; needsPatch = true; }
-    if (!current.shifts) { patched.shifts = DEFAULT_SETTINGS.shifts; needsPatch = true; }
+
+    // Deep-patch slaHours: fill in any missing individual shift keys
+    const currentSlaHours = (current.slaHours || {}) as Record<string, unknown>;
+    const patchedSlaHours = { ...DEFAULT_SETTINGS.slaHours, ...currentSlaHours };
+    if (JSON.stringify(patchedSlaHours) !== JSON.stringify(currentSlaHours)) {
+      patched.slaHours = patchedSlaHours;
+      needsPatch = true;
+    }
+
+    // Deep-patch shifts: fill in any missing individual shift keys (e.g. Night was missing)
+    const currentShifts = (current.shifts || {}) as Record<string, unknown>;
+    const patchedShifts = { ...DEFAULT_SETTINGS.shifts, ...currentShifts };
+    if (JSON.stringify(patchedShifts) !== JSON.stringify(currentShifts)) {
+      patched.shifts = patchedShifts;
+      needsPatch = true;
+    }
+
+    // Deep-patch lockoutHours: fill in any missing individual shift keys
+    const currentLockout = (current.lockoutHours || {}) as Record<string, unknown>;
+    const patchedLockout = { ...DEFAULT_SETTINGS.lockoutHours, ...currentLockout };
+    if (JSON.stringify(patchedLockout) !== JSON.stringify(currentLockout)) {
+      patched.lockoutHours = patchedLockout;
+      needsPatch = true;
+    }
+
     if (!current.departments) { patched.departments = DEFAULT_SETTINGS.departments; needsPatch = true; }
     if (!current.escalationEmail) { patched.escalationEmail = DEFAULT_SETTINGS.escalationEmail; needsPatch = true; }
     if (needsPatch) {
