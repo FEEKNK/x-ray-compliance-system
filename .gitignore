@@ -27,7 +27,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Temporary / one-off scripts
-fix-admin.cjs
-refactor-admin.cjs
