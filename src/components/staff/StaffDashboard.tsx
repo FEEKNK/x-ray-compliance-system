@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../api';
 import type { Submission, Schedule, DynamicForm } from '../../types';
+import { useSchedules, useForms, useAddSubmission } from '../../hooks/queries';
 import { translations } from '../../i18n';
 import { getLockStatus, getSubmitDeadline, getLocalTodayStr } from '../../utils/shiftTime';
 
@@ -42,14 +43,17 @@ function useCountdown(scheduleDate: string, shift: import('../../types').Shift, 
 }
 
 const StaffDashboard: React.FC = () => {
-  const { currentUser, getStaffSchedule, forms, submitForm } = useApp();
+  const { currentUser } = useApp();
+  const { data: schedules = [] } = useSchedules();
+  const { data: forms = [] } = useForms();
+  const { mutate: submitForm } = useAddSubmission();
   
   // Get local date YYYY-MM-DD
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
   const mySchedules = currentUser 
-    ? getStaffSchedule(currentUser.id, today).sort((a, b) => (a.status === 'Pending' ? -1 : b.status === 'Pending' ? 1 : 0))
+    ? schedules.filter(s => s.staffId === currentUser.id && s.date === today).sort((a, b) => (a.status === 'Pending' ? -1 : b.status === 'Pending' ? 1 : 0))
     : [];
   
   const [activeSchedule, setActiveSchedule] = useState<Schedule | null>(null);

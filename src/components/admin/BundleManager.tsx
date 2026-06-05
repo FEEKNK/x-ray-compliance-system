@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
+import { useForms, useBundles, useAddBundle, useUpdateBundle, useDeleteBundle } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
 import { Plus, Trash2, Check, ChevronRight, Save } from 'lucide-react';
 import type { ProtocolBundle } from '../../types';
 import { translations } from '../../i18n';
 
 const BundleManager: React.FC = () => {
-  const { forms, bundles, addBundle, updateBundle, deleteBundle, language, settings } = useApp();
+  const { language, settings } = useApp();
+  const { mutate: addBundle } = useAddBundle();
+  const { mutate: updateBundle } = useUpdateBundle();
+  const { mutate: deleteBundle } = useDeleteBundle();
+  const { data: forms = [] } = useForms();
+  const { data: bundles = [] } = useBundles();
   const t = translations[language];
 
   const [selectedBundle, setSelectedBundle] = useState<ProtocolBundle | null>(null);

@@ -8,9 +8,13 @@ import { translations } from '../../i18n';
 import type { Submission } from '../../types';
 
 import { api } from '../../api';
+import { useUsers, useForms, useSchedules } from '../../hooks/queries';
 
 const MasterLogs: React.FC = () => {
-  const { users, forms, schedules, language } = useApp();
+  const { language } = useApp();
+  const { data: users = [] } = useUsers();
+  const { data: forms = [] } = useForms();
+  const { data: schedules = [] } = useSchedules();
   const t = translations[language];
   
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -91,6 +95,7 @@ const MasterLogs: React.FC = () => {
     link.download = `xray_logs_${getLocalTodayStr()}.csv`;
     link.click();
   };
+
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

@@ -40,6 +40,9 @@ app.use(express.json({ limit: '50mb' }));
 // ============================================
 // Register API Routes
 // ============================================
+import cookieParser from 'cookie-parser';
+app.use(cookieParser());
+
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/forms', authenticateToken, formsRouter);

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useForms, useSubmissions, useSchedules, useUsers } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
 import { parseDbDate } from '../../utils/shiftTime';
 import {
@@ -59,7 +60,12 @@ function saveColumns(cols: ColumnDef[]) {
 
 // ─── Component ──────────────────────────────────────
 const QualityDashboard: React.FC = () => {
-  const { forms, submissions, schedules, users, language, settings } = useApp();
+  const { language, settings } = useApp();
+  const { data: users = [] } = useUsers();
+  const { data: forms = [] } = useForms();
+  const { data: schedules = [] } = useSchedules();
+  const { data: submissionsData } = useSubmissions();
+  const submissions = submissionsData?.data || [];
 
   // State
   const [currentDate, setCurrentDate] = useState(() => {

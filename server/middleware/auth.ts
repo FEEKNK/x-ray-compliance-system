@@ -6,8 +6,7 @@ interface AuthenticatedRequest extends express.Request {
 }
 
 export const authenticateToken = (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = req.cookies?.xray_jwt_token;
   
   if (!token) {
     res.status(401).json({ error: 'Unauthorized' });

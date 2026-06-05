@@ -7,9 +7,15 @@ import { translations } from '../../i18n';
 import type { Submission, DynamicForm, Schedule } from '../../types';
 import { getLockStatus, isSubmitAllowed } from '../../utils/shiftTime';
 import { FormRenderer } from './StaffDashboard';
+import { useForms, useSchedules, useSubmissions, useAddSubmission } from '../../hooks/queries';
 
 const StaffHistory: React.FC = () => {
-  const { submissions, forms, schedules, currentUser, language, submitForm, settings } = useApp();
+  const { currentUser, language, settings } = useApp();
+  const { data: forms = [] } = useForms();
+  const { data: schedules = [] } = useSchedules();
+  const { data: submissionsData } = useSubmissions();
+  const submissions = submissionsData?.data || [];
+  const { mutate: submitForm } = useAddSubmission();
   const t = translations[language];
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filterDate, setFilterDate] = React.useState('');

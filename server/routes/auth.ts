@@ -45,9 +45,16 @@ router.post('/login', async (req, res) => {
       { expiresIn: '12h' }
     );
 
-    // Return token and sanitized user
+    // Set HttpOnly cookie
+    res.cookie('xray_jwt_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 12 * 60 * 60 * 1000 // 12 hours
+    });
+
+    // Return sanitized user (without token)
     res.json({
-      token,
       user: {
         id: user.id,
         name: user.name,
@@ -62,6 +69,12 @@ router.post('/login', async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// POST /api/auth/logout
+router.post('/logout', (req, res) => {
+  res.clearCookie('xray_jwt_token');
+  res.json({ success: true });
 });
 
 export default router;

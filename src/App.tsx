@@ -16,10 +16,23 @@ import MonthlyDashboard from './components/admin/MonthlyDashboard';
 import BundleManager from './components/admin/BundleManager';
 import QualityDashboard from './components/admin/QualityDashboard';
 import { LogOut, UserCircle } from 'lucide-react';
+import GlobalLoader from './components/shared/GlobalLoader';
 
 const AppContent: React.FC = () => {
-  const { currentUser, setCurrentUser } = useApp();
+  const { currentUser, setCurrentUser, isLoading, loadError } = useApp();
   const [activeTab, setActiveTab] = React.useState('dashboard');
+
+  React.useEffect(() => {
+    const handleAuthError = () => {
+      setCurrentUser(null);
+    };
+    window.addEventListener('auth-error', handleAuthError);
+    return () => window.removeEventListener('auth-error', handleAuthError);
+  }, [setCurrentUser]);
+
+  if (isLoading || loadError) {
+    return <GlobalLoader error={loadError} onRetry={() => window.location.reload()} />;
+  }
 
   if (!currentUser) return <LandingPage />;
 

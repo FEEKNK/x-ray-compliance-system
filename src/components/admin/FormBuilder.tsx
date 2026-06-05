@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
+import { useForms, useAddForm, useUpdateForm, useDeleteForm } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
 import { Plus, Trash2, Save, FileText, ChevronRight, Edit3, X } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { QuestionBlock, DynamicForm } from '../../types';
 
 const FormBuilder: React.FC = () => {
-  const { forms, addForm, updateForm, deleteForm, language, settings } = useApp();
+  const { language, settings } = useApp();
+  const { mutate: addForm } = useAddForm();
+  const { mutate: updateForm } = useUpdateForm();
+  const { mutate: deleteForm } = useDeleteForm();
+  const { data: forms = [] } = useForms();
   const t = translations[language];
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

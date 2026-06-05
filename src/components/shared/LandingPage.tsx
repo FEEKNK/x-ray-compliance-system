@@ -4,6 +4,7 @@ import { ShieldCheck, User as UserIcon, Lock, ChevronRight, LayoutGrid, Delete, 
 import logo from '../../assets/logo.svg';
 import type { User } from '../../types';
 import { api } from '../../api';
+import { usePublicUsers } from '../../hooks/queries';
 
 // ─── PIN Pad Component ──────────────────────────────────────────────────────
 interface PinPadProps {
@@ -43,8 +44,7 @@ const PinPad: React.FC<PinPadProps> = ({ selectedUser, onSuccess, onBack }) => {
     if (isLoggingIn) return;
     setIsLoggingIn(true);
     try {
-      const { token, user } = await api.auth.login(selectedUser.id, pinToCheck);
-      localStorage.setItem('xray_jwt_token', token);
+      const { user } = await api.auth.login(selectedUser.id, pinToCheck);
       onSuccess(user);
     } catch {
       setShake(true);
@@ -175,7 +175,8 @@ const PinPad: React.FC<PinPadProps> = ({ selectedUser, onSuccess, onBack }) => {
 
 // ─── Main Landing Page ──────────────────────────────────────────────────────
 const LandingPage: React.FC = () => {
-  const { users, setCurrentUser, settings } = useApp();
+  const { setCurrentUser, settings } = useApp();
+  const { data: users = [], isLoading } = usePublicUsers();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const handleSelectUser = (user: User) => {
@@ -214,12 +215,17 @@ const LandingPage: React.FC = () => {
                 <p className="text-gray-500 font-medium">เลือกโปรไฟล์เพื่อดำเนินการเข้าสู่ระบบด้วย PIN</p>
               </div>
 
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-[#00468B] border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {users.map(user => (
                   <button
                     key={user.id}
                     id={`select-user-${user.id}`}
-                    onClick={() => handleSelectUser(user)}
+                    onClick={() => handleSelectUser(user as any)}
                     className="group p-6 rounded-3xl border-2 border-gray-50 bg-gray-50/50 hover:bg-white hover:border-[#00468B] hover:shadow-xl transition-all text-left flex items-center justify-between"
                   >
                     <div className="flex items-center space-x-5">
@@ -235,6 +241,7 @@ const LandingPage: React.FC = () => {
                   </button>
                 ))}
               </div>
+              )}
             </div>
           ) : (
             /* ── Step 2: PIN Pad ── */

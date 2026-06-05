@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useUsers, useForms, useBundles, useAddSchedule, useSchedules, useBulkDeleteSchedules, useDeleteSchedule } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
 import { 
   ChevronLeft, 
@@ -17,7 +18,13 @@ import { getLocalTodayStr } from '../../utils/shiftTime';
 import type { Schedule, Shift } from '../../types';
 
 const Scheduler: React.FC = () => {
-  const { users, forms, bundles, addSchedule, schedules, bulkDeleteSchedules, language, currentUser, settings } = useApp();
+  const { language, currentUser, settings } = useApp();
+  const { mutate: addSchedule } = useAddSchedule();
+  const { mutate: bulkDeleteSchedules } = useBulkDeleteSchedules();
+  const { data: users = [] } = useUsers();
+  const { data: forms = [] } = useForms();
+  const { data: schedules = [] } = useSchedules();
+  const { data: bundles = [] } = useBundles();
   const t = translations[language];
   const [selectedDept, setSelectedDept] = useState<string>(settings?.departments?.[0] || 'IMAGING');
   
@@ -745,7 +752,12 @@ const Scheduler: React.FC = () => {
 
 // Extracted Old Scheduler Logic for legacy access
 const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> = ({ setViewMode }) => {
-  const { users, forms, addSchedule, schedules, deleteSchedule, language, currentUser } = useApp();
+  const { language, currentUser } = useApp();
+  const { data: users = [] } = useUsers();
+  const { data: forms = [] } = useForms();
+  const { data: schedules = [] } = useSchedules();
+  const { mutate: addSchedule } = useAddSchedule();
+  const { mutate: deleteSchedule } = useDeleteSchedule();
   const t = translations[language];
   const staff = users.filter(u => u.role === 'STAFF');
 

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useForms, useSubmissions, useUsers, useSchedules } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
 import {
   BarChart, Bar,
@@ -82,7 +83,12 @@ interface MonthlyViewProps {
 }
 
 const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month }) => {
-  const { forms, submissions, users, schedules } = useApp();
+  const {  } = useApp();
+  const { data: users = [] } = useUsers();
+  const { data: forms = [] } = useForms();
+  const { data: schedules = [] } = useSchedules();
+  const { data: submissionsData } = useSubmissions();
+  const submissions = submissionsData?.data || [];
   const [filterDate, setFilterDate] = useState('');
   const [selectedError, setSelectedError] = useState<MachineErrorDetail | null>(null);
 
@@ -377,7 +383,11 @@ interface YearlyViewProps {
 }
 
 const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
-  const { submissions, forms, schedules, users } = useApp();
+  const { data: users = [] } = useUsers();
+  const { data: forms = [] } = useForms();
+  const { data: schedules = [] } = useSchedules();
+  const { data: submissionsData } = useSubmissions();
+  const submissions = submissionsData?.data || [];
   const MONTHS = language === 'TH' ? MONTHS_TH : MONTHS_EN;
   const [selectedError, setSelectedError] = useState<MachineErrorDetail | null>(null);
 

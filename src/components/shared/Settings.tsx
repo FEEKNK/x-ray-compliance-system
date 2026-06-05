@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../AppContext';
 import { Building2, Mail, Save, RefreshCw, Trash2, ShieldAlert, Clock, Loader2, CheckCircle, DatabaseBackup, ClockAlert, Plus, X, Layers, Lock } from 'lucide-react';
+import { useUpdateSettings } from '../../hooks/queries';
 import { translations } from '../../i18n';
 import type { Shift, SystemSettings } from '../../types';
 import { api } from '../../api';
 
 const Settings: React.FC = () => {
-  const { settings, updateSettings, resetDatabase, language, resetData, exportData } = useApp();
+  const { settings, resetDatabase, language, resetData, exportData } = useApp();
+  const { mutateAsync: updateSettings } = useUpdateSettings();
   const t = translations[language];
 
   const [localSettings, setLocalSettings] = useState<SystemSettings>(settings);

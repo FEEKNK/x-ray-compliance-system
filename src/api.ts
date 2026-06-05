@@ -1,18 +1,14 @@
 // API Client — centralized fetch functions for all backend endpoints
 import type { User, DynamicForm, Schedule, Submission, ProtocolBundle, Alert, SystemSettings } from './types';
 
-// Get token from localStorage
-const getToken = () => localStorage.getItem('xray_jwt_token');
-
 const BASE = '/api';
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     if (res.status === 401 || res.status === 403) {
-      localStorage.removeItem('xray_jwt_token');
-      localStorage.removeItem('xray_currentUser');
-      window.location.href = '/';
-      return {} as T; // Return empty object since we are redirecting
+      // Dispatch event instead of hard reload
+      window.dispatchEvent(new Event('auth-error'));
+      return {} as T;
     }
     const errorBody = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(errorBody.error || `API error: ${res.status}`);
@@ -20,100 +16,101 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json();
 }
 
-function jsonHeaders(): HeadersInit {
-  const token = getToken();
-  return { 
+async function apiFetch(endpoint: string, options: RequestInit = {}) {
+  const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    ...options.headers,
   };
+  return fetch(`${BASE}${endpoint}`, {
+    ...options,
+    headers,
+    credentials: 'include'
+  });
 }
 
 export const api = {
   // ─── Auth ─────────────────────────────────────────
   auth: {
-    login: (userId: string, pin: string): Promise<{ token: string, user: User }> =>
-      fetch(`${BASE}/auth/login`, {
+    login: (userId: string, pin: string): Promise<{ user: User }> =>
+      apiFetch(`/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, pin })
+      }).then(r => handleResponse(r)),
+      
+    logout: (): Promise<{ success: boolean }> =>
+      apiFetch(`/auth/logout`, {
+        method: 'POST'
       }).then(r => handleResponse(r)),
   },
 
   // ─── Users ────────────────────────────────────────
   users: {
     getPublic: (): Promise<Partial<User>[]> =>
-      fetch(`${BASE}/users/public`).then(r => handleResponse(r)),
+      apiFetch(`/users/public`).then(r => handleResponse(r)),
 
     getAll: (): Promise<User[]> =>
-      fetch(`${BASE}/users`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/users`).then(r => handleResponse(r)),
 
     create: (user: Partial<User>): Promise<User> =>
-      fetch(`${BASE}/users`, {
+      apiFetch(`/users`, {
         method: 'POST',
-        headers: jsonHeaders(),
         body: JSON.stringify(user),
       }).then(r => handleResponse(r)),
 
     update: (id: string, user: Partial<User>): Promise<User> =>
-      fetch(`${BASE}/users/${id}`, {
+      apiFetch(`/users/${id}`, {
         method: 'PUT',
-        headers: jsonHeaders(),
         body: JSON.stringify(user),
       }).then(r => handleResponse(r)),
 
     delete: (id: string): Promise<{ success: boolean }> =>
-      fetch(`${BASE}/users/${id}`, { method: 'DELETE', headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/users/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
   },
 
   // ─── Forms ────────────────────────────────────────
   forms: {
     getAll: (): Promise<DynamicForm[]> =>
-      fetch(`${BASE}/forms`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/forms`).then(r => handleResponse(r)),
 
     create: (form: Partial<DynamicForm>): Promise<DynamicForm> =>
-      fetch(`${BASE}/forms`, {
+      apiFetch(`/forms`, {
         method: 'POST',
-        headers: jsonHeaders(),
         body: JSON.stringify(form),
       }).then(r => handleResponse(r)),
 
     update: (id: string, form: Partial<DynamicForm>): Promise<DynamicForm> =>
-      fetch(`${BASE}/forms/${id}`, {
+      apiFetch(`/forms/${id}`, {
         method: 'PUT',
-        headers: jsonHeaders(),
         body: JSON.stringify(form),
       }).then(r => handleResponse(r)),
 
     delete: (id: string): Promise<{ success: boolean }> =>
-      fetch(`${BASE}/forms/${id}`, { method: 'DELETE', headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/forms/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
   },
 
   // ─── Schedules ────────────────────────────────────
   schedules: {
     getAll: (): Promise<Schedule[]> =>
-      fetch(`${BASE}/schedules`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/schedules`).then(r => handleResponse(r)),
 
     create: (schedule: Partial<Schedule> | Partial<Schedule>[]): Promise<Schedule | Schedule[]> =>
-      fetch(`${BASE}/schedules`, {
+      apiFetch(`/schedules`, {
         method: 'POST',
-        headers: jsonHeaders(),
         body: JSON.stringify(schedule),
       }).then(r => handleResponse(r)),
 
     update: (id: string, data: Partial<Schedule>): Promise<Schedule> =>
-      fetch(`${BASE}/schedules/${id}`, {
+      apiFetch(`/schedules/${id}`, {
         method: 'PUT',
-        headers: jsonHeaders(),
         body: JSON.stringify(data),
       }).then(r => handleResponse(r)),
 
     delete: (id: string): Promise<{ success: boolean }> =>
-      fetch(`${BASE}/schedules/${id}`, { method: 'DELETE', headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/schedules/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
 
     bulkDelete: (ids: string[]): Promise<{ success: boolean }> =>
-      fetch(`${BASE}/schedules/bulk-delete`, {
+      apiFetch(`/schedules/bulk-delete`, {
         method: 'POST',
-        headers: jsonHeaders(),
         body: JSON.stringify({ ids }),
       }).then(r => handleResponse(r)),
   },
@@ -121,99 +118,92 @@ export const api = {
   // ─── Submissions ──────────────────────────────────
   submissions: {
     getAll: (page = 1, limit = 50): Promise<{ data: Submission[], total: number, page: number, totalPages: number }> =>
-      fetch(`${BASE}/submissions?page=${page}&limit=${limit}`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/submissions?page=${page}&limit=${limit}`).then(r => handleResponse(r)),
 
     getByScheduleId: (scheduleId: string): Promise<Submission> =>
-      fetch(`${BASE}/submissions/schedule/${scheduleId}`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/submissions/schedule/${scheduleId}`).then(r => handleResponse(r)),
 
     create: (submission: Partial<Submission>): Promise<Submission> =>
-      fetch(`${BASE}/submissions`, {
+      apiFetch(`/submissions`, {
         method: 'POST',
-        headers: jsonHeaders(),
         body: JSON.stringify(submission),
       }).then(r => handleResponse(r)),
 
     delete: (id: string): Promise<{ success: boolean }> =>
-      fetch(`${BASE}/submissions/${id}`, { method: 'DELETE', headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/submissions/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
   },
 
 
   // ─── Bundles ──────────────────────────────────────
   bundles: {
     getAll: (): Promise<ProtocolBundle[]> =>
-      fetch(`${BASE}/bundles`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/bundles`).then(r => handleResponse(r)),
 
     create: (bundle: Partial<ProtocolBundle>): Promise<ProtocolBundle> =>
-      fetch(`${BASE}/bundles`, {
+      apiFetch(`/bundles`, {
         method: 'POST',
-        headers: jsonHeaders(),
         body: JSON.stringify(bundle),
       }).then(r => handleResponse(r)),
 
     update: (id: string, bundle: Partial<ProtocolBundle>): Promise<ProtocolBundle> =>
-      fetch(`${BASE}/bundles/${id}`, {
+      apiFetch(`/bundles/${id}`, {
         method: 'PUT',
-        headers: jsonHeaders(),
         body: JSON.stringify(bundle),
       }).then(r => handleResponse(r)),
 
     delete: (id: string): Promise<{ success: boolean }> =>
-      fetch(`${BASE}/bundles/${id}`, { method: 'DELETE', headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/bundles/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
   },
 
   // ─── Alerts ───────────────────────────────────────
   alerts: {
     getAll: (): Promise<Alert[]> =>
-      fetch(`${BASE}/alerts`, { headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/alerts`).then(r => handleResponse(r)),
 
     create: (alert: Partial<Alert>): Promise<Alert> =>
-      fetch(`${BASE}/alerts`, {
+      apiFetch(`/alerts`, {
         method: 'POST',
-        headers: jsonHeaders(),
         body: JSON.stringify(alert),
       }).then(r => handleResponse(r)),
 
     markAsRead: (id: string): Promise<Alert> =>
-      fetch(`${BASE}/alerts/${id}/read`, { method: 'PATCH', headers: jsonHeaders() }).then(r => handleResponse(r)),
+      apiFetch(`/alerts/${id}/read`, { method: 'PATCH' }).then(r => handleResponse(r)),
   },
 
   // ─── Config ───────────────────────────────────────
   config: {
     get: (): Promise<{ settings: SystemSettings; announcements: string[] }> =>
-      fetch(`${BASE}/config`).then(r => handleResponse(r)),
+      apiFetch(`/config`).then(r => handleResponse(r)),
 
     updateSettings: (settings: Partial<SystemSettings>): Promise<SystemSettings> =>
-      fetch(`${BASE}/config`, {
+      apiFetch(`/config`, {
         method: 'PUT',
-        headers: jsonHeaders(),
         body: JSON.stringify({ settings }),
       }).then(r => handleResponse(r)),
 
     addAnnouncement: (text: string): Promise<string[]> =>
-      fetch(`${BASE}/config/announcements`, {
+      apiFetch(`/config/announcements`, {
         method: 'POST',
-        headers: jsonHeaders(),
         body: JSON.stringify({ text }),
       }).then(r => handleResponse<{ announcements: string[] }>(r).then(d => d.announcements)),
   },
 
   // ─── Seed ─────────────────────────────────────────
   seed: (): Promise<{ success: boolean }> =>
-    fetch(`${BASE}/seed`, { method: 'POST', headers: jsonHeaders() }).then(r => handleResponse(r)),
+    apiFetch(`/seed`, { method: 'POST' }).then(r => handleResponse(r)),
 
   // ─── Export Data ──────────────────────────────────
   exportData: (): Promise<unknown> =>
-    fetch(`${BASE}/export-data`, { method: 'GET', headers: jsonHeaders() }).then(r => handleResponse(r)),
+    apiFetch(`/export-data`, { method: 'GET' }).then(r => handleResponse(r)),
 
   // ─── Reset Data ───────────────────────────────────
   resetData: (): Promise<{ success: boolean; message: string }> =>
-    fetch(`${BASE}/reset-data`, { method: 'POST', headers: jsonHeaders() }).then(r => handleResponse(r)),
+    apiFetch(`/reset-data`, { method: 'POST' }).then(r => handleResponse(r)),
 
   // ─── Import Data ──────────────────────────────────
   importData: (payload: unknown): Promise<{ success: boolean; message: string }> =>
-    fetch(`${BASE}/import-data`, {
+    apiFetch(`/import-data`, {
       method: 'POST',
-      headers: jsonHeaders(),
       body: JSON.stringify(payload)
     }).then(r => handleResponse(r)),
 };

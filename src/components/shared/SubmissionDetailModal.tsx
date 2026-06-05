@@ -3,6 +3,7 @@ import { X, Image as ImageIcon, Printer } from 'lucide-react';
 import { useApp } from '../../AppContext';
 import { parseDbDate } from '../../utils/shiftTime';
 import type { Submission } from '../../types';
+import { usePublicUsers, useForms } from '../../hooks/queries';
 
 interface SubmissionDetailModalProps {
   submission: Submission;
@@ -10,7 +11,9 @@ interface SubmissionDetailModalProps {
 }
 
 const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({ submission, onClose }) => {
-  const { users, forms, language } = useApp();
+  const { language } = useApp();
+  const { data: users = [] } = usePublicUsers();
+  const { data: forms = [] } = useForms();
   const staff = users.find(u => u.id === submission.staffId);
   const form = forms.find(f => f.id === submission.formId);
 

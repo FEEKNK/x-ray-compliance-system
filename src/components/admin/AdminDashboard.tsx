@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSchedules, useUsers, useForms, useAddAnnouncement, useAlerts, useAddAlert, useMarkAlertAsRead, useSubmissions } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
 import { CheckCircle, AlertTriangle, Clock, TrendingUp, ShieldCheck, Megaphone, Send, ShieldAlert, Info, BellRing, MailWarning } from 'lucide-react';
 import { translations } from '../../i18n';
@@ -7,7 +8,28 @@ import { getLocalTodayStr, parseDbDate } from '../../utils/shiftTime';
 import type { Shift } from '../../types';
 
 const AdminDashboard: React.FC = () => {
-  const { schedules, getCompletionRate, users, forms, announcements, addAnnouncement, alerts, addAlert, markAlertAsRead, language, settings, submissions } = useApp();
+  const { language, settings, announcements } = useApp();
+  const { mutate: addAnnouncement } = useAddAnnouncement();
+  const { mutate: addAlert } = useAddAlert();
+  const { mutate: markAlertAsRead } = useMarkAlertAsRead();
+  const { data: users = [] } = useUsers();
+  const { data: forms = [] } = useForms();
+  const { data: schedules = [] } = useSchedules();
+  const { data: alerts = [] } = useAlerts();
+  const { data: submissionsData } = useSubmissions();
+  const submissions = submissionsData?.data || [];
+  const getCompletionRate = (date: string, department?: string) => {
+      let dailySchedules = schedules.filter(s => s.date === date);
+      if (department) {
+        dailySchedules = dailySchedules.filter(s => {
+          const form = forms.find(f => f.id === s.formId);
+          return form?.department === department;
+        });
+      }
+      if (dailySchedules.length === 0) return 0;
+      const completed = dailySchedules.filter(s => s.status === 'Completed').length;
+      return (completed / dailySchedules.length) * 100;
+    };
   const t = translations[language];
   const [newAnnouncement, setNewAnnouncement] = useState('');
   const [selectedDept, setSelectedDept] = useState<string>(settings?.departments?.[0] || 'IMAGING');

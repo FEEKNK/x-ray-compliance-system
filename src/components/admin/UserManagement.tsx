@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useUsers, useAddUser, useUpdateUser, useDeleteUser } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
 import { Mail, Building2, Tag, ShieldCheck, UserPlus, Trash2 } from 'lucide-react';
 import { translations } from '../../i18n';
@@ -6,7 +7,11 @@ import type { User } from '../../types';
 import UserModal from './UserModal';
 
 const UserManagement: React.FC = () => {
-  const { users, addUser, updateUser, deleteUser, language } = useApp();
+  const { language } = useApp();
+  const { mutate: addUser } = useAddUser();
+  const { mutate: updateUser } = useUpdateUser();
+  const { mutate: deleteUser } = useDeleteUser();
+  const { data: users = [] } = useUsers();
   const t = translations[language];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
