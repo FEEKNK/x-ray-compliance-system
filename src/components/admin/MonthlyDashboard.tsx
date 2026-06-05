@@ -83,12 +83,11 @@ interface MonthlyViewProps {
 }
 
 const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month }) => {
-  const {  } = useApp();
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
   const { data: schedules = [] } = useSchedules();
   const { data: submissionsData } = useSubmissions();
-  const submissions = submissionsData?.data || [];
+  const submissions = useMemo(() => submissionsData?.data || [], [submissionsData]);
   const [filterDate, setFilterDate] = useState('');
   const [selectedError, setSelectedError] = useState<MachineErrorDetail | null>(null);
 
@@ -387,7 +386,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
   const { data: forms = [] } = useForms();
   const { data: schedules = [] } = useSchedules();
   const { data: submissionsData } = useSubmissions();
-  const submissions = submissionsData?.data || [];
+  const submissions = useMemo(() => submissionsData?.data || [], [submissionsData]);
   const MONTHS = language === 'TH' ? MONTHS_TH : MONTHS_EN;
   const [selectedError, setSelectedError] = useState<MachineErrorDetail | null>(null);
 

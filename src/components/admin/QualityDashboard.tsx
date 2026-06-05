@@ -65,7 +65,7 @@ const QualityDashboard: React.FC = () => {
   const { data: forms = [] } = useForms();
   const { data: schedules = [] } = useSchedules();
   const { data: submissionsData } = useSubmissions();
-  const submissions = submissionsData?.data || [];
+  const submissions = useMemo(() => submissionsData?.data || [], [submissionsData]);
 
   // State
   const [currentDate, setCurrentDate] = useState(() => {

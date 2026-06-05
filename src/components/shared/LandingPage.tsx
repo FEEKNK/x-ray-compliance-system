@@ -225,7 +225,7 @@ const LandingPage: React.FC = () => {
                   <button
                     key={user.id}
                     id={`select-user-${user.id}`}
-                    onClick={() => handleSelectUser(user as any)}
+                    onClick={() => handleSelectUser(user as unknown as User)}
                     className="group p-6 rounded-3xl border-2 border-gray-50 bg-gray-50/50 hover:bg-white hover:border-[#00468B] hover:shadow-xl transition-all text-left flex items-center justify-between"
                   >
                     <div className="flex items-center space-x-5">

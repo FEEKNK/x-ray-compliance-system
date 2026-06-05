@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../AppContext';
+import type { User } from '../../types';
 import { usePublicUsers } from '../../hooks/queries';
 import { Clock, User as UserIcon } from 'lucide-react';
 
@@ -78,7 +79,7 @@ const Header: React.FC = () => {
               value={currentUser?.id}
               onChange={(e) => {
                 const user = users.find(u => u.id === e.target.value);
-                if (user) setCurrentUser(user as any);
+                if (user) setCurrentUser(user as unknown as User);
               }}
             >
               {users.map(u => (
