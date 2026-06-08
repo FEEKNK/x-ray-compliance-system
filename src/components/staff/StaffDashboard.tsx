@@ -571,8 +571,6 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, init
                 {(!customModes[q.id] && (
                   q.label === 'อื่นๆ' ||
                   q.label.includes('(ระบุ)') || 
-                  q.label.includes('ยา') || 
-                  q.label.includes('จำนวน') ||
                   formData[q.id] === 'อื่นๆ' ||
                   formData[q.id] === 'Fail' ||
                   formData[q.id] === 'Alert'
