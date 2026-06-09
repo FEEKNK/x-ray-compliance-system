@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSchedules, useUsers, useForms, useAddAnnouncement, useAlerts, useAddAlert, useMarkAlertAsRead, useSubmissions } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
-import { CheckCircle, AlertTriangle, Clock, TrendingUp, ShieldCheck, Megaphone, Send, ShieldAlert, Info, BellRing, MailWarning } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Clock, TrendingUp, Megaphone, Send, ShieldAlert, Info, BellRing, MailWarning } from 'lucide-react';
 import { translations } from '../../i18n';
 import { getLocalTodayStr, parseDbDate } from '../../utils/shiftTime';
 
