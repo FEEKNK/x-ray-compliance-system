@@ -290,11 +290,17 @@ const QualityDashboard: React.FC = () => {
 
       // Signature row
       const sigRow: Record<string, unknown> = { 'รายการตรวจเช็ค': 'ผู้ตรวจสอบ' };
+      const timeRow: Record<string, unknown> = { 'รายการตรวจเช็ค': 'เวลา' };
       daysArray.forEach(day => {
         const subsOnDay = detailSubs.filter(s => new Date(s.submittedAt).getDate() === day);
         sigRow[String(day)] = subsOnDay.map(s => s.staffName.split(' ')[0]).join(', ');
+        timeRow[String(day)] = subsOnDay.map(s => {
+          const dt = new Date(s.submittedAt);
+          return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+        }).join(', ');
       });
       rows.push(sigRow);
+      rows.push(timeRow);
 
       if (form.description) {
         rows.push({});
@@ -305,8 +311,9 @@ const QualityDashboard: React.FC = () => {
       // Set column widths
       ws['!cols'] = [{ wch: 30 }, ...daysArray.map(() => ({ wch: 6 }))];
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, form.title.substring(0, 31));
-      XLSX.writeFile(wb, `${form.title}_${selectedMonthStr}.xlsx`);
+      const safeTitle = form.title.replace(/[\\/?*[\]:]/g, '-');
+      XLSX.utils.book_append_sheet(wb, ws, safeTitle.substring(0, 31));
+      XLSX.writeFile(wb, `${safeTitle}_${selectedMonthStr}.xlsx`);
     } catch (err) {
       console.error('Excel export error:', err);
       alert('เกิดข้อผิดพลาดในการดาวน์โหลด Excel');
@@ -381,11 +388,17 @@ const QualityDashboard: React.FC = () => {
 
       // Signature row
       const sigRow = ['ผู้ตรวจสอบ'];
+      const timeRow = ['เวลา'];
       daysArray.forEach(day => {
         const subsOnDay = detailSubs.filter(s => new Date(s.submittedAt).getDate() === day);
         sigRow.push(subsOnDay.map(s => s.staffName.split(' ')[0].substring(0, 3)).join('/'));
+        timeRow.push(subsOnDay.map(s => {
+          const dt = new Date(s.submittedAt);
+          return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+        }).join('/'));
       });
       body.push(sigRow);
+      body.push(timeRow);
 
       // AutoTable
       autoTable(doc, {
@@ -426,8 +439,8 @@ const QualityDashboard: React.FC = () => {
               data.cell.styles.fontStyle = 'bold';
             }
           }
-          // Highlight signature row
-          if (data.section === 'body' && data.row.index === body.length - 1) {
+          // Highlight signature and time rows
+          if (data.section === 'body' && data.row.index >= body.length - 2) {
             data.cell.styles.fillColor = [240, 246, 252];
             data.cell.styles.fontStyle = 'bold';
             data.cell.styles.textColor = [0, 70, 139];
@@ -454,7 +467,8 @@ const QualityDashboard: React.FC = () => {
       doc.text(`Generated: ${new Date().toLocaleString('en-GB', { hour12: false })}  |  ${hospitalName}`, 10, currentY + 5);
       doc.text(`Page 1`, pageW - 15, currentY + 5);
 
-      doc.save(`${form.title}_${selectedMonthStr}.pdf`);
+      const safeTitle = form.title.replace(/[\\/?*[\]:]/g, '-');
+      doc.save(`${safeTitle}_${selectedMonthStr}.pdf`);
     } catch (err) {
       console.error('PDF export error:', err);
       alert(`เกิดข้อผิดพลาดในการสร้าง PDF: ${err instanceof Error ? err.message : String(err)}`);
@@ -945,6 +959,37 @@ const QualityDashboard: React.FC = () => {
                                                       </span>
                                                     </div>
                                                   ))}
+                                                </div>
+                                              ) : (
+                                                <div className="h-full min-h-[24px]"></div>
+                                              )}
+                                            </td>
+                                          );
+                                        })}
+                                      </tr>
+                                      
+                                      {/* Time Row */}
+                                      <tr className="bg-blue-50/10 border-t border-gray-100">
+                                        <td className="px-3 py-2 text-[10px] font-black text-gray-500 border-r border-gray-200 sticky left-0 z-10 bg-white shadow-[1px_0_0_0_#e5e7eb]">
+                                          เวลา
+                                        </td>
+                                        {daysArray.map(day => {
+                                          const subsOnDay = detailSubs.filter(s => new Date(s.submittedAt).getDate() === day);
+                                          return (
+                                            <td key={day} className="p-0 border-r border-gray-100 align-top bg-white">
+                                              {subsOnDay.length > 0 ? (
+                                                <div className="flex flex-col h-full min-h-[24px]">
+                                                  {subsOnDay.map((sub, i) => {
+                                                    const dt = new Date(sub.submittedAt);
+                                                    const timeStr = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+                                                    return (
+                                                      <div key={i} className={`flex-1 flex items-center justify-center p-0.5 ${i > 0 ? 'border-t border-gray-100' : ''}`} title={`เวลาส่งข้อมูล: ${timeStr}`}>
+                                                        <span className="text-[7px] font-bold text-gray-500 tracking-tighter">
+                                                          {timeStr}
+                                                        </span>
+                                                      </div>
+                                                    );
+                                                  })}
                                                 </div>
                                               ) : (
                                                 <div className="h-full min-h-[24px]"></div>

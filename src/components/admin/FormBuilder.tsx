@@ -17,6 +17,9 @@ const FormBuilder: React.FC = () => {
   const [department, setDepartment] = useState<string>(settings?.departments?.[0] || 'IMAGING');
   const [questions, setQuestions] = useState<QuestionBlock[]>([]);
   const [selectedForm, setSelectedForm] = useState<DynamicForm | null>(null);
+  const [filterDepartment, setFilterDepartment] = useState<string>('ALL');
+
+  const filteredForms = forms.filter(f => filterDepartment === 'ALL' || (f.department || 'IMAGING') === filterDepartment);
 
   const addQuestion = () => {
     const newQ: QuestionBlock = {
@@ -93,7 +96,7 @@ const FormBuilder: React.FC = () => {
         <div className="lg:col-span-1 space-y-6">
            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
               <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Library ({forms.length})</h3>
+                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Library ({filteredForms.length})</h3>
                  <button onClick={() => {
                    setSelectedForm(null);
                    setTitle('');
@@ -104,8 +107,20 @@ const FormBuilder: React.FC = () => {
                     <Plus size={16} />
                  </button>
               </div>
+              <div className="p-3 border-b border-gray-50 bg-white">
+                <select 
+                  value={filterDepartment} 
+                  onChange={(e) => setFilterDepartment(e.target.value)}
+                  className="w-full text-xs font-bold text-gray-600 bg-gray-50 border border-gray-100 rounded-lg p-2.5 outline-none focus:border-[#00468B] transition-all"
+                >
+                  <option value="ALL">All Departments (ทั้งหมด)</option>
+                  {(settings?.departments || []).map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
               <div className="divide-y divide-gray-50 max-h-[70vh] overflow-y-auto">
-                 {forms.map(f => (
+                 {filteredForms.map(f => (
                    <div 
                     key={f.id} 
                     onClick={() => {
