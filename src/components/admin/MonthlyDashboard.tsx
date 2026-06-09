@@ -80,9 +80,10 @@ const MachineErrorModal: React.FC<{
 interface MonthlyViewProps {
   year: number;
   month: number; // 0-indexed
+  selectedDept: string;
 }
 
-const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month }) => {
+const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) => {
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
   const { data: schedules = [] } = useSchedules();
@@ -97,10 +98,15 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month }) => {
 
 
 
+  const filteredStaff = useMemo(() => {
+    let s = users.filter(u => u.role === 'STAFF');
+    if (selectedDept !== 'ALL') s = s.filter(u => u.department === selectedDept);
+    return s;
+  }, [users, selectedDept]);
+
   // ── Staff KPI ────────────────────────────
   const staffKPI = useMemo(() => {
-    const staffList = users.filter(u => u.role === 'STAFF');
-    return staffList.map(s => {
+    return filteredStaff.map(s => {
       const staffSchedules = schedules.filter(sch =>
         sch.staffId === s.id &&
         (filterDate ? sch.date === filterDate : sch.date.startsWith(selectedMonthStr))
@@ -110,7 +116,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month }) => {
       const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
       return { id: s.id, name: s.name, department: s.department, total, completed, percent };
     }).sort((a, b) => b.percent - a.percent);
-  }, [users, schedules, selectedMonthStr, filterDate]);
+  }, [filteredStaff, schedules, selectedMonthStr, filterDate]);
 
   // ── Machine Errors ───────────────────────
   const machineErrors = useMemo(() => {
@@ -123,6 +129,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month }) => {
     periodSubmissions.forEach(sub => {
       const form = forms.find(f => f.id === sub.formId);
       if (!form) return;
+      if (selectedDept !== 'ALL' && form.department !== selectedDept) return;
       
       let formHasError = false;
       Object.entries(sub.data).forEach(([key, value]) => {
@@ -150,10 +157,10 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month }) => {
         equipmentDetails: errorsMap[formId].details
       };
     }).sort((a, b) => b.errorCount - a.errorCount);
-  }, [submissions, forms, selectedMonthStr, filterDate]);
+  }, [submissions, forms, selectedMonthStr, filterDate, selectedDept]);
 
   // ── Compliance Matrix ────────────────────
-  const staff = users.filter(u => u.role === 'STAFF');
+  const staff = filteredStaff;
   const getCellStatus = (staffId: string, day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const cellSchedules = schedules.filter(s => s.staffId === staffId && s.date === dateStr);
@@ -172,8 +179,9 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month }) => {
   const missedDetails = useMemo(() => {
     const monthlySchedules = schedules.filter(s => s.date.startsWith(selectedMonthStr));
     const details: Array<Schedule & { staffName: string; formTitle: string }> = [];
+    const staffIdsInDept = new Set(filteredStaff.map(s => s.id));
     monthlySchedules.forEach(s => {
-      if (s.status === 'Pending' && s.date < todayStr) {
+      if (s.status === 'Pending' && s.date < todayStr && staffIdsInDept.has(s.staffId)) {
         details.push({
           ...s,
           staffName: users.find(u => u.id === s.staffId)?.name || 'Unknown',
@@ -182,7 +190,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month }) => {
       }
     });
     return details.sort((a, b) => b.date.localeCompare(a.date));
-  }, [schedules, users, forms, selectedMonthStr, todayStr]);
+  }, [schedules, users, forms, selectedMonthStr, todayStr, filteredStaff]);
 
   return (
     <div className="space-y-8">
@@ -379,9 +387,10 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month }) => {
 interface YearlyViewProps {
   year: number;
   language: 'TH' | 'EN';
+  selectedDept: string;
 }
 
-const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
+const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept }) => {
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
   const { data: schedules = [] } = useSchedules();
@@ -390,32 +399,43 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
   const MONTHS = language === 'TH' ? MONTHS_TH : MONTHS_EN;
   const [selectedError, setSelectedError] = useState<MachineErrorDetail | null>(null);
 
+  const filteredStaff = useMemo(() => {
+    let s = users.filter(u => u.role === 'STAFF');
+    if (selectedDept !== 'ALL') s = s.filter(u => u.department === selectedDept);
+    return s;
+  }, [users, selectedDept]);
+
   // ── Compliance per month (completion rate %) ──
   const monthlyCompliance = useMemo(() => {
+    const staffIdsInDept = new Set(filteredStaff.map(s => s.id));
     return Array.from({ length: 12 }, (_, m) => {
       const monthStr = `${year}-${String(m + 1).padStart(2, '0')}`;
-      const monthSchedules = schedules.filter(s => s.date.startsWith(monthStr));
+      const monthSchedules = schedules.filter(s => s.date.startsWith(monthStr) && staffIdsInDept.has(s.staffId));
       const total = monthSchedules.length;
       const completed = monthSchedules.filter(s => s.status === 'Completed').length;
       const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
       return { month: MONTHS[m], total, completed, rate };
     });
-  }, [schedules, year, MONTHS]);
+  }, [schedules, year, MONTHS, filteredStaff]);
 
   // ── Error count per month ──
   const monthlyErrors = useMemo(() => {
     return Array.from({ length: 12 }, (_, m) => {
       const monthStr = `${year}-${String(m + 1).padStart(2, '0')}`;
-      const monthSubs = submissions.filter(s => getLocalTodayStr(new Date(s.submittedAt)).startsWith(monthStr));
+      const monthSubs = submissions.filter(s => {
+        if (!getLocalTodayStr(new Date(s.submittedAt)).startsWith(monthStr)) return false;
+        if (selectedDept === 'ALL') return true;
+        const form = forms.find(f => f.id === s.formId);
+        return form && form.department === selectedDept;
+      });
       const errors = monthSubs.filter(s => Object.values(s.data).some(v => v === 'Fail' || v === 'Alert')).length;
       return { month: MONTHS[m], errors };
     });
-  }, [submissions, year, MONTHS]);
+  }, [submissions, forms, year, MONTHS, selectedDept]);
 
   // ── Staff KPI for whole year ──
   const yearlyStaffKPI = useMemo(() => {
-    const staffList = users.filter(u => u.role === 'STAFF');
-    return staffList.map(s => {
+    return filteredStaff.map(s => {
       const staffSchedules = schedules.filter(sch =>
         sch.staffId === s.id && sch.date.startsWith(`${year}-`)
       );
@@ -425,7 +445,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
       const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
       return { id: s.id, name: s.name, department: s.department, total, completed, missed, percent };
     }).sort((a, b) => b.percent - a.percent);
-  }, [users, schedules, year]);
+  }, [filteredStaff, schedules, year]);
 
   // ── Top machine errors for whole year ──
   const yearlyMachineErrors = useMemo(() => {
@@ -435,6 +455,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
     yearSubs.forEach(sub => {
       const form = forms.find(f => f.id === sub.formId);
       if (!form) return;
+      if (selectedDept !== 'ALL' && form.department !== selectedDept) return;
       
       let formHasError = false;
       Object.entries(sub.data).forEach(([key, value]) => {
@@ -462,10 +483,11 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
         equipmentDetails: errorsMap[formId].details
       };
     }).sort((a, b) => b.errorCount - a.errorCount);
-  }, [submissions, forms, year]);
+  }, [submissions, forms, year, selectedDept]);
 
   // ── Year summary stats ──
-  const yearSchedules = schedules.filter(s => s.date.startsWith(`${year}-`));
+  const staffIdsInDept = new Set(filteredStaff.map(s => s.id));
+  const yearSchedules = schedules.filter(s => s.date.startsWith(`${year}-`) && staffIdsInDept.has(s.staffId));
   const totalTasks = yearSchedules.length;
   const completedTasks = yearSchedules.filter(s => s.status === 'Completed').length;
   const missedTasks = yearSchedules.filter(s => s.status === 'Pending' && s.date < getLocalTodayStr()).length;
@@ -643,9 +665,10 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language }) => {
 // ─────────────────────────────────────────
 
 const MonthlyDashboard: React.FC = () => {
-  const { language } = useApp();
+  const { language, settings } = useApp();
   const t = translations[language];
 
+  const [selectedDept, setSelectedDept] = useState<string>('ALL');
   const [view, setView] = useState<'monthly' | 'yearly'>('monthly');
   const [currentDate, setCurrentDate] = useState(() => {
     const d = new Date();
@@ -669,6 +692,18 @@ const MonthlyDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
+          {/* Department Filter */}
+          <select
+            value={selectedDept}
+            onChange={(e) => setSelectedDept(e.target.value)}
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-gray-200 text-gray-700 outline-none shadow-sm focus:border-[#00468B] transition-all"
+          >
+            <option value="ALL">ทุกแผนก (All Depts)</option>
+            {settings?.departments?.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+
           {/* Tab switcher */}
           <div className="flex bg-gray-100 rounded-2xl p-1">
             <button
@@ -718,8 +753,8 @@ const MonthlyDashboard: React.FC = () => {
 
       {/* Content */}
       {view === 'monthly'
-        ? <MonthlyView year={currentDate.getFullYear()} month={currentDate.getMonth()} />
-        : <YearlyView year={currentYear} language={language} />
+        ? <MonthlyView year={currentDate.getFullYear()} month={currentDate.getMonth()} selectedDept={selectedDept} />
+        : <YearlyView year={currentYear} language={language} selectedDept={selectedDept} />
       }
     </div>
   );

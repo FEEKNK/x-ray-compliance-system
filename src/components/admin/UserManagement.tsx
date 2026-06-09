@@ -7,7 +7,7 @@ import type { User } from '../../types';
 import UserModal from './UserModal';
 
 const UserManagement: React.FC = () => {
-  const { language } = useApp();
+  const { language, settings } = useApp();
   const { mutate: addUser } = useAddUser();
   const { mutate: updateUser } = useUpdateUser();
   const { mutate: deleteUser } = useDeleteUser();
@@ -16,6 +16,12 @@ const UserManagement: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [testingEmailId, setTestingEmailId] = useState<string | null>(null);
+  const [selectedDept, setSelectedDept] = useState<string>('ALL');
+
+  const filteredUsers = React.useMemo(() => {
+    if (selectedDept === 'ALL') return users;
+    return users.filter(u => u.department === selectedDept);
+  }, [users, selectedDept]);
 
   const handleTestEmail = async (email: string, id: string) => {
     if (!email) return;
@@ -82,17 +88,29 @@ const UserManagement: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-800">{t.personnelDirectory}</h1>
           <p className="text-sm text-gray-500 font-medium">Manage hospital clinical staff and administrative access</p>
         </div>
-        <button 
-          onClick={() => handleOpenModal()}
-          className="bg-[#00468B] text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-[#003569] transition-all flex items-center space-x-2"
-        >
-          <UserPlus size={16} />
-          <span>{t.registerNewUser}</span>
-        </button>
+        <div className="flex items-center space-x-4">
+          <select
+            value={selectedDept}
+            onChange={(e) => setSelectedDept(e.target.value)}
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-gray-200 text-gray-700 outline-none shadow-sm focus:border-[#00468B] transition-all"
+          >
+            <option value="ALL">ทุกแผนก (All Depts)</option>
+            {settings?.departments?.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          <button 
+            onClick={() => handleOpenModal()}
+            className="bg-[#00468B] text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-[#003569] transition-all flex items-center space-x-2"
+          >
+            <UserPlus size={16} />
+            <span>{t.registerNewUser}</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {users.map(user => (
+        {filteredUsers.map(user => (
           <div key={user.id} className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-5 text-[#00468B] group-hover:scale-110 transition-transform">
                <ShieldCheck size={80} />

@@ -11,7 +11,7 @@ import { api } from '../../api';
 import { useUsers, useForms, useSchedules } from '../../hooks/queries';
 
 const MasterLogs: React.FC = () => {
-  const { language } = useApp();
+  const { language, settings } = useApp();
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
   const { data: schedules = [] } = useSchedules();
@@ -25,7 +25,7 @@ const MasterLogs: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterShift, setFilterShift] = useState('All');
-  const [filterDept, setFilterDept] = useState<'All' | 'IMAGING' | 'MRI'>('All');
+  const [filterDept, setFilterDept] = useState<string>('All');
   const [filterDate, setFilterDate] = useState('');
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
 
@@ -160,12 +160,13 @@ const MasterLogs: React.FC = () => {
           </select>
           <select 
             value={filterDept}
-            onChange={(e) => setFilterDept(e.target.value as 'All' | 'IMAGING' | 'MRI')}
+            onChange={(e) => setFilterDept(e.target.value)}
             className="border-2 border-gray-50 rounded-xl px-4 py-3 bg-gray-50 text-xs font-black uppercase tracking-widest text-gray-600 focus:border-blue-500 outline-none transition-all"
           >
             <option value="All">All Depts</option>
-            <option value="IMAGING">IMAGING</option>
-            <option value="MRI">MRI</option>
+            {settings?.departments?.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
           </select>
         </div>
       </div>

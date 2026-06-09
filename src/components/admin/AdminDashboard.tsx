@@ -85,6 +85,16 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const last7DaysTrend = React.useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const dateStr = getLocalTodayStr(d);
+      const label = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      return { val: getCompletionRate(dateStr, selectedDept), label };
+    });
+  }, [schedules, forms, selectedDept]);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex items-center justify-between">
@@ -294,21 +304,21 @@ const AdminDashboard: React.FC = () => {
             </div>
             
             <div className="h-48 w-full flex items-end justify-between px-2 group/chart">
-              {[85, 92, 78, 100, 88, 95, rate].map((val, i) => (
+              {last7DaysTrend.map((item, i) => (
                 <div key={i} className="relative flex-1 flex flex-col items-center group/bar">
                   <div className="absolute -top-8 bg-[#00468B] text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
-                    {Math.round(val)}%
+                    {Math.round(item.val)}%
                   </div>
                   <div 
                     className="w-4/5 max-w-[40px] bg-blue-50 rounded-t-lg transition-all duration-700 ease-out hover:bg-blue-100 group-hover/chart:opacity-50 hover:!opacity-100"
-                    style={{ height: `${val || 5}%` }}
+                    style={{ height: `${item.val || 5}%` }}
                   >
                     <div 
                       className="w-full bg-[#00468B] rounded-t-lg transition-all duration-1000 delay-300"
                       style={{ height: `100%` }}
                     ></div>
                   </div>
-                  <span className="text-[9px] font-black text-gray-400 uppercase mt-4">Day {i+1}</span>
+                  <span className="text-[9px] font-black text-gray-400 uppercase mt-4">{item.label}</span>
                 </div>
               ))}
             </div>
@@ -316,17 +326,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-[#00468B] rounded-2xl shadow-lg p-8 text-white relative overflow-hidden group">
-            <div className="relative z-10">
-              <ShieldCheck className="mb-4 text-blue-300 group-hover:scale-110 transition-transform" size={40} />
-              <h3 className="text-xl font-bold mb-2">Compliance Lock</h3>
-              <p className="text-blue-100 text-sm mb-6 leading-relaxed">System-wide integrity is monitored. {rate === 100 ? t.allFormsActive : 'Action required for full coverage.'}</p>
-              <button className="w-full bg-white text-[#00468B] py-3 rounded-xl font-bold text-sm shadow-md hover:bg-blue-50 transition-colors">
-                Run Validation Scan
-              </button>
-            </div>
-            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white opacity-5 rounded-full"></div>
-          </div>
+
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             <div className="flex items-center justify-between mb-6">
