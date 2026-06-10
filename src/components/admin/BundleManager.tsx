@@ -18,6 +18,11 @@ const BundleManager: React.FC = () => {
   const [name, setName] = useState('');
   const [department, setDepartment] = useState<string>(settings?.departments?.[0] || 'IMAGING');
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
+  const [filterDepartment, setFilterDepartment] = useState<string>('ALL');
+
+  const filteredBundles = filterDepartment === 'ALL' 
+    ? bundles 
+    : bundles.filter(b => b.department === filterDepartment);
 
   const handleSave = () => {
     if (!name) return alert('Please enter a bundle name');
@@ -73,14 +78,26 @@ const BundleManager: React.FC = () => {
         {/* Bundle Library */}
         <div className="lg:col-span-1 space-y-6">
            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
-              <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.presetGroups} ({bundles.length})</h3>
-                 <button onClick={reset} className="p-1.5 rounded-lg hover:bg-white text-[#00468B] transition-colors">
-                    <Plus size={16} />
-                 </button>
+              <div className="p-6 border-b border-gray-50 bg-gray-50/50 space-y-4">
+                 <div className="flex items-center justify-between">
+                   <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.presetGroups} ({filteredBundles.length})</h3>
+                   <button onClick={reset} className="p-1.5 rounded-lg hover:bg-white text-[#00468B] transition-colors">
+                      <Plus size={16} />
+                   </button>
+                 </div>
+                 <select
+                   value={filterDepartment}
+                   onChange={(e) => setFilterDepartment(e.target.value)}
+                   className="w-full text-xs p-2 rounded-lg border border-gray-200 bg-white text-gray-700 outline-none focus:border-[#00468B] transition-colors"
+                 >
+                   <option value="ALL">{t.allDepts || 'All Depts'}</option>
+                   {settings?.departments?.map(d => (
+                     <option key={d} value={d}>{d}</option>
+                   ))}
+                 </select>
               </div>
               <div className="divide-y divide-gray-50 max-h-[70vh] overflow-y-auto">
-                 {bundles.map(b => (
+                 {filteredBundles.map(b => (
                    <div 
                     key={b.id} 
                     onClick={() => {
