@@ -43,7 +43,8 @@ function useCountdown(scheduleDate: string, shift: import('../../types').Shift, 
 }
 
 const StaffDashboard: React.FC = () => {
-  const { currentUser } = useApp();
+  const { currentUser, language } = useApp();
+  const t = translations[language];
   const { data: schedules = [] } = useSchedules();
   const { data: forms = [] } = useForms();
   const { mutate: submitForm } = useAddSubmission();
@@ -105,11 +106,11 @@ const StaffDashboard: React.FC = () => {
       <div className="bg-gradient-to-br from-[#00468B] to-[#003070] rounded-3xl p-6 md:p-10 text-white overflow-hidden relative">
         <div className="relative z-10 space-y-1">
           <p className="text-blue-200 text-[10px] font-black uppercase tracking-[0.2em]">สวัสดี, {currentUser?.name?.split(' ')[0] || 'คุณ'}</p>
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight">งานของวันนี้</h1>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight">{t.todaysWork || 'งานของวันนี้'}</h1>
           <p className="text-blue-200/80 text-sm font-medium">
             {mySchedules.filter(s => s.status === 'Pending').length > 0
-              ? `รออยู่ ${mySchedules.filter(s => s.status === 'Pending').length} รายการ`
-              : 'ทำเสร็จครบทุกงานแล้ว! 🎉'}
+              ? `${t.pendingTasks || 'รออยู่'} ${mySchedules.filter(s => s.status === 'Pending').length} รายการ`
+              : t.allTasksCompleted || 'ทำเสร็จครบทุกงานแล้ว! 🎉'}
           </p>
         </div>
         <div className="absolute -right-8 -top-8 w-40 h-40 bg-white/5 rounded-full" />
@@ -124,7 +125,7 @@ const StaffDashboard: React.FC = () => {
         <div className="space-y-4">
           <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] px-1 flex items-center">
             <Clock size={14} className="mr-2" />
-            คิวงานวันนี้ ({mySchedules.filter(s => s.status === 'Pending').length} รอดำเนินการ)
+            {t.queueToday || 'คิวงานวันนี้'} ({mySchedules.filter(s => s.status === 'Pending').length} {t.pendingTasks || 'รอดำเนินการ'})
           </h3>
           {/* Mobile: vertical stack; Desktop: horizontal scroll */}
           <div className="flex flex-col gap-4 md:hidden">
@@ -176,7 +177,8 @@ interface ScheduleCardProps {
 }
 
 const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit, fullWidth = false }) => {
-  const { settings } = useApp();
+  const { settings, language } = useApp();
+  const t = translations[language];
   const lockoutHours = settings?.lockoutHours as Record<string, number> | undefined;
   const shiftsConfig = settings?.shifts as Record<string, string> | undefined;
   const isCompleted = s.status === 'Completed';
@@ -226,7 +228,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
         </div>
         {cd.isLocked ? (
           <span className="px-5 py-2 rounded-xl text-xs font-bold bg-red-50 text-red-400 border border-red-100">
-            ไม่ได้ทำ
+            {t.notDone || 'ไม่ได้ทำ'}
           </span>
         ) : (
           <button 
@@ -235,7 +237,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
               isCompleted ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'bg-[#00468B] text-white'
             }`}
           >
-            {isCompleted ? 'แก้ไข' : 'Audit Now'}
+            {isCompleted ? (t.edit || 'แก้ไข') : 'Audit Now'}
           </button>
         )}
       </div>

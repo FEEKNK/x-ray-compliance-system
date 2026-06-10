@@ -186,6 +186,18 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ text }),
       }).then(r => handleResponse<{ announcements: string[] }>(r).then(d => d.announcements)),
+
+    testEmail: (email: string): Promise<{ success: boolean; error?: string }> =>
+      apiFetch(`/test-email`, {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      }).then(r => handleResponse(r)),
+
+    triggerSla: (): Promise<{ success: boolean }> =>
+      apiFetch(`/trigger-sla`, { method: 'POST' }).then(r => handleResponse(r)),
+
+    testSlaNow: (): Promise<{ success: boolean; total?: number; sent?: string[]; message?: string; error?: string }> =>
+      apiFetch(`/test-sla-now`, { method: 'POST' }).then(r => handleResponse(r)),
   },
 
   // ─── Seed ─────────────────────────────────────────

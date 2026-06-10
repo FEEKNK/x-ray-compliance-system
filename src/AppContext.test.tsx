@@ -54,7 +54,7 @@ describe('AppContext', () => {
     );
 
     // Should initially show loading
-    expect(screen.getByText('กำลังโหลดข้อมูล...')).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
 
     // Wait for API calls to resolve by looking for the loaded text
     const langElement = await screen.findByTestId('lang');

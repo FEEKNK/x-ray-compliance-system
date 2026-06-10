@@ -84,6 +84,8 @@ interface MonthlyViewProps {
 }
 
 const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) => {
+  const { language } = useApp();
+  const t = translations[language];
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
   const { data: schedules = [] } = useSchedules();
@@ -202,7 +204,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
               <Users size={20} />
             </div>
             <div>
-              <span className="font-bold text-gray-700 block">ตารางสรุปการทำงาน (Compliance Matrix)</span>
+              <span className="font-bold text-gray-700 block">{t.complianceMatrix || "ตารางสรุปการทำงาน (Compliance Matrix)"}</span>
               <span className="text-xs text-gray-400">ภาพรวมการตรวจสอบงานแต่ละวันของพนักงาน</span>
             </div>
           </div>
@@ -698,7 +700,7 @@ const MonthlyDashboard: React.FC = () => {
             onChange={(e) => setSelectedDept(e.target.value)}
             className="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-gray-200 text-gray-700 outline-none shadow-sm focus:border-[#00468B] transition-all"
           >
-            <option value="ALL">ทุกแผนก (All Depts)</option>
+            <option value="ALL">{t.allDepts || "ทุกแผนก (All Depts)"}</option>
             {settings?.departments?.map(d => (
               <option key={d} value={d}>{d}</option>
             ))}

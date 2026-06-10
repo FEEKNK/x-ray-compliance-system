@@ -20,6 +20,11 @@ vi.mock('../../db', () => {
   };
 });
 
+// Mock the auth middleware
+vi.mock('../../middleware/auth', () => ({
+  authenticateToken: vi.fn((req, res, next) => next())
+}));
+
 import { db } from '../../db';
 
 const app = express();

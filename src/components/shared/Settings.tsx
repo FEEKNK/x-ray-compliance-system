@@ -40,13 +40,7 @@ const Settings: React.FC = () => {
       await updateSettings(localSettings);
       
       // Trigger SLA check immediately in the background without waiting 1 minute
-      const token = localStorage.getItem('token');
-      if (token) {
-        fetch('/api/trigger-sla', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
-        }).catch(err => console.error('Failed to trigger SLA check immediately', err));
-      }
+      api.config.triggerSla().catch(err => console.error('Failed to trigger SLA check immediately', err));
 
       alert('System settings updated successfully. SLA limits applied and checked immediately.');
     } catch (err) {
@@ -62,14 +56,7 @@ const Settings: React.FC = () => {
     }
     setIsTestingEmail(true);
     try {
-      const res = await fetch('/api/test-email', { 
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email: localSettings.supervisorEmail })
-      });
-      const data = await res.json();
+      const data = await api.config.testEmail(localSettings.supervisorEmail);
       if (data.success) {
         alert('✅ ส่งอีเมลทดสอบสำเร็จ! กรุณาตรวจสอบกล่องจดหมายของคุณ (✅ Test email sent successfully!)');
       } else {
@@ -419,14 +406,13 @@ const Settings: React.FC = () => {
                   setIsSendingTestSLA(true);
                   setTestSLAResult(null);
                   try {
-                    const res = await fetch('/api/test-sla-now', { method: 'POST', credentials: 'include' });
-                    const data = await res.json();
+                    const data = await api.config.testSlaNow();
                     if (data.success) {
-                      setTestSLAResult(`✅ ส่งสำเร็จ ${data.total} คน:\n${data.sent.join('\n')}`);
+                      setTestSLAResult(`✅ ส่งสำเร็จ ${data.total} คน:\n${(data.sent || []).join('\n')}`);
                     } else {
                       setTestSLAResult(`⚠️ ${data.message || data.error}`);
                     }
-                  } catch (e) {
+                  } catch {
                     setTestSLAResult('❌ เชื่อมต่อ server ไม่ได้');
                   } finally {
                     setIsSendingTestSLA(false);

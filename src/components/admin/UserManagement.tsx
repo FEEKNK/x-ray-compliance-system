@@ -4,6 +4,7 @@ import { useApp } from '../../AppContext';
 import { Mail, Building2, Tag, ShieldCheck, UserPlus, Trash2 } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { User } from '../../types';
+import { api } from '../../api';
 import UserModal from './UserModal';
 
 const UserManagement: React.FC = () => {
@@ -27,12 +28,7 @@ const UserManagement: React.FC = () => {
     if (!email) return;
     setTestingEmailId(id);
     try {
-      const res = await fetch('/api/test-email', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      const data = await res.json();
+      const data = await api.config.testEmail(email);
       if (data.success) {
         alert(`✅ ส่งอีเมลทดสอบไปที่ ${email} สำเร็จ! (✅ Test email sent!)`);
       } else {

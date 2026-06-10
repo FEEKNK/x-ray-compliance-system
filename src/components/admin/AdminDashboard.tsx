@@ -18,7 +18,7 @@ const AdminDashboard: React.FC = () => {
   const { data: alerts = [] } = useAlerts();
   const { data: submissionsData } = useSubmissions();
   const submissions = submissionsData?.data || [];
-  const getCompletionRate = (date: string, department?: string) => {
+  const getCompletionRate = React.useCallback((date: string, department?: string) => {
       let dailySchedules = schedules.filter(s => s.date === date);
       if (department) {
         dailySchedules = dailySchedules.filter(s => {
@@ -29,7 +29,7 @@ const AdminDashboard: React.FC = () => {
       if (dailySchedules.length === 0) return 0;
       const completed = dailySchedules.filter(s => s.status === 'Completed').length;
       return (completed / dailySchedules.length) * 100;
-    };
+    }, [schedules, forms]);
   const t = translations[language];
   const [newAnnouncement, setNewAnnouncement] = useState('');
   const [selectedDept, setSelectedDept] = useState<string>(settings?.departments?.[0] || 'IMAGING');
@@ -93,7 +93,7 @@ const AdminDashboard: React.FC = () => {
       const label = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
       return { val: getCompletionRate(dateStr, selectedDept), label };
     });
-  }, [schedules, forms, selectedDept]);
+  }, [selectedDept, getCompletionRate]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
