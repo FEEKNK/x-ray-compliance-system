@@ -14,7 +14,7 @@ import { api } from '../../api';
 import type { Submission, Schedule, DynamicForm } from '../../types';
 import { useSchedules, useForms, useAddSubmission } from '../../hooks/queries';
 import { translations } from '../../i18n';
-import { getLockStatus, getSubmitDeadline, getLocalTodayStr } from '../../utils/shiftTime';
+import { getLockStatus, getSubmitDeadline, getLocalTodayStr, getShiftAllowStartTime } from '../../utils/shiftTime';
 
 /** Live countdown: re-renders every second until deadline */
 function useCountdown(scheduleDate: string, shift: import('../../types').Shift, lockoutHours?: Record<string, number>, shiftsConfig?: Record<string, string>) {
@@ -24,22 +24,44 @@ function useCountdown(scheduleDate: string, shift: import('../../types').Shift, 
     return () => clearInterval(id);
   }, []);
 
+  const allowStartTime = getShiftAllowStartTime(scheduleDate, shift, shiftsConfig);
+  const isEarly = now < allowStartTime;
+
   const deadline = getSubmitDeadline(scheduleDate, shift, lockoutHours, shiftsConfig);
   const diffMs = deadline.getTime() - now.getTime();
-  const isLocked = diffMs <= 0;
-  const totalSec = Math.max(0, Math.floor(diffMs / 1000));
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
+  const isLockedTime = diffMs <= 0;
+
+  const isLocked = isLockedTime || isEarly;
+  
+  let label = '';
+  let urgent = false;
+  let warning = false;
+  let totalSec = 0;
+
   const pad = (n: number) => String(n).padStart(2, '0');
-  const label = isLocked
-    ? 'ล็อกแล้ว'
-    : h > 0
-    ? `${h}:${pad(m)}:${pad(s)}`
-    : `${pad(m)}:${pad(s)}`;
-  const urgent = !isLocked && totalSec < 30 * 60; // < 30 min
-  const warning = !isLocked && totalSec < 60 * 60; // < 60 min
-  return { isLocked, label, urgent, warning, totalSec };
+
+  if (isEarly) {
+    const earlyDiffMs = allowStartTime.getTime() - now.getTime();
+    const eTotalSec = Math.max(0, Math.floor(earlyDiffMs / 1000));
+    const eh = Math.floor(eTotalSec / 3600);
+    const em = Math.floor((eTotalSec % 3600) / 60);
+    const es = eTotalSec % 60;
+    label = `เปิดใน ${eh > 0 ? `${eh}:` : ''}${pad(em)}:${pad(es)}`;
+  } else if (isLockedTime) {
+    label = 'ล็อกแล้ว';
+  } else {
+    totalSec = Math.max(0, Math.floor(diffMs / 1000));
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    label = h > 0
+      ? `${h}:${pad(m)}:${pad(s)}`
+      : `${pad(m)}:${pad(s)}`;
+    urgent = totalSec < 30 * 60; // < 30 min
+    warning = totalSec < 60 * 60; // < 60 min
+  }
+
+  return { isLocked, isEarly, label, urgent, warning, totalSec };
 }
 
 const StaffDashboard: React.FC = () => {
@@ -189,7 +211,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
     <div 
       className={`${fullWidth ? 'w-full' : 'min-w-[280px] md:min-w-[320px]'} snap-start p-6 rounded-3xl border-2 transition-all flex flex-col justify-between ${
         lockStatus.isLocked
-          ? 'bg-red-50/60 border-red-100 opacity-80'
+          ? (lockStatus.isEarly ? 'bg-orange-50/60 border-orange-100 opacity-80' : 'bg-red-50/60 border-red-100 opacity-80')
           : isCompleted 
           ? 'bg-gray-50 border-gray-100 opacity-70' 
           : 'bg-white border-[#00468B]/10 shadow-lg shadow-blue-900/5'
@@ -208,7 +230,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
         {/* Countdown badge — top-right corner of card body */}
         <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-black tracking-widest self-start ${
           cd.isLocked
-            ? 'bg-red-100 text-red-600'
+            ? (cd.isEarly ? 'bg-orange-100 text-orange-600' : 'bg-red-100 text-red-600')
             : cd.urgent
             ? 'bg-orange-100 text-orange-600 animate-pulse'
             : cd.warning
@@ -216,7 +238,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
             : 'bg-gray-100 text-gray-500'
         }`}>
           {cd.isLocked ? '🔒' : <Clock size={11} />}
-          {cd.isLocked ? 'หมดเวลา' : cd.label}
+          {cd.isLocked ? (cd.isEarly ? cd.label : 'หมดเวลา') : cd.label}
         </div>
       </div>
       
@@ -227,8 +249,8 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
           </div>
         </div>
         {cd.isLocked ? (
-          <span className="px-5 py-2 rounded-xl text-xs font-bold bg-red-50 text-red-400 border border-red-100">
-            {t.notDone || 'ไม่ได้ทำ'}
+          <span className={`px-5 py-2 rounded-xl text-xs font-bold ${cd.isEarly ? 'bg-orange-50 text-orange-400 border border-orange-100' : 'bg-red-50 text-red-400 border border-red-100'}`}>
+            {cd.isEarly ? 'ยังไม่ถึงเวลา' : (t.notDone || 'ไม่ได้ทำ')}
           </span>
         ) : (
           <button 

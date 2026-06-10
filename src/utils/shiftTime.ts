@@ -42,21 +42,30 @@ export const ALERT_AFTER_HOURS: Record<Shift, number> = {
   Night: 1,
 };
 
-/**
- * Get the deadline (Date) by which a form must be submitted for a given schedule date+shift.
- * After this time, the form is LOCKED and cannot be submitted.
- */
-export function getSubmitDeadline(scheduleDate: string, shift: Shift, lockoutHours?: Record<string, number>, shiftsConfig?: Record<string, string>): Date {
+export function getShiftStartTime(scheduleDate: string, shift: Shift, shiftsConfig?: Record<string, string>): Date {
   const [year, month, day] = scheduleDate.split('-').map(Number);
   
   const startHour = shift === 'Morning' ? parseShiftStartHour(shiftsConfig?.Morning, SHIFT_START.Morning) :
                     shift === 'Afternoon' ? parseShiftStartHour(shiftsConfig?.Afternoon, SHIFT_START.Afternoon) :
                     parseShiftStartHour(shiftsConfig?.Night, SHIFT_START.Night);
 
+  return new Date(year, month - 1, day, startHour, 0, 0, 0);
+}
+
+export function getShiftAllowStartTime(scheduleDate: string, shift: Shift, shiftsConfig?: Record<string, string>): Date {
+  const startTime = getShiftStartTime(scheduleDate, shift, shiftsConfig);
+  startTime.setHours(startTime.getHours() - 2); // 2 hours before
+  return startTime;
+}
+
+/**
+ * Get the deadline (Date) by which a form must be submitted for a given schedule date+shift.
+ * After this time, the form is LOCKED and cannot be submitted.
+ */
+export function getSubmitDeadline(scheduleDate: string, shift: Shift, lockoutHours?: Record<string, number>, shiftsConfig?: Record<string, string>): Date {
   const windowHours = lockoutHours ? lockoutHours[shift] : DEFAULT_LOCKOUT_HOURS[shift];
 
-  // For Night shift, deadline is next day 02:00
-  const deadline = new Date(year, month - 1, day, startHour, 0, 0, 0);
+  const deadline = getShiftStartTime(scheduleDate, shift, shiftsConfig);
   deadline.setHours(deadline.getHours() + windowHours);
   
   // Also support decimal hours
@@ -106,10 +115,22 @@ export function isAlertTime(scheduleDate: string, shift: Shift, shiftsConfig?: R
  */
 export function getLockStatus(scheduleDate: string, shift: Shift, lockoutHours?: Record<string, number>, shiftsConfig?: Record<string, string>): {
   isLocked: boolean;
+  isEarly?: boolean;
   label: string;
   minutesLeft?: number;
 } {
   const now = new Date();
+
+  const allowStartTime = getShiftAllowStartTime(scheduleDate, shift, shiftsConfig);
+  if (now < allowStartTime) {
+    const earlyDiff = allowStartTime.getTime() - now.getTime();
+    const eMin = Math.floor(earlyDiff / 60000);
+    const eHr = Math.floor(eMin / 60);
+    const eMinLeft = eMin % 60;
+    const timeStr = eHr > 0 ? `${eHr}ชม. ${eMinLeft}น.` : `${eMin} นาที`;
+    return { isLocked: true, isEarly: true, label: `รอก่อน (เปิดในอีก ${timeStr})` };
+  }
+
   const deadline = getSubmitDeadline(scheduleDate, shift, lockoutHours, shiftsConfig);
   const diff = deadline.getTime() - now.getTime();
 
