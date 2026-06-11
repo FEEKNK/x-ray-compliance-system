@@ -193,7 +193,7 @@ const Scheduler: React.FC = () => {
 
     if (allToDeleteIds.length > 0) {
       if (hasCompleted) {
-        if (!confirm(t.language === 'TH' ? 'ตรวจพบงานที่บันทึกข้อมูลแล้วในรายการที่คุณต้องการลบ คุณแน่ใจหรือไม่ว่าต้องการลบงานที่ทำเสร็จแล้วเหล่านี้?' : 'Detected completed tasks in your selection. Are you sure you want to delete these completed records?')) {
+        if (!confirm(language === 'TH' ? 'ตรวจพบงานที่บันทึกข้อมูลแล้วในรายการที่คุณต้องการลบ คุณแน่ใจหรือไม่ว่าต้องการลบงานที่ทำเสร็จแล้วเหล่านี้?' : 'Detected completed tasks in your selection. Are you sure you want to delete these completed records?')) {
           return;
         }
       }
@@ -523,12 +523,12 @@ const Scheduler: React.FC = () => {
               {/* Step 1: Days Selection */}
               <div className="space-y-4">
                 <div className="flex justify-between items-end px-1">
-                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.language === 'TH' ? 'เลือกวันที่' : 'Select Days'}</h4>
+                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{language === 'TH' ? 'เลือกวันที่' : 'Select Days'}</h4>
                    <button 
                     onClick={() => setSelectedDays(Array.from({length: daysInMonth}, (_, i) => i + 1))} 
                     className="text-[10px] font-black text-[#00468B] uppercase tracking-widest hover:underline"
                    >
-                    {t.language === 'TH' ? 'เลือกทั้งเดือน' : 'Select Full Month'}
+                    {language === 'TH' ? 'เลือกทั้งเดือน' : 'Select Full Month'}
                    </button>
                 </div>
                 <div className="grid grid-cols-7 sm:grid-cols-7 md:grid-cols-10 gap-2">
@@ -802,7 +802,7 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
           <form onSubmit={handleSchedule} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6 sticky top-6">
              <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">{t.language === 'TH' ? 'วันที่' : 'Date'}</label>
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">{language === 'TH' ? 'วันที่' : 'Date'}</label>
                 <input 
                   type="date" 
                   value={date}
@@ -811,7 +811,7 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">{t.language === 'TH' ? 'เวร' : 'Shift'}</label>
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">{language === 'TH' ? 'เวร' : 'Shift'}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['Morning', 'Afternoon', 'Night'] as Shift[]).map(s => (
                     <button
@@ -836,7 +836,7 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
                   onChange={(e) => setStaffId(e.target.value)}
                   className="w-full border-2 border-gray-50 rounded-xl p-3 bg-gray-50 font-bold text-gray-700 outline-none focus:border-blue-500 transition-all appearance-none"
                 >
-                  <option value="">{t.language === 'TH' ? 'เลือกพนักงาน...' : 'Select Personnel...'}</option>
+                  <option value="">{language === 'TH' ? 'เลือกพนักงาน...' : 'Select Personnel...'}</option>
                   {staff.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               </div>
@@ -847,7 +847,7 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
                   onChange={(e) => setFormId(e.target.value)}
                   className="w-full border-2 border-gray-50 rounded-xl p-3 bg-gray-50 font-bold text-gray-700 outline-none focus:border-blue-500 transition-all appearance-none"
                 >
-                  <option value="">{t.language === 'TH' ? 'เลือกแบบฟอร์ม...' : 'Select Form...'}</option>
+                  <option value="">{language === 'TH' ? 'เลือกแบบฟอร์ม...' : 'Select Form...'}</option>
                   {forms.map(f => <option key={f.id} value={f.id}>{f.title}</option>)}
                 </select>
               </div>
@@ -872,7 +872,7 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
                    </div>
                    <button 
                     onClick={() => {
-                      if (confirm(t.language === 'TH' ? 'คุณแน่ใจหรือไม่ว่าต้องการยกเลิกเวรนี้?' : 'Are you sure you want to cancel this shift?')) {
+                      if (confirm(language === 'TH' ? 'คุณแน่ใจหรือไม่ว่าต้องการยกเลิกเวรนี้?' : 'Are you sure you want to cancel this shift?')) {
                         deleteSchedule(s.id);
                       }
                     }} 

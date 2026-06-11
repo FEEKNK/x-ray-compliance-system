@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useForms, useSubmissions, useSchedules, useUsers } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
-import { parseDbDate } from '../../utils/shiftTime';
+import { parseDbDate, getLocalTodayStr } from '../../utils/shiftTime';
 import {
   ShieldCheck, ChevronLeft, ChevronRight, Calendar,
   FileText, CheckCircle2, AlertTriangle, BarChart3,
@@ -126,7 +126,7 @@ const QualityDashboard: React.FC = () => {
   const formStats = useMemo(() => {
     return filteredForms.map(form => {
       const monthSubs = submissions.filter(s =>
-        s.formId === form.id && s.submittedAt.startsWith(selectedMonthStr)
+        s.formId === form.id && getLocalTodayStr(parseDbDate(s.submittedAt)).startsWith(selectedMonthStr)
       );
       const failCount = monthSubs.filter(s =>
         Object.values(s.data).some(v => v === 'Fail' || v === 'Alert')
@@ -207,7 +207,7 @@ const QualityDashboard: React.FC = () => {
             break;
           case 'submitCount': base[col.label] = f.submitCount; break;
           case 'failCount': base[col.label] = f.failCount; break;
-          case 'lastSubmit': base[col.label] = f.lastSubmit ? new Date(f.lastSubmit).toLocaleDateString('th-TH') : '—'; break;
+          case 'lastSubmit': base[col.label] = f.lastSubmit ? parseDbDate(f.lastSubmit).toLocaleDateString('th-TH') : '—'; break;
           default:
             if (col.isCustom) base[col.label] = '';
             break;
@@ -275,8 +275,8 @@ const QualityDashboard: React.FC = () => {
               const rawVal = sub.data[q.id];
               const otherVal = sub.data[`${q.id}_other`];
               const val = (rawVal === 'อื่นๆ' && otherVal) ? otherVal : rawVal;
-              if (val === 'Pass' || val === 'yes' || val === true) return '✓';
-              if (val === 'Fail' || val === 'Alert' || val === 'no' || val === false) return '✗';
+              if (val === 'Pass' || val === 'yes' || val === true) return '/';
+              if (val === 'Fail' || val === 'Alert' || val === 'no' || val === false) return 'X';
               if (val === undefined || val === null || val === '') return '-';
               return String(val);
             });
@@ -400,8 +400,8 @@ const QualityDashboard: React.FC = () => {
               const rawVal = sub.data[q.id];
               const otherVal = sub.data[`${q.id}_other`];
               const val = (rawVal === 'อื่นๆ' && otherVal) ? otherVal : rawVal;
-              if (val === 'Pass' || val === 'yes' || val === true) return '✓';
-              if (val === 'Fail' || val === 'Alert' || val === 'no' || val === false) return '✗';
+              if (val === 'Pass' || val === 'yes' || val === true) return '/';
+              if (val === 'Fail' || val === 'Alert' || val === 'no' || val === false) return 'X';
               if (val === undefined || val === null || val === '') return '-';
               return String(val).substring(0, 4);
             });
@@ -458,10 +458,10 @@ const QualityDashboard: React.FC = () => {
           // Color coding for Pass/Fail
           if (data.section === 'body' && data.column.index > 0) {
             const text = data.cell.text?.[0] || '';
-            if (text === '✓') {
+            if (text === '/' || text === '✓') {
               data.cell.styles.textColor = [22, 163, 74]; // green
               data.cell.styles.fontStyle = 'bold';
-            } else if (text === '✗') {
+            } else if (text === 'X' || text === '✗') {
               data.cell.styles.textColor = [220, 38, 38]; // red
               data.cell.styles.fontStyle = 'bold';
             }
@@ -548,7 +548,7 @@ const QualityDashboard: React.FC = () => {
   // ─── Expanded Row Submissions ─────────────────────
   const getFormSubmissions = (formId: string) => {
     return submissions
-      .filter(s => s.formId === formId && s.submittedAt.startsWith(selectedMonthStr))
+      .filter(s => s.formId === formId && getLocalTodayStr(parseDbDate(s.submittedAt)).startsWith(selectedMonthStr))
       .map(s => {
         const staff = users.find(u => u.id === s.staffId);
         const schedule = schedules.find(sch => sch.id === s.scheduleId);
@@ -623,7 +623,7 @@ const QualityDashboard: React.FC = () => {
         );
       case 'lastSubmit':
         return stat.lastSubmit
-          ? <span className="text-[10px] font-bold text-gray-600">{new Date(stat.lastSubmit).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
+          ? <span className="text-[10px] font-bold text-gray-600">{parseDbDate(stat.lastSubmit).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
           : <span className="text-gray-300 text-xs">—</span>;
       default:
         // Custom columns — render empty editable placeholder

@@ -3,7 +3,7 @@ import { useApp } from '../../AppContext';
 import { parseDbDate } from '../../utils/shiftTime';
 import { Search, Filter, Download, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import SubmissionDetailModal from '../shared/SubmissionDetailModal';
-import { getLocalTodayStr } from '../../utils/shiftTime';
+import { parseDbDate, getLocalTodayStr } from '../../utils/shiftTime';
 import { translations } from '../../i18n';
 import type { Submission } from '../../types';
 
@@ -61,7 +61,7 @@ const MasterLogs: React.FC = () => {
     
     const matchesShift = filterShift === 'All' || schedule?.shift === filterShift;
     const matchesDept = filterDept === 'All' || form?.department === filterDept;
-    const matchesDate = !filterDate || sub.submittedAt.startsWith(filterDate);
+    const matchesDate = !filterDate || getLocalTodayStr(parseDbDate(sub.submittedAt)).startsWith(filterDate);
 
     return matchesSearch && matchesShift && matchesDept && matchesDate;
   });

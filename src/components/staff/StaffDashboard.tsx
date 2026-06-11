@@ -33,7 +33,7 @@ function useCountdown(scheduleDate: string, shift: import('../../types').Shift, 
 
   const isLocked = isLockedTime || isEarly;
   
-  let label = '';
+  let label: string;
   let urgent = false;
   let warning = false;
   let totalSec = 0;
@@ -74,9 +74,7 @@ const StaffDashboard: React.FC = () => {
   const lockoutHours = settings?.lockoutHours as Record<string, number> | undefined;
   const shiftsConfig = settings?.shifts as Record<string, string> | undefined;
 
-  // Get local date YYYY-MM-DD
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const today = getLocalTodayStr();
   
   const mySchedules = currentUser 
     ? schedules.filter(s => s.staffId === currentUser.id && s.date === today).sort((a, b) => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../AppContext';
-import { parseDbDate } from '../../utils/shiftTime';
+import { parseDbDate, getLocalTodayStr } from '../../utils/shiftTime';
 import { ClipboardList, Clock, CheckCircle2, Search, Pencil, Lock } from 'lucide-react';
 import SubmissionDetailModal from '../shared/SubmissionDetailModal';
 import { translations } from '../../i18n';
@@ -27,7 +27,7 @@ const StaffHistory: React.FC = () => {
     .filter(s => {
       const form = forms.find(f => f.id === s.formId);
       const matchesSearch = form?.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDate = !filterDate || s.submittedAt.startsWith(filterDate);
+      const matchesDate = !filterDate || getLocalTodayStr(parseDbDate(s.submittedAt)).startsWith(filterDate);
       return matchesSearch && matchesDate;
     })
     .sort((a, b) => parseDbDate(b.submittedAt).getTime() - parseDbDate(a.submittedAt).getTime());
