@@ -313,6 +313,33 @@ const QualityDashboard: React.FC = () => {
       const wb = XLSX.utils.book_new();
       const safeTitle = form.title.replace(/[\\/?*[\]:]/g, '-');
       XLSX.utils.book_append_sheet(wb, ws, safeTitle.substring(0, 31));
+
+      // Build Failure Log
+      const failRows: string[][] = [];
+      failRows.push(['วันที่/เวลา', 'เวร', 'ผู้ตรวจสอบ', 'รายการที่พบปัญหา', 'สาเหตุ/หมายเหตุ']);
+      let hasFails = false;
+      detailSubs.forEach(sub => {
+        const dt = parseDbDate(sub.submittedAt);
+        const dateStr = dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+        const timeStr = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+        const dateTime = `${dateStr} ${timeStr}`;
+        questions.forEach(q => {
+          const rawVal = sub.data[q.id];
+          if (rawVal === 'Fail' || rawVal === 'Alert' || rawVal === 'no' || rawVal === false) {
+             hasFails = true;
+             const otherVal = sub.data[`${q.id}_other`];
+             const reason = otherVal ? String(otherVal) : '-';
+             failRows.push([dateTime, sub.shift, sub.staffName, q.label, reason]);
+          }
+        });
+      });
+
+      if (hasFails) {
+        const failWs = XLSX.utils.aoa_to_sheet(failRows);
+        failWs['!cols'] = [{ wch: 18 }, { wch: 10 }, { wch: 20 }, { wch: 40 }, { wch: 40 }];
+        XLSX.utils.book_append_sheet(wb, failWs, 'Failure Log');
+      }
+
       XLSX.writeFile(wb, `${safeTitle}_${selectedMonthStr}.xlsx`);
     } catch (err) {
       console.error('Excel export error:', err);
@@ -457,8 +484,8 @@ const QualityDashboard: React.FC = () => {
       if (form.description) {
         doc.setFontSize(7);
         doc.setTextColor(80);
-        const lines = doc.splitTextToSize(form.description, pageW - 20);
-        doc.text(lines, 10, currentY);
+        const lines = doc.splitTextToSize(form.description, pageW / 2 - 10);
+        doc.text(lines, pageW - 10, currentY, { align: 'right' });
         currentY += (lines.length * 4) + 2;
       }
 
@@ -466,6 +493,49 @@ const QualityDashboard: React.FC = () => {
       doc.setTextColor(150);
       doc.text(`Generated: ${new Date().toLocaleString('en-GB', { hour12: false })}  |  ${hospitalName}`, 10, currentY + 5);
       doc.text(`Page 1`, pageW - 15, currentY + 5);
+
+      // Build Failure Log Page
+      const failBody: string[][] = [];
+      detailSubs.forEach(sub => {
+        const dt = parseDbDate(sub.submittedAt);
+        const dateStr = dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+        const timeStr = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+        const dateTime = `${dateStr} ${timeStr}`;
+        questions.forEach(q => {
+          const rawVal = sub.data[q.id];
+          if (rawVal === 'Fail' || rawVal === 'Alert' || rawVal === 'no' || rawVal === false) {
+             const otherVal = sub.data[`${q.id}_other`];
+             const reason = otherVal ? String(otherVal) : '-';
+             failBody.push([dateTime, sub.shift, sub.staffName, q.label, reason]);
+          }
+        });
+      });
+
+      if (failBody.length > 0) {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.setTextColor(220, 38, 38);
+        doc.text('รายงานข้อผิดพลาด (Failure / Defect Log)', pageW / 2, 15, { align: 'center' });
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`เดือน: ${monthDisplay}`, pageW / 2, 21, { align: 'center' });
+        
+        autoTable(doc, {
+          head: [['วันที่/เวลา', 'เวร', 'ผู้ตรวจสอบ', 'รายการที่พบปัญหา', 'สาเหตุ/หมายเหตุ']],
+          body: failBody,
+          startY: 25,
+          theme: 'grid',
+          styles: { font: 'Sarabun', fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [220, 38, 38], textColor: [255, 255, 255], fontStyle: 'bold' },
+          columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 15 },
+            2: { cellWidth: 35 },
+            3: { cellWidth: 70 },
+            4: { cellWidth: 'auto' }
+          }
+        });
+      }
 
       const safeTitle = form.title.replace(/[\\/?*[\]:]/g, '-');
       doc.save(`${safeTitle}_${selectedMonthStr}.pdf`);
