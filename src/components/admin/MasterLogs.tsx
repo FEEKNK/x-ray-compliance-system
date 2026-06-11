@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useApp } from '../../AppContext';
-import { parseDbDate } from '../../utils/shiftTime';
 import { Search, Filter, Download, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import SubmissionDetailModal from '../shared/SubmissionDetailModal';
 import { parseDbDate, getLocalTodayStr } from '../../utils/shiftTime';
