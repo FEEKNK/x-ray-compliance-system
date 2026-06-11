@@ -30,7 +30,7 @@ const StaffHistory: React.FC = () => {
       const matchesDate = !filterDate || s.submittedAt.startsWith(filterDate);
       return matchesSearch && matchesDate;
     })
-    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    .sort((a, b) => parseDbDate(b.submittedAt).getTime() - parseDbDate(a.submittedAt).getTime());
 
   const handleEditClick = (sub: Submission) => {
     const schedule = schedules.find(s => s.id === sub.scheduleId);

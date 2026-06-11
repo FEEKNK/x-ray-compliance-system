@@ -10,7 +10,7 @@ import {
 import { Calendar, Users, AlertCircle, ChevronLeft, ChevronRight, User, Check, Clock, TrendingUp, BarChart2, X } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { Schedule } from '../../types';
-import { getLocalTodayStr } from '../../utils/shiftTime';
+import { getLocalTodayStr, parseDbDate } from '../../utils/shiftTime';
 
 
 
@@ -123,7 +123,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
   // ── Machine Errors ───────────────────────
   const machineErrors = useMemo(() => {
     const periodSubmissions = submissions.filter(s => {
-      const localDate = getLocalTodayStr(new Date(s.submittedAt));
+      const localDate = getLocalTodayStr(parseDbDate(s.submittedAt));
       return filterDate ? localDate === filterDate : localDate.startsWith(selectedMonthStr);
     });
     const errorsMap: Record<string, { count: number, details: Record<string, number> }> = {};
@@ -425,7 +425,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept })
     return Array.from({ length: 12 }, (_, m) => {
       const monthStr = `${year}-${String(m + 1).padStart(2, '0')}`;
       const monthSubs = submissions.filter(s => {
-        if (!getLocalTodayStr(new Date(s.submittedAt)).startsWith(monthStr)) return false;
+        if (!getLocalTodayStr(parseDbDate(s.submittedAt)).startsWith(monthStr)) return false;
         if (selectedDept === 'ALL') return true;
         const form = forms.find(f => f.id === s.formId);
         return form && form.department === selectedDept;
@@ -451,7 +451,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept })
 
   // ── Top machine errors for whole year ──
   const yearlyMachineErrors = useMemo(() => {
-    const yearSubs = submissions.filter(s => getLocalTodayStr(new Date(s.submittedAt)).startsWith(`${year}-`));
+    const yearSubs = submissions.filter(s => getLocalTodayStr(parseDbDate(s.submittedAt)).startsWith(`${year}-`));
     const errorsMap: Record<string, { count: number, details: Record<string, number> }> = {};
     
     yearSubs.forEach(sub => {

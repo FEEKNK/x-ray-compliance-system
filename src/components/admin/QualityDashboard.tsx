@@ -269,7 +269,7 @@ const QualityDashboard: React.FC = () => {
       questions.forEach(q => {
         const row: Record<string, unknown> = { 'รายการตรวจเช็ค': q.label };
         daysArray.forEach(day => {
-          const subsOnDay = detailSubs.filter(s => new Date(s.submittedAt).getDate() === day);
+          const subsOnDay = detailSubs.filter(s => parseDbDate(s.submittedAt).getDate() === day);
           if (subsOnDay.length > 0) {
             const values = subsOnDay.map(sub => {
               const rawVal = sub.data[q.id];
@@ -292,10 +292,10 @@ const QualityDashboard: React.FC = () => {
       const sigRow: Record<string, unknown> = { 'รายการตรวจเช็ค': 'ผู้ตรวจสอบ' };
       const timeRow: Record<string, unknown> = { 'รายการตรวจเช็ค': 'เวลา' };
       daysArray.forEach(day => {
-        const subsOnDay = detailSubs.filter(s => new Date(s.submittedAt).getDate() === day);
+        const subsOnDay = detailSubs.filter(s => parseDbDate(s.submittedAt).getDate() === day);
         sigRow[String(day)] = subsOnDay.map(s => s.staffName.split(' ')[0]).join(', ');
         timeRow[String(day)] = subsOnDay.map(s => {
-          const dt = new Date(s.submittedAt);
+          const dt = parseDbDate(s.submittedAt);
           return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
         }).join(', ');
       });
@@ -367,7 +367,7 @@ const QualityDashboard: React.FC = () => {
       questions.forEach(q => {
         const row = [q.label];
         daysArray.forEach(day => {
-          const subsOnDay = detailSubs.filter(s => new Date(s.submittedAt).getDate() === day);
+          const subsOnDay = detailSubs.filter(s => parseDbDate(s.submittedAt).getDate() === day);
           if (subsOnDay.length > 0) {
             const vals = subsOnDay.map(sub => {
               const rawVal = sub.data[q.id];
@@ -390,10 +390,10 @@ const QualityDashboard: React.FC = () => {
       const sigRow = ['ผู้ตรวจสอบ'];
       const timeRow = ['เวลา'];
       daysArray.forEach(day => {
-        const subsOnDay = detailSubs.filter(s => new Date(s.submittedAt).getDate() === day);
+        const subsOnDay = detailSubs.filter(s => parseDbDate(s.submittedAt).getDate() === day);
         sigRow.push(subsOnDay.map(s => s.staffName.split(' ')[0].substring(0, 3)).join('/'));
         timeRow.push(subsOnDay.map(s => {
-          const dt = new Date(s.submittedAt);
+          const dt = parseDbDate(s.submittedAt);
           return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
         }).join('/'));
       });
@@ -902,7 +902,7 @@ const QualityDashboard: React.FC = () => {
                                             {q.label}
                                           </td>
                                           {daysArray.map(day => {
-                                            const subsOnDay = detailSubs.filter(s => new Date(s.submittedAt).getDate() === day);
+                                            const subsOnDay = detailSubs.filter(s => parseDbDate(s.submittedAt).getDate() === day);
                                             return (
                                               <td key={day} className="p-0 border-r border-gray-100 align-top relative bg-white">
                                                 {subsOnDay.length > 0 ? (
@@ -947,7 +947,7 @@ const QualityDashboard: React.FC = () => {
                                           ผู้ตรวจสอบ
                                         </td>
                                         {daysArray.map(day => {
-                                          const subsOnDay = detailSubs.filter(s => new Date(s.submittedAt).getDate() === day);
+                                          const subsOnDay = detailSubs.filter(s => parseDbDate(s.submittedAt).getDate() === day);
                                           return (
                                             <td key={day} className="p-0 border-r border-gray-100 align-top bg-[#f8fbff]">
                                               {subsOnDay.length > 0 ? (
@@ -974,13 +974,13 @@ const QualityDashboard: React.FC = () => {
                                           เวลา
                                         </td>
                                         {daysArray.map(day => {
-                                          const subsOnDay = detailSubs.filter(s => new Date(s.submittedAt).getDate() === day);
+                                          const subsOnDay = detailSubs.filter(s => parseDbDate(s.submittedAt).getDate() === day);
                                           return (
                                             <td key={day} className="p-0 border-r border-gray-100 align-top bg-white">
                                               {subsOnDay.length > 0 ? (
                                                 <div className="flex flex-col h-full min-h-[24px]">
                                                   {subsOnDay.map((sub, i) => {
-                                                    const dt = new Date(sub.submittedAt);
+                                                    const dt = parseDbDate(sub.submittedAt);
                                                     const timeStr = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
                                                     return (
                                                       <div key={i} className={`flex-1 flex items-center justify-center p-0.5 ${i > 0 ? 'border-t border-gray-100' : ''}`} title={`เวลาส่งข้อมูล: ${timeStr}`}>
