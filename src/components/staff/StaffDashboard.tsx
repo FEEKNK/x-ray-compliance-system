@@ -14,7 +14,7 @@ import { api } from '../../api';
 import type { Submission, Schedule, DynamicForm } from '../../types';
 import { useSchedules, useForms, useAddSubmission } from '../../hooks/queries';
 import { translations } from '../../i18n';
-import { getLockStatus, getSubmitDeadline, getLocalTodayStr, getShiftAllowStartTime } from '../../utils/shiftTime';
+import { getLockStatus, getSubmitDeadline, getLocalTodayStr, getShiftAllowStartTime, getShiftStartTime } from '../../utils/shiftTime';
 
 /** Live countdown: re-renders every second until deadline */
 function useCountdown(scheduleDate: string, shift: import('../../types').Shift, lockoutHours?: Record<string, number>, shiftsConfig?: Record<string, string>) {
@@ -65,18 +65,35 @@ function useCountdown(scheduleDate: string, shift: import('../../types').Shift, 
 }
 
 const StaffDashboard: React.FC = () => {
-  const { currentUser, language } = useApp();
+  const { currentUser, language, settings } = useApp();
   const t = translations[language];
   const { data: schedules = [] } = useSchedules();
   const { data: forms = [] } = useForms();
   const { mutate: submitForm } = useAddSubmission();
   
+  const lockoutHours = settings?.lockoutHours as Record<string, number> | undefined;
+  const shiftsConfig = settings?.shifts as Record<string, string> | undefined;
+
   // Get local date YYYY-MM-DD
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
   const mySchedules = currentUser 
-    ? schedules.filter(s => s.staffId === currentUser.id && s.date === today).sort((a, b) => (a.status === 'Pending' ? -1 : b.status === 'Pending' ? 1 : 0))
+    ? schedules.filter(s => s.staffId === currentUser.id && s.date === today).sort((a, b) => {
+        if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+        if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+        
+        if (a.status === 'Pending' && b.status === 'Pending') {
+           const lockA = getLockStatus(a.date, a.shift, lockoutHours, shiftsConfig).isLocked;
+           const lockB = getLockStatus(b.date, b.shift, lockoutHours, shiftsConfig).isLocked;
+           if (!lockA && lockB) return -1;
+           if (lockA && !lockB) return 1;
+        }
+        
+        const timeA = getShiftStartTime(a.date, a.shift, shiftsConfig).getTime();
+        const timeB = getShiftStartTime(b.date, b.shift, shiftsConfig).getTime();
+        return timeA - timeB;
+      })
     : [];
   
   const [activeSchedule, setActiveSchedule] = useState<Schedule | null>(null);
