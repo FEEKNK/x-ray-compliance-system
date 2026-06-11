@@ -80,15 +80,19 @@ const StaffDashboard: React.FC = () => {
   
   const mySchedules = currentUser 
     ? schedules.filter(s => s.staffId === currentUser.id && s.date === today).sort((a, b) => {
-        if (a.status === 'Pending' && b.status !== 'Pending') return -1;
-        if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+        const getPriority = (schedule: Schedule) => {
+           const lock = getLockStatus(schedule.date, schedule.shift, lockoutHours, shiftsConfig);
+           if (!lock.isLocked) {
+               return schedule.status === 'Pending' ? 1 : 2;
+           } else {
+               return lock.isEarly ? 3 : 4;
+           }
+        };
+
+        const prioA = getPriority(a);
+        const prioB = getPriority(b);
         
-        if (a.status === 'Pending' && b.status === 'Pending') {
-           const lockA = getLockStatus(a.date, a.shift, lockoutHours, shiftsConfig).isLocked;
-           const lockB = getLockStatus(b.date, b.shift, lockoutHours, shiftsConfig).isLocked;
-           if (!lockA && lockB) return -1;
-           if (lockA && !lockB) return 1;
-        }
+        if (prioA !== prioB) return prioA - prioB;
         
         const timeA = getShiftStartTime(a.date, a.shift, shiftsConfig).getTime();
         const timeB = getShiftStartTime(b.date, b.shift, shiftsConfig).getTime();
