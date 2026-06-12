@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, SystemSettings, AppContextType } from './types';
 import { api } from './api';
-import { getLocalTodayStr } from './utils/shiftTime';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -91,13 +90,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await api.resetData();
   }, []);
 
-  const exportData = useCallback(async () => {
+  const exportData = useCallback(async (prefix = 'xray-system-export') => {
     const data = await api.exportData();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `xray-system-export-${getLocalTodayStr()}.json`;
+    
+    // Create timestamp YYYYMMDD_HHMM
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const mins = String(now.getMinutes()).padStart(2, '0');
+    const timestamp = `${year}${month}${day}_${hours}${mins}`;
+    
+    a.download = `${prefix}_${timestamp}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

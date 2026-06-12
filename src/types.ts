@@ -76,6 +76,7 @@ export interface SystemSettings {
     Afternoon: string;
     Night: string;
   };
+  autoBackupEnabled?: boolean;
 }
 
 export interface Alert {
@@ -108,7 +109,7 @@ export interface AppContextType {
   // Keep these global actions here for now or move to separate hooks
   resetDatabase: () => void;
   resetData: () => Promise<void>;
-  exportData: () => Promise<void>;
+  exportData: (prefix?: string) => Promise<void>;
   clearLogs: () => void;
 }
 

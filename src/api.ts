@@ -213,9 +213,9 @@ export const api = {
     apiFetch(`/reset-data`, { method: 'POST' }).then(r => handleResponse(r)),
 
   // ─── Import Data ──────────────────────────────────
-  importData: (payload: unknown): Promise<{ success: boolean; message: string }> =>
+  importData: (payload: unknown, options?: { mode: 'replace_all' | 'merge', collections: string[] }): Promise<{ success: boolean; message: string }> =>
     apiFetch(`/import-data`, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ payload, options })
     }).then(r => handleResponse(r)),
 };

@@ -23,6 +23,13 @@ const Settings: React.FC = () => {
   const [testSLAResult, setTestSLAResult] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Backup Preview Modal States
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [previewPayload, setPreviewPayload] = useState<any>(null);
+  const [importMode, setImportMode] = useState<'replace_all' | 'merge'>('merge');
+  const [importCollections, setImportCollections] = useState<string[]>(['settings', 'users', 'forms', 'schedules', 'submissions']);
+
   // Sync localSettings whenever global settings finish loading from the server
   useEffect(() => {
     let ignore = false;
@@ -95,17 +102,36 @@ const Settings: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!confirm('CRITICAL WARNING: This will permanently DELETE your current database and replace it with the backup file. Are you absolutely sure you want to proceed?')) {
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-
-    setIsImporting(true);
     try {
       const text = await file.text();
       const payload = JSON.parse(text);
       
-      await api.importData(payload);
+      if (!payload || !payload.users || !payload.forms || !payload.config) {
+        alert('Invalid backup file format.');
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+      
+      setPreviewPayload(payload);
+      setShowPreviewModal(true);
+    } catch (err) {
+      console.error('Error reading backup file:', err);
+      alert('Failed to read backup file.');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const confirmImport = async () => {
+    if (!previewPayload) return;
+    
+    setIsImporting(true);
+    try {
+      // 1. Auto-Export Safety Net
+      await exportData('xray-safety-backup');
+      
+      // 2. Perform Import
+      await api.importData(previewPayload, { mode: importMode, collections: importCollections });
       
       setResetSuccess(true);
       setTimeout(() => {
@@ -117,7 +143,8 @@ const Settings: React.FC = () => {
       alert('Failed to import backup: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsImporting(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setShowPreviewModal(false);
+      setPreviewPayload(null);
     }
   };
 
@@ -334,6 +361,26 @@ const Settings: React.FC = () => {
 
             </div>
 
+            <div className="pt-4 border-t border-gray-50 mb-6">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                <DatabaseBackup size={12} className="mr-1.5" />
+                Automated Backups
+              </label>
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <div className="relative">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only" 
+                    checked={localSettings.autoBackupEnabled || false}
+                    onChange={(e) => setLocalSettings({...localSettings, autoBackupEnabled: e.target.checked})}
+                  />
+                  <div className={`block w-14 h-8 rounded-full transition-colors ${localSettings.autoBackupEnabled ? 'bg-[#00468B]' : 'bg-gray-200'}`}></div>
+                  <div className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${localSettings.autoBackupEnabled ? 'transform translate-x-6' : ''}`}></div>
+                </div>
+                <span className="text-sm font-bold text-gray-700">Enable Weekly Auto-Backup to Supervisor Email</span>
+              </label>
+            </div>
+
             <button 
               type="submit"
               className="w-full bg-[#00468B] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#003569] transition-all shadow-xl shadow-blue-900/10 flex items-center justify-center space-x-2"
@@ -501,6 +548,133 @@ const Settings: React.FC = () => {
                   <><Loader2 size={16} className="animate-spin" /> กำลังล้างข้อมูล...</>
                 ) : (
                   <><Trash2 size={16} /> ยืนยันล้างข้อมูล</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Backup Preview Modal */}
+      {showPreviewModal && previewPayload && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full mx-4 space-y-6 flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div className="flex items-center space-x-3 text-[#00468B]">
+                <DatabaseBackup size={24} />
+                <h3 className="text-xl font-bold tracking-tight">Backup Preview & Import</h3>
+              </div>
+              <button onClick={() => { setShowPreviewModal(false); setPreviewPayload(null); }} className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto space-y-6 pr-2">
+              <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                <p className="text-xs font-bold text-blue-800 mb-2 uppercase tracking-widest">Backup Information</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                    <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Created At</span>
+                    <span className="text-sm font-bold text-gray-800">{new Date(previewPayload.exportedAt || Date.now()).toLocaleDateString()}</span>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                    <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Users</span>
+                    <span className="text-sm font-bold text-gray-800">{previewPayload.users?.length || 0}</span>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                    <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Forms</span>
+                    <span className="text-sm font-bold text-gray-800">{previewPayload.forms?.length || 0}</span>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                    <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Schedules</span>
+                    <span className="text-sm font-bold text-gray-800">{previewPayload.schedules?.length || 0}</span>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                    <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Submissions</span>
+                    <span className="text-sm font-bold text-gray-800">{previewPayload.submissions?.length || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Import Mode</label>
+                <div className="flex bg-gray-50 p-1 rounded-xl">
+                  <button 
+                    onClick={() => setImportMode('merge')}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${importMode === 'merge' ? 'bg-white text-[#00468B] shadow-sm border border-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}
+                  >
+                    Merge (Recommended)
+                  </button>
+                  <button 
+                    onClick={() => setImportMode('replace_all')}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${importMode === 'replace_all' ? 'bg-red-50 text-red-600 shadow-sm border border-red-100' : 'text-gray-500 hover:bg-gray-100'}`}
+                  >
+                    Replace All (Destructive)
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-500 mt-1 px-1">
+                  {importMode === 'merge' 
+                    ? 'Merges backup data with existing data. Existing matching records will be updated.' 
+                    : 'Wipes all current database records and replaces them with this backup entirely.'}
+                </p>
+              </div>
+
+              {importMode === 'merge' && (
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Select Data to Import</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: 'settings', label: 'System Settings' },
+                    { id: 'users', label: 'Users & Staff' },
+                    { id: 'forms', label: 'Forms & Bundles' },
+                    { id: 'schedules', label: 'Schedules' },
+                    { id: 'submissions', label: 'Check Submissions' }
+                  ].map(collection => (
+                    <label key={collection.id} className={`flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition-all ${importCollections.includes(collection.id) ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}>
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-[#00468B] rounded border-gray-300 focus:ring-[#00468B]"
+                        checked={importCollections.includes(collection.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setImportCollections([...importCollections, collection.id]);
+                          } else {
+                            setImportCollections(importCollections.filter(c => c !== collection.id));
+                          }
+                        }}
+                      />
+                      <span className={`text-xs font-bold ${importCollections.includes(collection.id) ? 'text-[#00468B]' : 'text-gray-600'}`}>{collection.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              )}
+              
+              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex items-start space-x-3">
+                <ShieldAlert className="text-amber-600 shrink-0 mt-0.5" size={16} />
+                <p className="text-xs text-amber-800 font-medium">
+                  <strong>Safety Net:</strong> The system will automatically export your current database to your device before this import starts.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => { setShowPreviewModal(false); setPreviewPayload(null); }}
+                disabled={isImporting}
+                className="flex-[1] py-3 rounded-xl border-2 border-gray-100 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmImport}
+                disabled={isImporting || (importMode === 'merge' && importCollections.length === 0)}
+                className="flex-[2] py-3 rounded-xl bg-[#00468B] text-white font-bold text-sm hover:bg-[#003569] transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
+              >
+                {isImporting ? (
+                  <><Loader2 size={16} className="animate-spin" /> Importing...</>
+                ) : (
+                  <><DatabaseBackup size={16} className="rotate-180" /> Confirm Import</>
                 )}
               </button>
             </div>

@@ -286,28 +286,68 @@ app.get('/api/export-data', authenticateToken, async (_req, res) => {
 // ============================================
 app.post('/api/import-data', authenticateToken, async (req, res) => {
   try {
-    const payload = req.body;
-    if (!payload || !payload.users || !payload.forms || !payload.config) {
+    const { payload, options } = req.body;
+    // Fallback to req.body if payload is not nested (legacy support)
+    const data = payload || req.body;
+    
+    if (!data || !data.users || !data.forms || !data.config) {
       return res.status(400).json({ error: 'Invalid backup file format' });
     }
 
-    // 1. Delete all existing data in reverse dependency order
-    await db.delete(alerts);
-    await db.delete(submissions);
-    await db.delete(schedules);
-    await db.delete(bundles);
-    await db.delete(forms);
-    await db.delete(users);
-    await db.delete(config);
+    const mode = options?.mode || 'replace_all';
+    const collections = options?.collections || ['settings', 'users', 'forms', 'schedules', 'submissions'];
 
-    // 2. Insert imported data
-    if (payload.users?.length) await db.insert(users).values(payload.users);
-    if (payload.forms?.length) await db.insert(forms).values(payload.forms);
-    if (payload.bundles?.length) await db.insert(bundles).values(payload.bundles);
-    if (payload.schedules?.length) await db.insert(schedules).values(payload.schedules);
-    if (payload.submissions?.length) await db.insert(submissions).values(payload.submissions);
-    if (payload.alerts?.length) await db.insert(alerts).values(payload.alerts);
-    if (payload.config?.length) await db.insert(config).values(payload.config);
+    if (mode === 'replace_all') {
+      // 1. Delete all existing data in reverse dependency order
+      await db.delete(alerts);
+      await db.delete(submissions);
+      await db.delete(schedules);
+      await db.delete(bundles);
+      await db.delete(forms);
+      await db.delete(users);
+      await db.delete(config);
+
+      // 2. Insert imported data
+      if (data.users?.length) await db.insert(users).values(data.users);
+      if (data.forms?.length) await db.insert(forms).values(data.forms);
+      if (data.bundles?.length) await db.insert(bundles).values(data.bundles);
+      if (data.schedules?.length) await db.insert(schedules).values(data.schedules);
+      if (data.submissions?.length) await db.insert(submissions).values(data.submissions);
+      if (data.alerts?.length) await db.insert(alerts).values(data.alerts);
+      if (data.config?.length) await db.insert(config).values(data.config);
+    } else if (mode === 'merge') {
+      // Upsert selected collections
+      if (collections.includes('settings') && data.config?.length) {
+        for (const c of data.config) {
+          await db.insert(config).values(c).onConflictDoUpdate({ target: config.id, set: c });
+        }
+      }
+      if (collections.includes('users') && data.users?.length) {
+        for (const u of data.users) {
+          await db.insert(users).values(u).onConflictDoUpdate({ target: users.id, set: u });
+        }
+      }
+      if (collections.includes('forms') && data.forms?.length) {
+        for (const f of data.forms) {
+          await db.insert(forms).values(f).onConflictDoUpdate({ target: forms.id, set: f });
+        }
+        if (data.bundles?.length) {
+          for (const b of data.bundles) {
+            await db.insert(bundles).values(b).onConflictDoUpdate({ target: bundles.id, set: b });
+          }
+        }
+      }
+      if (collections.includes('schedules') && data.schedules?.length) {
+        for (const s of data.schedules) {
+          await db.insert(schedules).values(s).onConflictDoUpdate({ target: schedules.id, set: s });
+        }
+      }
+      if (collections.includes('submissions') && data.submissions?.length) {
+        for (const sub of data.submissions) {
+          await db.insert(submissions).values(sub).onConflictDoUpdate({ target: submissions.id, set: sub });
+        }
+      }
+    }
 
     res.json({ success: true, message: 'Database imported successfully' });
   } catch (error) {
@@ -482,6 +522,77 @@ const runSLAJob = async () => {
 
 // Run the job every 1 minute
 setInterval(runSLAJob, 1 * 60 * 1000);
+
+// ============================================
+// Weekly Backup Background Job
+// ============================================
+const runWeeklyBackupJob = async () => {
+  try {
+    const thTimeString = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
+    const now = new Date(thTimeString);
+    
+    // Check if it's Sunday (0) and hour is 2 AM and minute is 0-5.
+    if (now.getDay() === 0 && now.getHours() === 2 && now.getMinutes() < 5) {
+       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+       
+       const sysConfig = await db.select().from(config).limit(1);
+       const settings = sysConfig[0]?.settings as Record<string, unknown> | undefined;
+       if (!settings?.autoBackupEnabled) return;
+       
+       const lastBackupDate = settings?.lastAutoBackupDate as string | undefined;
+       if (lastBackupDate === todayStr) return; // Already backed up today
+       
+       // Perform Backup
+       const allSubmissions = await db.select().from(submissions);
+       const allSchedules = await db.select().from(schedules);
+       const allAlerts = await db.select().from(alerts);
+       const allUsers = await db.select().from(users);
+       const allForms = await db.select().from(forms);
+       const allBundles = await db.select().from(bundles);
+       const allConfig = await db.select().from(config);
+       
+       const backupData = {
+         exportedAt: new Date().toISOString(),
+         submissions: allSubmissions,
+         schedules: allSchedules,
+         alerts: allAlerts,
+         users: allUsers,
+         forms: allForms,
+         bundles: allBundles,
+         config: allConfig
+       };
+
+       const backupJson = JSON.stringify(backupData, null, 2);
+       const supervisorEmail = (settings?.supervisorEmail as string | undefined) || process.env.SUPERVISOR_EMAIL;
+
+       if (supervisorEmail) {
+         const transporter = getTransporter();
+         await transporter.sendMail({
+           from: `"Imaging Backup System" <${process.env.GMAIL_USER}>`,
+           to: supervisorEmail,
+           subject: `📦 Weekly System Backup (${todayStr})`,
+           html: `<p>Please find attached the weekly automated database backup for the Imaging Compliance System.</p>`,
+           attachments: [
+             {
+               filename: `xray_backup_${todayStr}.json`,
+               content: backupJson
+             }
+           ]
+         });
+         console.log(`[Backup Job] ✅ Weekly backup sent to ${supervisorEmail}`);
+       }
+
+       // Update lastAutoBackupDate
+       await db.update(config).set({
+         settings: { ...settings, lastAutoBackupDate: todayStr }
+       });
+    }
+  } catch (err) {
+    console.error('[Backup Job] ❌ Error:', err);
+  }
+};
+
+setInterval(runWeeklyBackupJob, 5 * 60 * 1000);
 
 // Endpoint to trigger SLA job immediately (called by frontend when settings are saved)
 app.post('/api/trigger-sla', authenticateToken, async (req, res) => {
