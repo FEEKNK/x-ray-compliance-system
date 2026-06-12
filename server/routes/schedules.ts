@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { schedules } from '../db/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, and, gte, lte } from 'drizzle-orm';
 
 const router = Router();
 
@@ -10,16 +10,13 @@ router.get('/', async (req, res) => {
   try {
     const { month, year, startDate, endDate } = req.query;
     
-    let queryArgs: (string | undefined)[] = [];
     let whereClause = undefined;
 
     if (startDate && endDate) {
       // Use exact start and end dates (YYYY-MM-DD)
-      const { and, gte, lte } = await import('drizzle-orm');
       whereClause = and(gte(schedules.date, startDate as string), lte(schedules.date, endDate as string));
     } else if (month && year) {
       // Filter by specific month
-      const { and, gte, lte } = await import('drizzle-orm');
       const mStr = String(month).padStart(2, '0');
       const startOfMonth = `${year}-${mStr}-01`;
       // Calculate last day of the month
@@ -28,13 +25,11 @@ router.get('/', async (req, res) => {
       whereClause = and(gte(schedules.date, startOfMonth), lte(schedules.date, endOfMonth));
     } else if (year) {
       // Filter by entire year
-      const { and, gte, lte } = await import('drizzle-orm');
       const startOfYear = `${year}-01-01`;
       const endOfYear = `${year}-12-31`;
       whereClause = and(gte(schedules.date, startOfYear), lte(schedules.date, endOfYear));
     } else {
       // Fallback: Rolling 3-month window to prevent DB exhaustion
-      const { and, gte, lte } = await import('drizzle-orm');
       const now = new Date();
       // -45 days to +45 days gives roughly a 3-month window
       const past = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);

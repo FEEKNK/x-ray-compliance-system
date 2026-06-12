@@ -468,6 +468,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, init
                     required={q.required}
                     placeholder="Enter observation..."
                     className="w-full border-2 border-gray-100 rounded-2xl p-4 focus:border-[#00468B] focus:bg-white bg-white shadow-sm outline-none transition-all font-bold text-gray-700"
+                    value={String(formData[q.id] || '')}
                     onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
                   />
                 )}
@@ -479,6 +480,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, init
                     required={q.required}
                     placeholder="0.00"
                     className="w-full border-2 border-gray-100 rounded-2xl p-4 focus:border-[#00468B] focus:bg-white bg-white shadow-sm outline-none transition-all font-bold text-gray-700"
+                    value={String(formData[q.id] ?? '')}
                     onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
                   />
                 )}

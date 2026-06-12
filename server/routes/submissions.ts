@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
       .limit(limit)
       .offset(offset);
 
-    const totalCount = await db.$count(submissions);
+    const totalCount = whereClause ? await db.$count(submissions, whereClause) : await db.$count(submissions);
 
     const mapped = allSubmissions.map(s => ({
       id: s.id,

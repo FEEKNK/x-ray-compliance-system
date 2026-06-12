@@ -2,19 +2,11 @@ import { Router } from 'express';
 import { db } from '../db';
 import { eq, desc } from 'drizzle-orm';
 import { alerts, users, forms } from '../db/schema';
-import nodemailer from 'nodemailer';
+import { getTransporter, escapeHtml } from '../services/email';
 
 const router = Router();
 
-const getTransporter = () => {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-  });
-};
+
 
 // GET /api/alerts — fetch all alerts (latest first, limit 50)
 router.get('/', async (_req, res) => {
@@ -59,11 +51,11 @@ router.post('/', async (req, res) => {
               html: `
                 <div style="font-family: sans-serif; color: #333;">
                   <h2 style="color: #f59e0b;">🔔 แจ้งเตือนคิวงานคงค้าง</h2>
-                  <p>เรียน คุณ ${staff.name}</p>
+                  <p>เรียน คุณ ${escapeHtml(staff.name)}</p>
                   <p>ระบบตรวจสอบพบว่า <strong>คุณยังไม่ได้ดำเนินการตรวจสอบ</strong> รายการเข้าเวรดังต่อไปนี้:</p>
                   <div style="background-color: #fffbeb; padding: 15px; border-left: 4px solid #f59e0b; margin: 15px 0;">
-                    <p><strong>รายการ:</strong> ${formTitle}</p>
-                    <p style="color: #666; font-size: 0.9em;">${message}</p>
+                    <p><strong>รายการ:</strong> ${escapeHtml(formTitle)}</p>
+                    <p style="color: #666; font-size: 0.9em;">${escapeHtml(message)}</p>
                   </div>
                   <p>กรุณาเข้าสู่ระบบเพื่อทำรายการให้เรียบร้อยก่อนหมดเวลา</p>
                   <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />

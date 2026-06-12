@@ -28,14 +28,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     lockoutHours: { Morning: 3, Afternoon: 2, Night: 2 }
   });
 
-  // Fetch only config here. Other data is fetched via React Query in components.
+  // Fetch config — uses public endpoint initially (no auth needed for landing page).
+  // Full config (with sensitive emails) is fetched after login via setCurrentUser.
   useEffect(() => {
     const fetchConfig = async () => {
       try {
         setIsLoading(true);
         setLoadError(null);
         
-        const configData = await api.config.get();
+        const saved = localStorage.getItem('xray_currentUser');
+        // If user is already logged in, fetch full config; otherwise fetch public config
+        const configData = saved
+          ? await api.config.get().catch(() => api.config.getPublic())
+          : await api.config.getPublic();
+
         const defaultSettings: SystemSettings = {
           hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
           supervisorEmail: "supervisor@hospital.com",

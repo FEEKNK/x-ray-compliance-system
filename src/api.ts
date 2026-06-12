@@ -184,6 +184,9 @@ export const api = {
 
   // ─── Config ───────────────────────────────────────
   config: {
+    getPublic: (): Promise<{ settings: Partial<SystemSettings>; announcements: string[] }> =>
+      apiFetch(`/config/public`).then(r => handleResponse(r)),
+
     get: (): Promise<{ settings: SystemSettings; announcements: string[] }> =>
       apiFetch(`/config`).then(r => handleResponse(r)),
 

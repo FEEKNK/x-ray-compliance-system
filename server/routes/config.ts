@@ -72,8 +72,27 @@ async function ensureConfig() {
   }
 }
 
-// GET /api/config — fetch settings and announcements
-router.get('/', async (_req, res) => {
+// GET /api/config/public — fetch non-sensitive settings for login page (no auth required)
+router.get('/public', async (_req, res) => {
+  try {
+    await ensureConfig();
+    const [row] = await db.select().from(config).where(eq(config.id, CONFIG_ID));
+    const settings = row.settings as Record<string, unknown>;
+    res.json({
+      settings: {
+        hospitalName: settings?.hospitalName || DEFAULT_SETTINGS.hospitalName,
+        departments: settings?.departments || DEFAULT_SETTINGS.departments,
+      },
+      announcements: row.announcements,
+    });
+  } catch (error) {
+    console.error('Error fetching public config:', error);
+    res.status(500).json({ error: 'Failed to fetch config' });
+  }
+});
+
+// GET /api/config — fetch full settings and announcements (requires auth)
+router.get('/', authenticateToken, async (_req, res) => {
   try {
     await ensureConfig();
     const [row] = await db.select().from(config).where(eq(config.id, CONFIG_ID));

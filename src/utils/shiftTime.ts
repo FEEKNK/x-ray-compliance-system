@@ -18,8 +18,8 @@ export const SHIFT_START: Record<Shift, number> = {
 
 export const parseShiftStartHour = (shiftStr: string | undefined, fallback: number): number => {
   if (!shiftStr) return fallback;
-  const match = shiftStr.match(/^(\d{2}):/);
-  if (match) return parseInt(match[1], 10);
+  const match = shiftStr.match(/^(\d{1,2}):(\d{2})/);
+  if (match) return parseInt(match[1], 10) + parseInt(match[2], 10) / 60;
   return fallback;
 };
 
@@ -66,12 +66,8 @@ export function getSubmitDeadline(scheduleDate: string, shift: Shift, lockoutHou
   const windowHours = lockoutHours ? lockoutHours[shift] : DEFAULT_LOCKOUT_HOURS[shift];
 
   const deadline = getShiftStartTime(scheduleDate, shift, shiftsConfig);
-  deadline.setHours(deadline.getHours() + windowHours);
-  
-  // Also support decimal hours
-  if (!Number.isInteger(windowHours)) {
-    deadline.setMinutes(deadline.getMinutes() + (windowHours % 1) * 60);
-  }
+  // Use milliseconds to avoid float issues with setHours()
+  deadline.setTime(deadline.getTime() + windowHours * 60 * 60 * 1000);
   
   return deadline;
 }
