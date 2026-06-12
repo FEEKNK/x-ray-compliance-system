@@ -5,10 +5,39 @@ import { eq, inArray } from 'drizzle-orm';
 
 const router = Router();
 
-// GET /api/schedules — fetch all schedules
-router.get('/', async (_req, res) => {
+// GET /api/schedules — fetch schedules with optional date filtering
+router.get('/', async (req, res) => {
   try {
-    const allSchedules = await db.select().from(schedules);
+    const { month, year, startDate, endDate } = req.query;
+    
+    let queryArgs: (string | undefined)[] = [];
+    let whereClause = undefined;
+
+    if (startDate && endDate) {
+      // Use exact start and end dates (YYYY-MM-DD)
+      const { and, gte, lte } = await import('drizzle-orm');
+      whereClause = and(gte(schedules.date, startDate as string), lte(schedules.date, endDate as string));
+    } else if (month && year) {
+      // Filter by specific month
+      const { and, like } = await import('drizzle-orm');
+      const mStr = String(month).padStart(2, '0');
+      const prefix = `${year}-${mStr}-%`;
+      whereClause = like(schedules.date, prefix);
+    } else {
+      // Fallback: Rolling 3-month window to prevent DB exhaustion
+      const { and, gte, lte } = await import('drizzle-orm');
+      const now = new Date();
+      // -45 days to +45 days gives roughly a 3-month window
+      const past = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
+      const future = new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000);
+      
+      const pastStr = `${past.getFullYear()}-${String(past.getMonth() + 1).padStart(2, '0')}-${String(past.getDate()).padStart(2, '0')}`;
+      const futureStr = `${future.getFullYear()}-${String(future.getMonth() + 1).padStart(2, '0')}-${String(future.getDate()).padStart(2, '0')}`;
+      
+      whereClause = and(gte(schedules.date, pastStr), lte(schedules.date, futureStr));
+    }
+
+    const allSchedules = await db.select().from(schedules).where(whereClause);
     res.json(allSchedules);
   } catch (error) {
     console.error('Error fetching schedules:', error);

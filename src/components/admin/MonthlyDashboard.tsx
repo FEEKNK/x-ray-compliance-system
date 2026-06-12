@@ -88,7 +88,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
   const t = translations[language];
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
-  const { data: schedules = [] } = useSchedules();
+  const { data: schedules = [] } = useSchedules({ month: month + 1, year });
   const { data: submissionsData } = useSubmissions();
   const submissions = useMemo(() => submissionsData?.data || [], [submissionsData]);
   const [filterDate, setFilterDate] = useState('');
@@ -395,7 +395,7 @@ interface YearlyViewProps {
 const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept }) => {
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
-  const { data: schedules = [] } = useSchedules();
+  const { data: schedules = [] } = useSchedules({ year });
   const { data: submissionsData } = useSubmissions();
   const submissions = useMemo(() => submissionsData?.data || [], [submissionsData]);
   const MONTHS = language === 'TH' ? MONTHS_TH : MONTHS_EN;

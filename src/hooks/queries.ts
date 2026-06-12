@@ -22,7 +22,11 @@ export const useDeleteForm = () => { const qc = useQueryClient(); return useMuta
 // ============================================
 // Schedules
 // ============================================
-export const useSchedules = () => useQuery({ queryKey: ['schedules'], queryFn: api.schedules.getAll });
+export const useSchedules = (filters?: { month?: number; year?: number; startDate?: string; endDate?: string }) => 
+  useQuery({ 
+    queryKey: ['schedules', filters], 
+    queryFn: () => api.schedules.getAll(filters) 
+  });
 export const useAddSchedule = () => { const qc = useQueryClient(); return useMutation({ mutationFn: api.schedules.create, onSuccess: () => qc.invalidateQueries({ queryKey: ['schedules'] }) }); };
 export const useDeleteSchedule = () => { const qc = useQueryClient(); return useMutation({ mutationFn: api.schedules.delete, onSuccess: () => qc.invalidateQueries({ queryKey: ['schedules'] }) }); };
 export const useBulkDeleteSchedules = () => { const qc = useQueryClient(); return useMutation({ mutationFn: api.schedules.bulkDelete, onSuccess: () => qc.invalidateQueries({ queryKey: ['schedules'] }) }); };

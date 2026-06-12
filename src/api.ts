@@ -88,10 +88,16 @@ export const api = {
       apiFetch(`/forms/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
   },
 
-  // ─── Schedules ────────────────────────────────────
   schedules: {
-    getAll: (): Promise<Schedule[]> =>
-      apiFetch(`/schedules`).then(r => handleResponse(r)),
+    getAll: (filters?: { month?: number; year?: number; startDate?: string; endDate?: string }): Promise<Schedule[]> => {
+      const params = new URLSearchParams();
+      if (filters?.month) params.append('month', filters.month.toString());
+      if (filters?.year) params.append('year', filters.year.toString());
+      if (filters?.startDate) params.append('startDate', filters.startDate);
+      if (filters?.endDate) params.append('endDate', filters.endDate);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      return apiFetch(`/schedules${query}`).then(r => handleResponse(r));
+    },
 
     create: (schedule: Partial<Schedule> | Partial<Schedule>[]): Promise<Schedule | Schedule[]> =>
       apiFetch(`/schedules`, {

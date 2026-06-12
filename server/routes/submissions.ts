@@ -75,35 +75,37 @@ router.post('/', async (req, res) => {
 
     let newSubmission;
 
-    if (dbScheduleId) {
-      const existing = await db.select().from(submissions).where(eq(submissions.scheduleId, dbScheduleId)).limit(1);
-      if (existing.length > 0) {
-        const [updated] = await db.update(submissions)
-          .set({ data, photos: photos || [], submittedAt: new Date().toISOString() })
-          .where(eq(submissions.id, existing[0].id))
-          .returning();
-        newSubmission = updated;
+    await db.transaction(async (tx) => {
+      if (dbScheduleId) {
+        const existing = await tx.select().from(submissions).where(eq(submissions.scheduleId, dbScheduleId)).limit(1);
+        if (existing.length > 0) {
+          const [updated] = await tx.update(submissions)
+            .set({ data, photos: photos || [], submittedAt: new Date().toISOString() })
+            .where(eq(submissions.id, existing[0].id))
+            .returning();
+          newSubmission = updated;
+        }
       }
-    }
 
-    if (!newSubmission) {
-      const [inserted] = await db.insert(submissions).values({
-        scheduleId: dbScheduleId,
-        staffId,
-        formId,
-        data,
-        photos: photos || [],
-      }).returning();
-      newSubmission = inserted;
-    }
+      if (!newSubmission) {
+        const [inserted] = await tx.insert(submissions).values({
+          scheduleId: dbScheduleId,
+          staffId,
+          formId,
+          data,
+          photos: photos || [],
+        }).returning();
+        newSubmission = inserted;
+      }
 
-    // Mark the related schedule as Completed if scheduleId exists and is not a manual/ad-hoc one
-    if (dbScheduleId) {
-      await db.update(schedules)
-        .set({ status: 'Completed' })
-        .where(eq(schedules.id, dbScheduleId))
-        .catch(() => { /* schedule might not exist */ });
-    }
+      // Mark the related schedule as Completed if scheduleId exists and is not a manual/ad-hoc one
+      if (dbScheduleId) {
+        await tx.update(schedules)
+          .set({ status: 'Completed' })
+          .where(eq(schedules.id, dbScheduleId))
+          .catch(() => { /* schedule might not exist */ });
+      }
+    });
 
     res.status(201).json({
       ...newSubmission,
@@ -121,25 +123,30 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find the submission first to get the scheduleId
-    const [existing] = await db.select().from(submissions).where(eq(submissions.id, id)).limit(1);
-    if (!existing) {
-      return res.status(404).json({ error: 'Submission not found' });
-    }
+    await db.transaction(async (tx) => {
+      // Find the submission first to get the scheduleId
+      const [existing] = await tx.select().from(submissions).where(eq(submissions.id, id)).limit(1);
+      if (!existing) {
+        throw new Error('NOT_FOUND');
+      }
 
-    // Delete the submission
-    await db.delete(submissions).where(eq(submissions.id, id));
+      // Delete the submission
+      await tx.delete(submissions).where(eq(submissions.id, id));
 
-    // Reset the related schedule back to Pending (if it has a real scheduleId)
-    if (existing.scheduleId) {
-      await db.update(schedules)
-        .set({ status: 'Pending' })
-        .where(eq(schedules.id, existing.scheduleId))
-        .catch(() => { /* schedule might not exist */ });
-    }
+      // Reset the related schedule back to Pending (if it has a real scheduleId)
+      if (existing.scheduleId) {
+        await tx.update(schedules)
+          .set({ status: 'Pending' })
+          .where(eq(schedules.id, existing.scheduleId))
+          .catch(() => { /* schedule might not exist */ });
+      }
+    });
 
     res.json({ success: true });
   } catch (error) {
+    if (error instanceof Error && error.message === 'NOT_FOUND') {
+      return res.status(404).json({ error: 'Submission not found' });
+    }
     console.error('Error deleting submission:', error);
     res.status(500).json({ error: 'Failed to delete submission' });
   }

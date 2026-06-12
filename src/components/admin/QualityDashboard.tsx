@@ -63,14 +63,17 @@ const QualityDashboard: React.FC = () => {
   const { language, settings } = useApp();
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
-  const { data: schedules = [] } = useSchedules();
+  const [currentDate, setCurrentDate] = useState(() => {
+    const d = new Date(); d.setDate(1); return d;
+  });
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const { data: schedules = [] } = useSchedules({ month: month + 1, year });
   const { data: submissionsData } = useSubmissions();
   const submissions = useMemo(() => submissionsData?.data || [], [submissionsData]);
 
   // State
-  const [currentDate, setCurrentDate] = useState(() => {
-    const d = new Date(); d.setDate(1); return d;
-  });
   const [deptFilter, setDeptFilter] = useState<string>('ALL');
   const [columns, setColumns] = useState<ColumnDef[]>(loadColumns);
   const [showColMenu, setShowColMenu] = useState(false);
@@ -80,8 +83,6 @@ const QualityDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const colMenuRef = useRef<HTMLDivElement>(null);
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
   const selectedMonthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);

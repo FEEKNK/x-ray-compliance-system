@@ -23,7 +23,12 @@ const Scheduler: React.FC = () => {
   const { mutate: bulkDeleteSchedules } = useBulkDeleteSchedules();
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
-  const { data: schedules = [] } = useSchedules();
+  const [currentDate, setCurrentDate] = useState(new Date());
+  
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
+  const { data: schedules = [] } = useSchedules({ month: currentMonth, year: currentYear });
+
   const { data: bundles = [] } = useBundles();
   const t = translations[language];
   const [selectedDept, setSelectedDept] = useState<string>(settings?.departments?.[0] || 'IMAGING');
@@ -33,7 +38,6 @@ const Scheduler: React.FC = () => {
     [users, selectedDept]
   );
   
-  const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'Matrix' | 'List'>('Matrix');
   
   // Selection States
