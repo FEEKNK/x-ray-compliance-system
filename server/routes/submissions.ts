@@ -8,12 +8,33 @@ const router = Router();
 // GET /api/submissions — fetch paginated submissions
 router.get('/', async (req, res) => {
   try {
+    const { month, year } = req.query;
+    let whereClause = undefined;
+
+    if (month && year) {
+      // Filter by specific month
+      const { and, gte, lte } = await import('drizzle-orm');
+      const mStr = String(month).padStart(2, '0');
+      const startOfMonth = `${year}-${mStr}-01T00:00:00.000Z`;
+      const lastDay = new Date(Number(year), Number(month), 0).getDate();
+      const endOfMonth = `${year}-${mStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999Z`;
+      whereClause = and(gte(submissions.submittedAt, startOfMonth), lte(submissions.submittedAt, endOfMonth));
+    } else if (year) {
+      // Filter by entire year
+      const { and, gte, lte } = await import('drizzle-orm');
+      const startOfYear = `${year}-01-01T00:00:00.000Z`;
+      const endOfYear = `${year}-12-31T23:59:59.999Z`;
+      whereClause = and(gte(submissions.submittedAt, startOfYear), lte(submissions.submittedAt, endOfYear));
+    }
+
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 50;
+    // If filtering by date, fetch a large limit by default unless explicitly specified
+    const limit = parseInt(req.query.limit as string) || (whereClause ? 10000 : 50);
     const offset = (page - 1) * limit;
 
     const allSubmissions = await db.select()
       .from(submissions)
+      .where(whereClause)
       .orderBy(desc(submissions.submittedAt))
       .limit(limit)
       .offset(offset);
@@ -73,7 +94,7 @@ router.post('/', async (req, res) => {
     const isAdhoc = scheduleId && String(scheduleId).startsWith('manual-');
     const dbScheduleId = isAdhoc ? null : (scheduleId || null);
 
-    let newSubmission;
+    let newSubmission: any;
 
     await db.transaction(async (tx) => {
       if (dbScheduleId) {
@@ -106,6 +127,10 @@ router.post('/', async (req, res) => {
           .catch(() => { /* schedule might not exist */ });
       }
     });
+
+    if (!newSubmission) {
+      throw new Error('Failed to create or update submission');
+    }
 
     res.status(201).json({
       ...newSubmission,

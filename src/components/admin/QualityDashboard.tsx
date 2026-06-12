@@ -70,7 +70,7 @@ const QualityDashboard: React.FC = () => {
   const month = currentDate.getMonth();
 
   const { data: schedules = [] } = useSchedules({ month: month + 1, year });
-  const { data: submissionsData } = useSubmissions();
+  const { data: submissionsData } = useSubmissions(1, 10000, { month: month + 1, year });
   const submissions = useMemo(() => submissionsData?.data || [], [submissionsData]);
 
   // State

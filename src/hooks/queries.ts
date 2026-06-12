@@ -34,7 +34,11 @@ export const useBulkDeleteSchedules = () => { const qc = useQueryClient(); retur
 // ============================================
 // Submissions
 // ============================================
-export const useSubmissions = (page = 1, limit = 200) => useQuery({ queryKey: ['submissions', page, limit], queryFn: () => api.submissions.getAll(page, limit) });
+export const useSubmissions = (page = 1, limit = 200, filters?: { month?: number; year?: number }) => 
+  useQuery({ 
+    queryKey: ['submissions', page, limit, filters], 
+    queryFn: () => api.submissions.getAll(page, limit, filters) 
+  });
 export const useAddSubmission = () => { 
   const qc = useQueryClient(); 
   return useMutation({ 

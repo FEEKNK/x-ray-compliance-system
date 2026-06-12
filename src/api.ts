@@ -123,8 +123,14 @@ export const api = {
 
   // ─── Submissions ──────────────────────────────────
   submissions: {
-    getAll: (page = 1, limit = 50): Promise<{ data: Submission[], total: number, page: number, totalPages: number }> =>
-      apiFetch(`/submissions?page=${page}&limit=${limit}`).then(r => handleResponse(r)),
+    getAll: (page = 1, limit = 50, filters?: { month?: number; year?: number }): Promise<{ data: Submission[], total: number, page: number, totalPages: number }> => {
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('limit', limit.toString());
+      if (filters?.month) params.append('month', filters.month.toString());
+      if (filters?.year) params.append('year', filters.year.toString());
+      return apiFetch(`/submissions?${params.toString()}`).then(r => handleResponse(r));
+    },
 
     getByScheduleId: (scheduleId: string): Promise<Submission> =>
       apiFetch(`/submissions/schedule/${scheduleId}`).then(r => handleResponse(r)),

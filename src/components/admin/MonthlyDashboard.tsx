@@ -7,10 +7,11 @@ import {
   CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine
 } from 'recharts';
-import { Calendar, Users, AlertCircle, ChevronLeft, ChevronRight, User, Check, Clock, TrendingUp, BarChart2, X } from 'lucide-react';
+import { Calendar, Users, AlertCircle, ChevronLeft, ChevronRight, User, Check, Clock, TrendingUp, BarChart2, X, Download } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { Schedule } from '../../types';
 import { getLocalTodayStr, parseDbDate } from '../../utils/shiftTime';
+import * as XLSX from 'xlsx';
 
 
 
@@ -89,7 +90,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
   const { data: schedules = [] } = useSchedules({ month: month + 1, year });
-  const { data: submissionsData } = useSubmissions();
+  const { data: submissionsData } = useSubmissions(1, 10000, { month: month + 1, year });
   const submissions = useMemo(() => submissionsData?.data || [], [submissionsData]);
   const [filterDate, setFilterDate] = useState('');
   const [selectedError, setSelectedError] = useState<MachineErrorDetail | null>(null);
@@ -178,6 +179,57 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
     return { status: 'none', missedCount: 0 };
   };
 
+  // ── Download Compliance Matrix as Excel ──
+  const downloadMatrix = () => {
+    const wb = XLSX.utils.book_new();
+    const monthLabel = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const deptLabel = selectedDept === 'ALL' ? 'All Depts' : selectedDept;
+
+    // === Sheet 1: Compliance Matrix ===
+    const header = ['พนักงาน (Staff)', 'แผนก'];
+    for (let d = 1; d <= daysInMonth; d++) header.push(String(d));
+    header.push('รวมงาน', 'สำเร็จ', 'ค้าง/ลืม', 'KPI %');
+
+    const rows: (string | number)[][] = [header];
+
+    staff.forEach(s => {
+      const row: (string | number)[] = [s.name, s.department];
+      let total = 0, completed = 0, missed = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const { status, missedCount } = getCellStatus(s.id, d);
+        if (status === 'completed')     { row.push('✓'); total++; completed++; }
+        else if (status === 'missed')   { row.push(`✗(${missedCount})`); total++; missed += missedCount; }
+        else if (status === 'pending_today') { row.push('○'); total++; }
+        else if (status === 'scheduled')    { row.push('·'); total++; }
+        else row.push('-');
+      }
+      const kpi = total > 0 ? Math.round((completed / total) * 100) : 0;
+      row.push(total, completed, missed, `${kpi}%`);
+      rows.push(row);
+    });
+
+    const ws1 = XLSX.utils.aoa_to_sheet(rows);
+    // Column widths
+    ws1['!cols'] = [
+      { wch: 24 }, { wch: 12 },
+      ...Array(daysInMonth).fill({ wch: 5 }),
+      { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Compliance Matrix');
+
+    // === Sheet 2: Staff KPI Summary ===
+    const kpiHeader = ['ลำดับ', 'พนักงาน', 'แผนก', 'งานทั้งหมด', 'สำเร็จ', 'KPI %'];
+    const kpiRows: (string | number)[][] = [kpiHeader];
+    staffKPI.forEach((s, i) => {
+      kpiRows.push([i + 1, s.name, s.department, s.total, s.completed, `${s.percent}%`]);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(kpiRows);
+    ws2['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 8 }];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Staff KPI');
+
+    XLSX.writeFile(wb, `Compliance_Matrix_${monthLabel}_${deptLabel}.xlsx`);
+  };
+
   const missedDetails = useMemo(() => {
     const monthlySchedules = schedules.filter(s => s.date.startsWith(selectedMonthStr));
     const details: Array<Schedule & { staffName: string; formTitle: string }> = [];
@@ -208,10 +260,19 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
               <span className="text-xs text-gray-400">ภาพรวมการตรวจสอบงานแต่ละวันของพนักงาน</span>
             </div>
           </div>
-          <div className="hidden md:flex items-center space-x-4 text-xs font-bold text-gray-500">
-            <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-green-500 mr-1.5"></span>ทำครบถ้วน</div>
-            <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-red-500 mr-1.5"></span>ลืมทำ/ค้าง</div>
-            <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-orange-400 mr-1.5"></span>รอทำวันนี้</div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="hidden md:flex items-center space-x-4 text-xs font-bold text-gray-500">
+              <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-green-500 mr-1.5"></span>ทำครบถ้วน</div>
+              <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-red-500 mr-1.5"></span>ลืมทำ/ค้าง</div>
+              <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-orange-400 mr-1.5"></span>รอทำวันนี้</div>
+            </div>
+            <button
+              onClick={downloadMatrix}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#00468B] hover:bg-[#003569] text-white text-xs font-bold transition-all shadow-sm active:scale-95"
+            >
+              <Download size={14} />
+              <span>ดาวน์โหลด Excel</span>
+            </button>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -273,9 +334,9 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
             <span className="font-bold text-red-700">รายการที่ลืมตรวจสอบ (Missed Tasks)</span>
             <span className="bg-red-100 text-red-700 py-0.5 px-2.5 rounded-full text-xs font-bold ml-auto">{missedDetails.length} รายการ</span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs tracking-wider">
+          <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+            <table className="w-full text-sm text-left relative">
+              <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs tracking-wider sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="px-6 py-4">วันที่</th>
                   <th className="px-6 py-4">เวร</th>
@@ -317,9 +378,18 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Staff KPI */}
         <div className="bg-white p-6 md:p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center"><Users size={20} /></div>
-            <span className="font-bold text-gray-700">Staff KPI (ความสำเร็จ)</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center"><Users size={20} /></div>
+              <span className="font-bold text-gray-700">Staff KPI (ความสำเร็จ)</span>
+            </div>
+            <button
+              onClick={downloadMatrix}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all active:scale-95"
+            >
+              <Download size={13} />
+              <span>ดาวน์โหลด</span>
+            </button>
           </div>
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs tracking-wider">
@@ -396,7 +466,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept })
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
   const { data: schedules = [] } = useSchedules({ year });
-  const { data: submissionsData } = useSubmissions();
+  const { data: submissionsData } = useSubmissions(1, 10000, { year });
   const submissions = useMemo(() => submissionsData?.data || [], [submissionsData]);
   const MONTHS = language === 'TH' ? MONTHS_TH : MONTHS_EN;
   const [selectedError, setSelectedError] = useState<MachineErrorDetail | null>(null);

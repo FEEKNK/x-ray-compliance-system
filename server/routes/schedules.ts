@@ -19,10 +19,19 @@ router.get('/', async (req, res) => {
       whereClause = and(gte(schedules.date, startDate as string), lte(schedules.date, endDate as string));
     } else if (month && year) {
       // Filter by specific month
-      const { and, like } = await import('drizzle-orm');
+      const { and, gte, lte } = await import('drizzle-orm');
       const mStr = String(month).padStart(2, '0');
-      const prefix = `${year}-${mStr}-%`;
-      whereClause = like(schedules.date, prefix);
+      const startOfMonth = `${year}-${mStr}-01`;
+      // Calculate last day of the month
+      const lastDay = new Date(Number(year), Number(month), 0).getDate();
+      const endOfMonth = `${year}-${mStr}-${String(lastDay).padStart(2, '0')}`;
+      whereClause = and(gte(schedules.date, startOfMonth), lte(schedules.date, endOfMonth));
+    } else if (year) {
+      // Filter by entire year
+      const { and, gte, lte } = await import('drizzle-orm');
+      const startOfYear = `${year}-01-01`;
+      const endOfYear = `${year}-12-31`;
+      whereClause = and(gte(schedules.date, startOfYear), lte(schedules.date, endOfYear));
     } else {
       // Fallback: Rolling 3-month window to prevent DB exhaustion
       const { and, gte, lte } = await import('drizzle-orm');
