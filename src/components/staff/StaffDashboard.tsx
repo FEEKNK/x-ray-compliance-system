@@ -102,10 +102,16 @@ const StaffDashboard: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleFinishSubmission = (data: Submission) => {
-    submitForm(data);
-    setActiveSchedule(null);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    submitForm(data, {
+      onSuccess: () => {
+        setActiveSchedule(null);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+      },
+      onError: (err) => {
+        alert("Failed to save submission: " + (err instanceof Error ? err.message : String(err)));
+      }
+    });
   };
 
 

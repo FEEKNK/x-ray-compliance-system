@@ -308,59 +308,57 @@ app.post('/api/import-data', authenticateToken, requireAdmin, async (req, res) =
     const mode = options?.mode || 'replace_all';
     const collections = options?.collections || ['settings', 'users', 'forms', 'schedules', 'submissions'];
 
-    await db.transaction(async (tx) => {
-      if (mode === 'replace_all') {
-        // 1. Delete all existing data in reverse dependency order
-        await tx.delete(alerts);
-        await tx.delete(submissions);
-        await tx.delete(schedules);
-        await tx.delete(bundles);
-        await tx.delete(forms);
-        await tx.delete(users);
-        await tx.delete(config);
+    if (mode === 'replace_all') {
+      // 1. Delete all existing data in reverse dependency order
+      await db.delete(alerts);
+      await db.delete(submissions);
+      await db.delete(schedules);
+      await db.delete(bundles);
+      await db.delete(forms);
+      await db.delete(users);
+      await db.delete(config);
 
-        // 2. Insert imported data
-        if (data.users?.length) await tx.insert(users).values(data.users);
-        if (data.forms?.length) await tx.insert(forms).values(data.forms);
-        if (data.bundles?.length) await tx.insert(bundles).values(data.bundles);
-        if (data.schedules?.length) await tx.insert(schedules).values(data.schedules);
-        if (data.submissions?.length) await tx.insert(submissions).values(data.submissions);
-        if (data.alerts?.length) await tx.insert(alerts).values(data.alerts);
-        if (data.config?.length) await tx.insert(config).values(data.config);
-      } else if (mode === 'merge') {
-        // Upsert selected collections
-        if (collections.includes('settings') && data.config?.length) {
-          for (const c of data.config) {
-            await tx.insert(config).values(c).onConflictDoUpdate({ target: config.id, set: c });
-          }
+      // 2. Insert imported data
+      if (data.users?.length) await db.insert(users).values(data.users);
+      if (data.forms?.length) await db.insert(forms).values(data.forms);
+      if (data.bundles?.length) await db.insert(bundles).values(data.bundles);
+      if (data.schedules?.length) await db.insert(schedules).values(data.schedules);
+      if (data.submissions?.length) await db.insert(submissions).values(data.submissions);
+      if (data.alerts?.length) await db.insert(alerts).values(data.alerts);
+      if (data.config?.length) await db.insert(config).values(data.config);
+    } else if (mode === 'merge') {
+      // Upsert selected collections
+      if (collections.includes('settings') && data.config?.length) {
+        for (const c of data.config) {
+          await db.insert(config).values(c).onConflictDoUpdate({ target: config.id, set: c });
         }
-        if (collections.includes('users') && data.users?.length) {
-          for (const u of data.users) {
-            await tx.insert(users).values(u).onConflictDoUpdate({ target: users.id, set: u });
-          }
+      }
+      if (collections.includes('users') && data.users?.length) {
+        for (const u of data.users) {
+          await db.insert(users).values(u).onConflictDoUpdate({ target: users.id, set: u });
         }
-        if (collections.includes('forms') && data.forms?.length) {
-          for (const f of data.forms) {
-            await tx.insert(forms).values(f).onConflictDoUpdate({ target: forms.id, set: f });
-          }
-          if (data.bundles?.length) {
-            for (const b of data.bundles) {
-              await tx.insert(bundles).values(b).onConflictDoUpdate({ target: bundles.id, set: b });
-            }
-          }
+      }
+      if (collections.includes('forms') && data.forms?.length) {
+        for (const f of data.forms) {
+          await db.insert(forms).values(f).onConflictDoUpdate({ target: forms.id, set: f });
         }
-        if (collections.includes('schedules') && data.schedules?.length) {
-          for (const s of data.schedules) {
-            await tx.insert(schedules).values(s).onConflictDoUpdate({ target: schedules.id, set: s });
-          }
-        }
-        if (collections.includes('submissions') && data.submissions?.length) {
-          for (const sub of data.submissions) {
-            await tx.insert(submissions).values(sub).onConflictDoUpdate({ target: submissions.id, set: sub });
+        if (data.bundles?.length) {
+          for (const b of data.bundles) {
+            await db.insert(bundles).values(b).onConflictDoUpdate({ target: bundles.id, set: b });
           }
         }
       }
-    });
+      if (collections.includes('schedules') && data.schedules?.length) {
+        for (const s of data.schedules) {
+          await db.insert(schedules).values(s).onConflictDoUpdate({ target: schedules.id, set: s });
+        }
+      }
+      if (collections.includes('submissions') && data.submissions?.length) {
+        for (const sub of data.submissions) {
+          await db.insert(submissions).values(sub).onConflictDoUpdate({ target: submissions.id, set: sub });
+        }
+      }
+    }
 
     res.json({ success: true, message: 'Database imported successfully' });
   } catch (error) {
