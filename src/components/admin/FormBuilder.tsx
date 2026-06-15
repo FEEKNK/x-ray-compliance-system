@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForms, useAddForm, useUpdateForm, useDeleteForm } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
-import { Plus, Trash2, Save, FileText, ChevronRight, Edit3, X } from 'lucide-react';
+import { Plus, Trash2, Save, ChevronRight, Edit3, X } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { QuestionBlock, DynamicForm } from '../../types';
 
@@ -92,7 +92,7 @@ const FormBuilder: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 space-y-6">
            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
               <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
@@ -348,24 +348,6 @@ const FormBuilder: React.FC = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-1">
-          <div className="bg-[#00468B] text-white p-8 rounded-2xl shadow-xl sticky top-6">
-            <div className="flex items-center space-x-3 mb-6 border-b border-white/10 pb-6">
-              <FileText className="text-blue-300" />
-              <h3 className="font-bold">JSON Data Schema</h3>
-            </div>
-            <div className="bg-black/20 rounded-xl p-4 font-mono text-[10px] text-blue-200 overflow-hidden">
-               <pre className="overflow-x-auto max-h-96">
-                 {JSON.stringify({ title, questions }, null, 2)}
-               </pre>
-            </div>
-            <div className="mt-8 p-4 bg-white/5 rounded-xl border border-white/10">
-              <p className="text-[11px] text-blue-100 italic leading-relaxed">
-                This schema follows the <span className="text-white font-bold">Standard Medical Compliance Format</span>. Changes will update the digital interface for staff members immediately.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

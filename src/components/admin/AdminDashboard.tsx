@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { useSchedules, useUsers, useForms, useAddAnnouncement, useAlerts, useAddAlert, useMarkAlertAsRead, useSubmissions } from '../../hooks/queries';
+import { useSchedules, useUsers, useForms, useAlerts, useAddAlert, useMarkAlertAsRead, useSubmissions } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
-import { CheckCircle, AlertTriangle, Clock, TrendingUp, Megaphone, Send, ShieldAlert, Info, BellRing, MailWarning } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Clock, TrendingUp, ShieldAlert, Info, BellRing, MailWarning, XCircle } from 'lucide-react';
 import { translations } from '../../i18n';
-import { getLocalTodayStr, parseDbDate } from '../../utils/shiftTime';
+import { getLocalTodayStr, parseDbDate, getSubmitDeadline } from '../../utils/shiftTime';
 
 import type { Shift } from '../../types';
 
 const AdminDashboard: React.FC = () => {
-  const { language, settings, announcements } = useApp();
-  const { mutate: addAnnouncement } = useAddAnnouncement();
+  const { language, settings } = useApp();
   const { mutate: addAlert } = useAddAlert();
   const { mutate: markAlertAsRead } = useMarkAlertAsRead();
   const { data: users = [] } = useUsers();
@@ -31,7 +30,6 @@ const AdminDashboard: React.FC = () => {
       return (completed / dailySchedules.length) * 100;
     }, [schedules, forms]);
   const t = translations[language];
-  const [newAnnouncement, setNewAnnouncement] = useState('');
   const [selectedDept, setSelectedDept] = useState<string>(settings?.departments?.[0] || 'IMAGING');
   
   const today = getLocalTodayStr();
@@ -62,6 +60,27 @@ const AdminDashboard: React.FC = () => {
       };
     });
 
+  // Overdue: Pending schedules whose submission deadline has already passed
+  const overdueItems = React.useMemo(() => {
+    const now = new Date();
+    return dailySchedules
+      .filter(s => s.status === 'Pending')
+      .filter(s => {
+        const deadline = getSubmitDeadline(
+          s.date,
+          s.shift as import('../../types').Shift,
+          settings?.lockoutHours,
+          settings?.shifts
+        );
+        return now >= deadline;
+      })
+      .map(s => {
+        const staff = users.find(u => u.id === s.staffId);
+        const form = forms.find(f => f.id === s.formId);
+        return { scheduleId: s.id, staffName: staff?.name || '—', formTitle: form?.title || '—', shift: s.shift, location: s.location || '—' };
+      });
+  }, [dailySchedules, users, forms, settings]);
+
   const runComplianceAudit = () => {
     const overdue = dailySchedules.filter(s => s.status === 'Pending');
     const uncovered = forms.filter(f => !dailySchedules.some(s => s.formId === f.id));
@@ -85,15 +104,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const last7DaysTrend = React.useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
-      const dateStr = getLocalTodayStr(d);
-      const label = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-      return { val: getCompletionRate(dateStr, selectedDept), label };
-    });
-  }, [selectedDept, getCompletionRate]);
+
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -213,8 +224,52 @@ const AdminDashboard: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
+      {/* ── Overdue Tasks Section ─────────────────── */}
+      {overdueItems.length > 0 && (
+        <div className="bg-white rounded-2xl border-2 border-orange-200 overflow-hidden shadow-sm animate-in slide-in-from-top-2">
+          <div className="p-5 bg-orange-50 flex items-center justify-between border-b border-orange-100">
+            <div className="flex items-center space-x-3 text-orange-700">
+              <XCircle size={20} />
+              <div>
+                <h3 className="font-black text-sm">งานหมดเวลาแล้ว แต่ยังไม่ได้ทำ</h3>
+                <p className="text-[10px] font-medium text-orange-500 mt-0.5">เวรที่ผ่านกำหนดส่งแล้วและยังค้างสถานะ Pending</p>
+              </div>
+            </div>
+            <span className="text-xs font-black text-white bg-orange-500 px-3 py-1.5 rounded-xl shadow-sm">
+              {overdueItems.length} รายการ
+            </span>
+          </div>
+
+          <div className="divide-y divide-orange-50">
+            {overdueItems.map((item, i) => (
+              <div key={item.scheduleId} className="flex items-center justify-between px-6 py-4 hover:bg-orange-50/40 transition-colors group animate-in fade-in" style={{ animationDelay: `${i * 60}ms` }}>
+                <div className="flex items-center space-x-4">
+                  <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                    <Clock size={16} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-800 leading-tight">{item.formTitle}</p>
+                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                      {item.staffName}
+                      <span className="mx-1.5">·</span>
+                      <span className={`font-black uppercase tracking-tight ${
+                        item.shift === 'Morning' ? 'text-orange-500' :
+                        item.shift === 'Afternoon' ? 'text-blue-500' : 'text-indigo-500'
+                      }`}>{item.shift}</span>
+                      {item.location !== '—' && <><span className="mx-1.5">·</span>{item.location}</>}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-black text-orange-600 bg-orange-100 border border-orange-200 px-3 py-1.5 rounded-lg uppercase tracking-wide">
+                  หมดเวลา
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-8">
           {alerts.length > 0 && (
             <div className="bg-red-50 rounded-2xl border-2 border-red-100 overflow-hidden animate-in slide-in-from-top-4">
                <div className="p-6 bg-red-100/50 flex items-center justify-between">
@@ -289,88 +344,7 @@ const AdminDashboard: React.FC = () => {
              </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h3 className="text-lg font-bold text-[#00468B]">{t.complianceVelocity}</h3>
-                <p className="text-xs text-gray-400 font-medium">Performance trend for the last 7 operational days</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                 <div className="flex items-center space-x-1.5">
-                   <div className="w-2 h-2 rounded-full bg-[#00468B]"></div>
-                   <span className="text-[10px] font-bold text-gray-500 uppercase">Rate</span>
-                 </div>
-              </div>
-            </div>
-            
-            <div className="h-48 w-full flex items-end justify-between px-2 group/chart">
-              {last7DaysTrend.map((item, i) => (
-                <div key={i} className="relative flex-1 flex flex-col items-center group/bar">
-                  <div className="absolute -top-8 bg-[#00468B] text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
-                    {Math.round(item.val)}%
-                  </div>
-                  <div 
-                    className="w-4/5 max-w-[40px] bg-blue-50 rounded-t-lg transition-all duration-700 ease-out hover:bg-blue-100 group-hover/chart:opacity-50 hover:!opacity-100"
-                    style={{ height: `${item.val || 5}%` }}
-                  >
-                    <div 
-                      className="w-full bg-[#00468B] rounded-t-lg transition-all duration-1000 delay-300"
-                      style={{ height: `100%` }}
-                    ></div>
-                  </div>
-                  <span className="text-[9px] font-black text-gray-400 uppercase mt-4">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
 
-        <div className="space-y-6">
-
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">{t.internalAnnouncements}</h3>
-              <Megaphone size={16} className="text-blue-500" />
-            </div>
-            
-            <div className="space-y-6 mb-8">
-              {announcements.map((ann, i) => (
-                <div key={i} className="flex space-x-3 animate-in slide-in-from-left-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
-                  <div className="w-2 h-2 rounded-full bg-[#00468B] mt-1.5 shrink-0"></div>
-                  <p className="text-xs text-gray-600 leading-relaxed font-medium">{ann}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="relative pt-6 border-t border-gray-50">
-               <input 
-                  type="text" 
-                  value={newAnnouncement}
-                  onChange={(e) => setNewAnnouncement(e.target.value)}
-                  placeholder="Post new update..."
-                  className="w-full bg-gray-50 border-2 border-gray-50 rounded-xl pl-4 pr-12 py-3 text-xs font-bold focus:border-blue-500 outline-none transition-all"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newAnnouncement) {
-                      addAnnouncement(newAnnouncement);
-                      setNewAnnouncement('');
-                    }
-                  }}
-               />
-               <button 
-                  onClick={() => {
-                    if (newAnnouncement) {
-                      addAnnouncement(newAnnouncement);
-                      setNewAnnouncement('');
-                    }
-                  }}
-                  className="absolute right-2 top-[34px] w-8 h-8 bg-[#00468B] text-white rounded-lg flex items-center justify-center hover:bg-[#003569] transition-colors"
-               >
-                 <Send size={14} />
-               </button>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

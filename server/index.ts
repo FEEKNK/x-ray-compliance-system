@@ -264,14 +264,7 @@ app.get('/api/export-data', authenticateToken, requireAdmin, async (_req, res) =
     const allSubmissions = await db.select().from(submissions);
     const allSchedules = await db.select().from(schedules);
     const allAlerts = await db.select().from(alerts);
-    const allUsers = await db.select({
-      id: users.id,
-      employeeId: users.employeeId,
-      name: users.name,
-      department: users.department,
-      email: users.email,
-      role: users.role,
-    }).from(users);
+    const allUsers = await db.select().from(users);
     const allForms = await db.select().from(forms);
     const allBundles = await db.select().from(bundles);
     const allConfig = await db.select().from(config);

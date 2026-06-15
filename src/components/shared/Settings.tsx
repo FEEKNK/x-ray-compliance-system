@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../AppContext';
-import { Building2, Mail, Save, RefreshCw, Trash2, ShieldAlert, Clock, Loader2, CheckCircle, DatabaseBackup, ClockAlert, Plus, X, Layers, Lock, BellRing } from 'lucide-react';
+import { Building2, Mail, Save, RefreshCw, Trash2, ShieldAlert, Clock, Loader2, CheckCircle, DatabaseBackup, ClockAlert, Plus, X, Layers, Lock } from 'lucide-react';
 import { useUpdateSettings } from '../../hooks/queries';
 import { translations } from '../../i18n';
 import type { Shift, SystemSettings } from '../../types';
@@ -16,11 +16,11 @@ const Settings: React.FC = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [showFactoryResetConfirm, setShowFactoryResetConfirm] = useState(false);
+  const [isFactoryResetting, setIsFactoryResetting] = useState(false);
   const [newDept, setNewDept] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [isSendingTestSLA, setIsSendingTestSLA] = useState(false);
-  const [testSLAResult, setTestSLAResult] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Backup Preview Modal States
@@ -191,47 +191,31 @@ const Settings: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-6">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center">
-                    <Mail size={12} className="mr-1.5" />
-                    {t.supervisorEmail}
-                  </label>
-                  <div className="flex space-x-2">
-                    <input 
-                      type="email" 
-                      value={localSettings.supervisorEmail}
-                      onChange={(e) => setLocalSettings({...localSettings, supervisorEmail: e.target.value})}
-                      className="flex-1 border-2 border-gray-50 rounded-xl p-4 bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none transition-all"
-                      placeholder="supervisor@hospital.com"
-                    />
-                    <button 
-                      type="button"
-                      onClick={handleTestEmail}
-                      disabled={isTestingEmail}
-                      className="bg-blue-50 text-[#00468B] px-6 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all disabled:opacity-50 flex items-center justify-center min-w-[100px]"
-                    >
-                      {isTestingEmail ? (
-                        <div className="w-4 h-4 border-2 border-[#00468B] border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        'Test Email'
-                      )}
-                    </button>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center">
-                    <Mail size={12} className="mr-1.5" />
-                    Escalation Email (Level 2 Alert)
-                  </label>
+              <div className="mb-6">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center">
+                  <Mail size={12} className="mr-1.5" />
+                  {t.supervisorEmail}
+                </label>
+                <div className="flex space-x-2">
                   <input 
                     type="email" 
-                    value={localSettings.escalationEmail}
-                    onChange={(e) => setLocalSettings({...localSettings, escalationEmail: e.target.value})}
-                    className="w-full border-2 border-gray-50 rounded-xl p-4 bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none transition-all"
-                    placeholder="director@hospital.com"
+                    value={localSettings.supervisorEmail}
+                    onChange={(e) => setLocalSettings({...localSettings, supervisorEmail: e.target.value})}
+                    className="flex-1 border-2 border-gray-50 rounded-xl p-4 bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none transition-all"
+                    placeholder="supervisor@hospital.com"
                   />
+                  <button 
+                    type="button"
+                    onClick={handleTestEmail}
+                    disabled={isTestingEmail}
+                    className="bg-blue-50 text-[#00468B] px-6 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all disabled:opacity-50 flex items-center justify-center min-w-[100px]"
+                  >
+                    {isTestingEmail ? (
+                      <div className="w-4 h-4 border-2 border-[#00468B] border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      'Test Email'
+                    )}
+                  </button>
                 </div>
               </div>
               
@@ -433,45 +417,7 @@ const Settings: React.FC = () => {
               </div>
            </div>
 
-           {/* Test SLA Alert Section */}
-           <div className="bg-amber-50 rounded-3xl p-6 border-2 border-amber-200 shadow-sm space-y-4">
-              <div className="flex items-center space-x-3 text-amber-700">
-                 <BellRing size={20} />
-                 <h3 className="font-black text-xs uppercase tracking-widest">ทดสอบแจ้งเตือน SLA</h3>
-              </div>
-              <p className="text-xs text-amber-800/70 font-medium leading-relaxed">
-                ส่งอีเมลแจ้งเตือนทันทีสำหรับตารางงานที่ยังค้างอยู่วันนี้ โดยไม่ต้องรอเวลา SLA
-              </p>
-              {testSLAResult && (
-                <div className="text-xs font-semibold text-amber-900 bg-amber-100 rounded-xl p-3 whitespace-pre-line">
-                  {testSLAResult}
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={async () => {
-                  setIsSendingTestSLA(true);
-                  setTestSLAResult(null);
-                  try {
-                    const data = await api.config.testSlaNow();
-                    if (data.success) {
-                      setTestSLAResult(`✅ ส่งสำเร็จ ${data.total} คน:\n${(data.sent || []).join('\n')}`);
-                    } else {
-                      setTestSLAResult(`⚠️ ${data.message || data.error}`);
-                    }
-                  } catch {
-                    setTestSLAResult('❌ เชื่อมต่อ server ไม่ได้');
-                  } finally {
-                    setIsSendingTestSLA(false);
-                  }
-                }}
-                disabled={isSendingTestSLA}
-                className="w-full bg-amber-500 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-amber-600 transition-all flex items-center justify-center space-x-2 shadow-sm disabled:opacity-60"
-              >
-                {isSendingTestSLA ? <Loader2 size={14} className="animate-spin" /> : <BellRing size={14} />}
-                <span>ส่งแจ้งเตือนทดสอบตอนนี้</span>
-              </button>
-           </div>
+
 
            {/* Danger Zone Section */}
            <div className="bg-red-50 rounded-3xl p-6 border-2 border-red-100 shadow-sm space-y-4">
@@ -492,11 +438,7 @@ const Settings: React.FC = () => {
                  </button>
 
                  <button 
-                  onClick={() => {
-                    if (confirm('CRITICAL: This will erase all forms, users, and schedules. The system will reload with factory default data. Continue?')) {
-                      resetDatabase();
-                    }
-                  }}
+                  onClick={() => setShowFactoryResetConfirm(true)}
                   className="w-full bg-red-600 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm hover:bg-red-700 transition-all flex items-center justify-center space-x-2"
                  >
                     <RefreshCw size={14} />
@@ -548,6 +490,102 @@ const Settings: React.FC = () => {
                   <><Loader2 size={16} className="animate-spin" /> กำลังล้างข้อมูล...</>
                 ) : (
                   <><Trash2 size={16} /> ยืนยันล้างข้อมูล</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Factory Reset Confirm Modal */}
+      {showFactoryResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-red-600 to-red-700 px-7 py-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                <RefreshCw size={24} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-black text-lg leading-tight">คืนค่าเริ่มต้นระบบ (Factory Reset)</h3>
+                <p className="text-red-200 text-xs font-semibold mt-0.5">ดำเนินการแล้วไม่สามารถย้อนกลับได้</p>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-5">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                ระบบจะ <strong className="text-red-600">ลบและเขียนทับข้อมูลทั้งหมด</strong> แล้วโหลดข้อมูลตั้งต้น (Demo/Seed) ขึ้นมาใหม่
+              </p>
+
+              {/* What WILL be deleted */}
+              <div className="bg-red-50 rounded-2xl border border-red-100 p-4 space-y-2">
+                <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-3">❌ ข้อมูลที่จะถูกลบทั้งหมด</p>
+                {[
+                  'พนักงานทุกคน (Users) — รหัสผ่าน PIN จะหายทั้งหมด',
+                  'แบบฟอร์มทุกแบบ (Forms) — ที่สร้างและแก้ไขไว้',
+                  'ตารางงาน / กำหนดการ (Schedules) — ทุกเดือน',
+                  'ประวัติการตรวจเช็ค (Submissions) — ทั้งหมด',
+                  'การแจ้งเตือน (Alerts) — ทุกรายการ',
+                  'กลุ่มแบบฟอร์ม (Bundles) — ทุกกลุ่ม',
+                  'การตั้งค่าระบบ (Settings) — จะถูก Reset เป็นค่า Default',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0 mt-1.5" />
+                    <p className="text-xs text-red-700 font-medium">{item}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* What will be loaded */}
+              <div className="bg-amber-50 rounded-2xl border border-amber-100 p-4 space-y-2">
+                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3">⚠️ ข้อมูลที่จะถูกโหลดขึ้นมาใหม่</p>
+                {[
+                  'พนักงานตัวอย่าง (Demo Staff) พร้อมรหัสผ่านเริ่มต้น',
+                  'แบบฟอร์มตัวอย่าง (Demo Forms)',
+                  'การตั้งค่าระบบเริ่มต้น (Default System Settings)',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1.5" />
+                    <p className="text-xs text-amber-700 font-medium">{item}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-blue-50 rounded-xl border border-blue-100 px-4 py-3 flex items-start gap-3">
+                <ShieldAlert size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-blue-700 font-semibold leading-relaxed">
+                  แนะนำให้ทำการ <strong>Export Backup</strong> ก่อนดำเนินการ เพื่อสำรองข้อมูลที่มีอยู่ไว้ก่อน
+                </p>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="px-7 pb-6 flex gap-3">
+              <button
+                onClick={() => setShowFactoryResetConfirm(false)}
+                disabled={isFactoryResetting}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-100 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all disabled:opacity-50"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={async () => {
+                  setIsFactoryResetting(true);
+                  try {
+                    await resetDatabase();
+                  } finally {
+                    setIsFactoryResetting(false);
+                    setShowFactoryResetConfirm(false);
+                  }
+                }}
+                disabled={isFactoryResetting}
+                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2 shadow-md"
+              >
+                {isFactoryResetting ? (
+                  <><Loader2 size={16} className="animate-spin" /> กำลังรีเซ็ตระบบ...</>
+                ) : (
+                  <><RefreshCw size={16} /> ยืนยัน Factory Reset</>
                 )}
               </button>
             </div>
