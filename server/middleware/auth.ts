@@ -21,7 +21,7 @@ export const authenticateToken = (req: AuthenticatedRequest, res: express.Respon
     return;
   }
 
-  jwt.verify(token, getJwtSecret(), (err, user) => {
+  jwt.verify(token, getJwtSecret(), (err: any, user: any) => {
     if (err) {
       res.status(403).json({ error: 'Forbidden' });
       return;
