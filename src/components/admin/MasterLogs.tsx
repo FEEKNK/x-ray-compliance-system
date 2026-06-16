@@ -114,15 +114,15 @@ const MasterLogs: React.FC = () => {
 
       <div className="grid grid-cols-3 gap-6">
          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Records</p>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total Records</p>
             <p className="text-2xl font-black text-gray-800">{stats.total}</p>
          </div>
          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Evidence Captured</p>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Evidence Captured</p>
             <p className="text-2xl font-black text-blue-600">{stats.withPhotos}</p>
          </div>
          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Critical Alerts</p>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Critical Alerts</p>
             <p className="text-2xl font-black text-red-600">{stats.alerts}</p>
          </div>
       </div>
@@ -156,6 +156,7 @@ const MasterLogs: React.FC = () => {
             <option value="Morning">Morning</option>
             <option value="Afternoon">Afternoon</option>
             <option value="Night">Night</option>
+            <option value="NightBeforeMorning">NightBeforeMorning</option>
           </select>
           <select 
             value={filterDept}
@@ -175,12 +176,12 @@ const MasterLogs: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-50">
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Verification Timestamp</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Medical Staff</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Protocol / Task</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Shift</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Integrity Status</th>
-                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Action</th>
+                <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Verification Timestamp</th>
+                <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Medical Staff</th>
+                <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Protocol / Task</th>
+                <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Shift</th>
+                <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Integrity Status</th>
+                <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -193,7 +194,7 @@ const MasterLogs: React.FC = () => {
                   <tr key={sub.id} className="hover:bg-blue-50/30 transition-colors group">
                     <td className="px-8 py-6">
                       <p className="text-sm text-gray-800 font-bold">{parseDbDate(sub.submittedAt).toLocaleDateString('en-GB')}</p>
-                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-tighter">{parseDbDate(sub.submittedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}</p>
+                      <p className="text-xs text-gray-400 font-black uppercase tracking-tighter">{parseDbDate(sub.submittedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}</p>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center space-x-3">
@@ -207,9 +208,11 @@ const MasterLogs: React.FC = () => {
                       <span className="text-sm font-bold text-[#00468B]">{form?.title}</span>
                     </td>
                     <td className="px-8 py-6">
-                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
+                      <span className={`text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
                         schedule?.shift === 'Morning' ? 'bg-orange-50 text-orange-600 border-orange-100' : 
-                        schedule?.shift === 'Afternoon' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                        schedule?.shift === 'Afternoon' ? 'bg-blue-50 text-blue-700 border-blue-100' : 
+                        schedule?.shift === 'NightBeforeMorning' ? 'bg-purple-50 text-purple-700 border-purple-100' : 
+                        'bg-indigo-50 text-indigo-700 border-indigo-100'
                       }`}>
                         {schedule?.shift}
                       </span>
@@ -217,7 +220,7 @@ const MasterLogs: React.FC = () => {
                     <td className="px-8 py-6">
                       <div className="flex items-center space-x-2">
                         {sub.photos.length > 0 && <ImageIcon size={14} className="text-blue-500" />}
-                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${
+                        <span className={`text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded border ${
                           hasAlert 
                             ? 'text-red-600 bg-red-50 border-red-100' 
                             : 'text-green-600 bg-green-50 border-green-100'

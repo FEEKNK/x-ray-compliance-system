@@ -12,7 +12,8 @@ import {
   ChevronUp,
   X,
   ShieldCheck,
-  LogOut
+  LogOut,
+  Layers
 } from 'lucide-react';
 
 
@@ -42,6 +43,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, role, on
   const adminMoreItems = [
     { id: 'quality', label: 'คุณภาพ', icon: ShieldCheck },
     { id: 'forms', label: 'แบบฟอร์ม', icon: FileText },
+    { id: 'bundles', label: 'จัดกลุ่ม', icon: Layers },
     { id: 'master-logs', label: 'ประวัติ', icon: ClipboardList },
     { id: 'users', label: 'บุคลากร', icon: Users },
     { id: 'settings', label: 'ตั้งค่า', icon: Settings },
@@ -66,9 +68,9 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, role, on
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#00468B] rounded-full" />
                 )}
                 <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-blue-50' : ''}`}>
-                  <Icon size={20} />
+                  <Icon size={22} />
                 </div>
-                <span className={`text-[9px] font-black uppercase tracking-tight ${isActive ? 'text-[#00468B]' : 'text-gray-400'}`}>{item.label}</span>
+                <span className={`text-xs font-black uppercase tracking-tight ${isActive ? 'text-[#00468B]' : 'text-gray-400'}`}>{item.label}</span>
               </button>
             );
           })}
@@ -108,8 +110,8 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, role, on
                       isActive ? 'bg-[#00468B] text-white shadow-lg shadow-blue-900/20' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                     }`}
                   >
-                    <Icon size={22} />
-                    <span className="text-[9px] font-black uppercase tracking-tight leading-none text-center">{item.label}</span>
+                    <Icon size={24} />
+                    <span className="text-xs font-black uppercase tracking-tight leading-none text-center">{item.label}</span>
                   </button>
                 );
               })}
@@ -154,9 +156,9 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, role, on
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#00468B] rounded-full" />
                 )}
                 <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-blue-50' : ''}`}>
-                  <Icon size={20} className={isMore && showAdminMenu ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                  <Icon size={22} className={isMore && showAdminMenu ? 'rotate-180 transition-transform' : 'transition-transform'} />
                 </div>
-                <span className={`text-[9px] font-black uppercase tracking-tight ${isActive ? 'text-[#00468B]' : 'text-gray-400'}`}>{item.label}</span>
+                <span className={`text-xs font-black uppercase tracking-tight ${isActive ? 'text-[#00468B]' : 'text-gray-400'}`}>{item.label}</span>
               </button>
             );
           })}

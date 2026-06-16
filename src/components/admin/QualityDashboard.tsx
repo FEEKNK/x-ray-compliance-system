@@ -570,12 +570,12 @@ const QualityDashboard: React.FC = () => {
   const renderCell = (col: ColumnDef, stat: typeof formStats[0], index: number) => {
     switch (col.id) {
       case 'index':
-        return <span className="text-xs font-black text-gray-400">{index + 1}</span>;
+        return <span className="text-sm font-black text-gray-500">{index + 1}</span>;
       case 'title':
-        return <span className="text-xs font-bold text-gray-800 leading-tight">{stat.title}</span>;
+        return <span className="text-sm font-bold text-gray-800 leading-tight">{stat.title}</span>;
       case 'department':
         return (
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+          <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-black uppercase tracking-wider ${
             stat.department === 'MRI' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'
           }`}>
             {stat.department}
@@ -586,58 +586,58 @@ const QualityDashboard: React.FC = () => {
         if (stat.status === 'complete') {
           return (
             <div className="flex items-center space-x-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-[10px] font-bold text-green-700">ครบถ้วน</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+              <span className="text-sm font-bold text-green-700">ครบถ้วน</span>
             </div>
           );
         } else if (stat.status === 'partial') {
           return (
             <div className="flex items-center space-x-1.5">
-              <div className="w-2 h-2 rounded-full bg-amber-400" />
-              <span className="text-[10px] font-bold text-amber-700">{stat.completedSchedules}/{stat.totalSchedules}</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+              <span className="text-sm font-bold text-amber-700">{stat.completedSchedules}/{stat.totalSchedules}</span>
             </div>
           );
         } else if (stat.status === 'none') {
           return (
             <div className="flex items-center space-x-1.5">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="text-[10px] font-bold text-red-600">ยังไม่ส่ง</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+              <span className="text-sm font-bold text-red-600">ยังไม่ส่ง</span>
             </div>
           );
         }
-        return <span className="text-[10px] text-gray-300 font-bold">ไม่ได้กำหนด</span>;
+        return <span className="text-sm text-gray-400 font-bold">ไม่ได้กำหนด</span>;
       case 'submitCount':
         return (
-          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-xl text-xs font-black ${
-            stat.submitCount > 0 ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-300'
+          <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-black ${
+            stat.submitCount > 0 ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-400'
           }`}>
             {stat.submitCount}
           </span>
         );
       case 'failCount':
         return (
-          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-xl text-xs font-black ${
-            stat.failCount > 0 ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-300'
+          <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-black ${
+            stat.failCount > 0 ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-400'
           }`}>
             {stat.failCount}
           </span>
         );
       case 'lastSubmit':
         return stat.lastSubmit
-          ? <span className="text-[10px] font-bold text-gray-600">{parseDbDate(stat.lastSubmit).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
-          : <span className="text-gray-300 text-xs">—</span>;
+          ? <span className="text-sm font-bold text-gray-600">{parseDbDate(stat.lastSubmit).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
+          : <span className="text-gray-400 text-sm">—</span>;
       default:
         // Custom columns — render empty editable placeholder
-        return <span className="text-gray-300 text-[10px] italic">—</span>;
+        return <span className="text-gray-300 text-xs italic">—</span>;
     }
   };
 
   // ─── Status Badge for summary ─────────────────────
   const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
-    if (status === 'Pass') return <span className="px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-[9px] font-bold">Pass</span>;
-    if (status === 'Fail') return <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[9px] font-bold">Fail</span>;
-    if (status === 'Alert') return <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-600 text-[9px] font-bold">Alert</span>;
-    return <span className="text-[9px] text-gray-400">{String(status)}</span>;
+    if (status === 'Pass') return <span className="px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-xs font-bold">Pass</span>;
+    if (status === 'Fail') return <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-xs font-bold">Fail</span>;
+    if (status === 'Alert') return <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-600 text-xs font-bold">Alert</span>;
+    return <span className="text-xs text-gray-400">{String(status)}</span>;
   };
 
   return (
@@ -671,7 +671,7 @@ const QualityDashboard: React.FC = () => {
               <button
                 key={dept}
                 onClick={() => setDeptFilter(dept)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
                   deptFilter === dept
                     ? 'bg-[#00468B] text-white shadow-md'
                     : 'text-gray-400 hover:bg-gray-50'
@@ -712,7 +712,7 @@ const QualityDashboard: React.FC = () => {
               card.color === 'green' ? 'bg-green-50 text-green-600' :
               card.color === 'red' ? 'bg-red-50 text-red-600' : 'bg-purple-50 text-purple-600'
             }`}>{card.icon}</div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{card.label}</p>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{card.label}</p>
             <p className={`text-2xl font-black ${
               card.color === 'blue' ? 'text-blue-700' :
               card.color === 'green' ? 'text-green-700' :
@@ -751,7 +751,7 @@ const QualityDashboard: React.FC = () => {
 
               {showColMenu && (
                 <div className="absolute right-0 top-12 z-50 bg-white rounded-2xl border border-gray-100 shadow-2xl w-72 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">แสดง / ซ่อน คอลัมน์</p>
+                  <p className="text-xs font-black text-gray-400 uppercase tracking-widest">แสดง / ซ่อน คอลัมน์</p>
                   <div className="space-y-1 max-h-60 overflow-y-auto">
                     {columns.map(col => (
                       <div key={col.id} className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 transition-colors group">
@@ -778,7 +778,7 @@ const QualityDashboard: React.FC = () => {
                   </div>
 
                   <div className="border-t border-gray-100 pt-3">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">เพิ่มคอลัมน์ใหม่</p>
+                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">เพิ่มคอลัมน์ใหม่</p>
                     <div className="flex items-center space-x-2">
                       <input
                         type="text"
@@ -822,7 +822,7 @@ const QualityDashboard: React.FC = () => {
                     className="p-4 text-left border-b border-gray-100"
                     style={{ minWidth: col.width }}
                   >
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{col.label}</span>
+                    <span className="text-sm font-black text-gray-500 uppercase tracking-widest">{col.label}</span>
                   </th>
                 ))}
                 <th className="p-4 border-b border-gray-100 w-10"></th>
@@ -863,7 +863,7 @@ const QualityDashboard: React.FC = () => {
                             <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center space-x-2">
                                 <div className="w-1.5 h-1.5 rounded-full bg-[#00468B]" />
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">
                                   รายละเอียดการ Submit ในเดือนนี้ ({detailSubs.length} ครั้ง)
                                 </span>
                               </div>
@@ -890,7 +890,7 @@ const QualityDashboard: React.FC = () => {
                                 <div className="flex items-center gap-1.5">
                                   <button
                                     onClick={(e) => { e.stopPropagation(); exportSingleFormExcel(stat.id); }}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition-all hover:shadow-sm"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition-all hover:shadow-sm"
                                     title="Download Excel"
                                   >
                                     <FileSpreadsheet size={12} />
@@ -898,7 +898,7 @@ const QualityDashboard: React.FC = () => {
                                   </button>
                                   <button
                                     onClick={(e) => { e.stopPropagation(); exportSingleFormPDF(stat.id); }}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-all hover:shadow-sm"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-all hover:shadow-sm"
                                     title="Download PDF"
                                   >
                                     <FileDown size={12} />
@@ -914,10 +914,10 @@ const QualityDashboard: React.FC = () => {
                                   <table className="w-full text-sm">
                                     <thead className="bg-gray-50">
                                       <tr>
-                                        <th className="px-4 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">วันที่ส่ง</th>
-                                        <th className="px-4 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">ผู้ส่ง</th>
-                                        <th className="px-4 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">เวร</th>
-                                        <th className="px-4 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">ผลลัพธ์</th>
+                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest">วันที่ส่ง</th>
+                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest">ผู้ส่ง</th>
+                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest">เวร</th>
+                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest">ผลลัพธ์</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
@@ -931,7 +931,7 @@ const QualityDashboard: React.FC = () => {
                                           </td>
                                           <td className="px-4 py-3 text-xs font-bold text-gray-800">{sub.staffName}</td>
                                           <td className="px-4 py-3">
-                                            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-gray-100 text-gray-600">{sub.shift}</span>
+                                            <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-gray-100 text-gray-600">{sub.shift}</span>
                                           </td>
                                           <td className="px-4 py-3">
                                             <div className="flex flex-wrap gap-1">
@@ -942,7 +942,7 @@ const QualityDashboard: React.FC = () => {
                                                   <StatusBadge key={key} status={String(val)} />
                                                 ))}
                                               {Object.keys(sub.data).length > 9 && (
-                                                <span className="text-[9px] text-gray-400 font-bold">+{Object.keys(sub.data).length - 9}</span>
+                                                <span className="text-xs text-gray-400 font-bold">+{Object.keys(sub.data).length - 9}</span>
                                               )}
                                             </div>
                                           </td>
@@ -956,11 +956,11 @@ const QualityDashboard: React.FC = () => {
                                   <table className="w-full text-sm border-collapse min-w-max">
                                     <thead>
                                       <tr className="bg-gray-100 border-b border-gray-200">
-                                        <th className="px-3 py-2 text-left text-[10px] font-black text-gray-500 border-r border-gray-200 sticky left-0 z-20 bg-gray-100 shadow-[1px_0_0_0_#e5e7eb]">
+                                        <th className="px-3 py-2 text-left text-xs font-black text-gray-500 border-r border-gray-200 sticky left-0 z-20 bg-gray-100 shadow-[1px_0_0_0_#e5e7eb]">
                                           รายการตรวจเช็ค
                                         </th>
                                         {daysArray.map(day => (
-                                          <th key={day} className="px-1 py-2 text-center text-[10px] font-black text-gray-500 border-r border-gray-200 w-8 min-w-[32px]">
+                                          <th key={day} className="px-1 py-2 text-center text-xs font-black text-gray-500 border-r border-gray-200 w-8 min-w-[32px]">
                                             {day}
                                           </th>
                                         ))}
@@ -969,7 +969,7 @@ const QualityDashboard: React.FC = () => {
                                     <tbody>
                                       {forms.find(f => f.id === stat.id)?.questions.filter(q => q.type !== 'date').map(q => (
                                         <tr key={q.id} className="border-b border-gray-100 hover:bg-gray-50/50 group/row">
-                                          <td className="px-3 py-2 text-[10px] font-bold text-gray-700 border-r border-gray-200 sticky left-0 z-10 bg-white group-hover/row:bg-gray-50/50 shadow-[1px_0_0_0_#f3f4f6]">
+                                          <td className="px-3 py-2 text-xs font-bold text-gray-700 border-r border-gray-200 sticky left-0 z-10 bg-white group-hover/row:bg-gray-50/50 shadow-[1px_0_0_0_#f3f4f6]">
                                             {q.label}
                                           </td>
                                           {daysArray.map(day => {
@@ -986,14 +986,14 @@ const QualityDashboard: React.FC = () => {
                                                       let color: string;
                                                       
                                                       if (val === 'Pass' || val === 'yes' || val === true) {
-                                                        display = '✓'; color = 'text-green-500 font-black text-xs';
+                                                        display = '✓'; color = 'text-green-500 font-black text-sm';
                                                       } else if (val === 'Fail' || val === 'Alert' || val === 'no' || val === false) {
-                                                        display = '✗'; color = 'text-red-500 font-black text-xs';
+                                                        display = '✗'; color = 'text-red-500 font-black text-sm';
                                                       } else if (val === undefined || val === null || val === '') {
-                                                        display = '-'; color = 'text-gray-200';
+                                                        display = '-'; color = 'text-gray-300 font-bold';
                                                       } else {
                                                         display = String(val).substring(0, 4);
-                                                        color = 'text-[#00468B] font-black text-[9px] tracking-tighter';
+                                                        color = 'text-[#00468B] font-black text-xs tracking-tighter';
                                                       }
 
                                                       return (
@@ -1014,7 +1014,7 @@ const QualityDashboard: React.FC = () => {
                                       
                                       {/* Staff Signature Row */}
                                       <tr className="bg-blue-50/30">
-                                        <td className="px-3 py-2 text-[10px] font-black text-[#00468B] border-r border-gray-200 sticky left-0 z-10 bg-[#f0f6fc] shadow-[1px_0_0_0_#e5e7eb]">
+                                        <td className="px-3 py-2 text-xs font-black text-[#00468B] border-r border-gray-200 sticky left-0 z-10 bg-[#f0f6fc] shadow-[1px_0_0_0_#e5e7eb]">
                                           ผู้ตรวจสอบ
                                         </td>
                                         {daysArray.map(day => {
@@ -1025,7 +1025,7 @@ const QualityDashboard: React.FC = () => {
                                                 <div className="flex flex-col h-full min-h-[24px]">
                                                   {subsOnDay.map((sub, i) => (
                                                     <div key={i} className={`flex-1 flex items-center justify-center p-0.5 ${i > 0 ? 'border-t border-blue-100/50' : ''}`} title={`${sub.staffName} (${sub.shift})`}>
-                                                      <span className="text-[7px] font-black text-blue-700 truncate max-w-[28px] uppercase">
+                                                      <span className="text-[10px] font-black text-blue-700 truncate max-w-[32px] uppercase">
                                                         {sub.staffName.split(' ')[0].substring(0, 4)}
                                                       </span>
                                                     </div>
@@ -1041,7 +1041,7 @@ const QualityDashboard: React.FC = () => {
                                       
                                       {/* Time Row */}
                                       <tr className="bg-blue-50/10 border-t border-gray-100">
-                                        <td className="px-3 py-2 text-[10px] font-black text-gray-500 border-r border-gray-200 sticky left-0 z-10 bg-white shadow-[1px_0_0_0_#e5e7eb]">
+                                        <td className="px-3 py-2 text-xs font-black text-gray-500 border-r border-gray-200 sticky left-0 z-10 bg-white shadow-[1px_0_0_0_#e5e7eb]">
                                           เวลา
                                         </td>
                                         {daysArray.map(day => {
@@ -1055,7 +1055,7 @@ const QualityDashboard: React.FC = () => {
                                                     const timeStr = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
                                                     return (
                                                       <div key={i} className={`flex-1 flex items-center justify-center p-0.5 ${i > 0 ? 'border-t border-gray-100' : ''}`} title={`เวลาส่งข้อมูล: ${timeStr}`}>
-                                                        <span className="text-[7px] font-bold text-gray-500 tracking-tighter">
+                                                        <span className="text-[9px] font-bold text-gray-500 tracking-tighter">
                                                           {timeStr}
                                                         </span>
                                                       </div>
@@ -1102,10 +1102,10 @@ const QualityDashboard: React.FC = () => {
 
         {/* Table Footer */}
         <div className="p-4 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between">
-          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+          <span className="text-xs font-black text-gray-400 uppercase tracking-widest">
             แสดง {formStats.length} จาก {forms.filter(f => f.isActive).length} ฟอร์ม
           </span>
-          <div className="flex items-center space-x-4 text-[10px] font-bold text-gray-400">
+          <div className="flex items-center space-x-4 text-xs font-bold text-gray-400">
             <div className="flex items-center space-x-1.5"><div className="w-2 h-2 rounded-full bg-green-500" /><span>ครบถ้วน</span></div>
             <div className="flex items-center space-x-1.5"><div className="w-2 h-2 rounded-full bg-amber-400" /><span>บางส่วน</span></div>
             <div className="flex items-center space-x-1.5"><div className="w-2 h-2 rounded-full bg-red-500" /><span>ยังไม่ส่ง</span></div>

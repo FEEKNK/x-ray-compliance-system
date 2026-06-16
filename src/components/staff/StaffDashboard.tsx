@@ -152,7 +152,7 @@ const StaffDashboard: React.FC = () => {
       {/* Hero Section — Mobile optimized */}
       <div className="bg-gradient-to-br from-[#00468B] to-[#003070] rounded-3xl p-6 md:p-10 text-white overflow-hidden relative">
         <div className="relative z-10 space-y-1">
-          <p className="text-blue-200 text-[10px] font-black uppercase tracking-[0.2em]">สวัสดี, {currentUser?.name?.split(' ')[0] || 'คุณ'}</p>
+          <p className="text-blue-200 text-xs font-black uppercase tracking-[0.2em]">สวัสดี, {currentUser?.name?.split(' ')[0] || 'คุณ'}</p>
           <h1 className="text-2xl md:text-3xl font-black tracking-tight">{t.todaysWork || 'งานของวันนี้'}</h1>
           <p className="text-blue-200/80 text-sm font-medium">
             {mySchedules.filter(s => s.status === 'Pending').length > 0
@@ -245,8 +245,11 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
       <div className="space-y-4">
         {/* Top row: shift badge + lock badge */}
         <div className="flex items-center justify-between">
-            <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${
-              s.shift === 'Morning' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
+            <span className={`text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${
+              s.shift === 'Morning' ? 'bg-orange-50 text-orange-600' : 
+              s.shift === 'Afternoon' ? 'bg-blue-50 text-blue-600' :
+              s.shift === 'NightBeforeMorning' ? 'bg-purple-50 text-purple-600' :
+              'bg-indigo-50 text-indigo-600'
             }`}>{s.shift}</span>
             {isCompleted && !cd.isLocked && <CheckCircle2 className="text-green-500" size={16} />}
         </div>
@@ -379,7 +382,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, init
           </button>
           <div className="min-w-0">
              <h2 className="text-lg font-bold leading-tight truncate pr-4">{form.title}</h2>
-             <p className="text-[10px] font-medium text-blue-100/70 truncate">{schedule.location || 'Clinical Area'}</p>
+             <p className="text-xs font-medium text-blue-100/70 truncate">{schedule.location || 'Clinical Area'}</p>
           </div>
         </div>
         <div className="w-10 h-10 rounded-full bg-blue-400/20 flex items-center justify-center shrink-0">
@@ -392,7 +395,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, init
           {form.questions.map((q, idx) => (
             <div key={q.id} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: `${idx * 50}ms` }}>
               <div className="flex items-start space-x-3">
-                 <span className="w-6 h-6 rounded-lg bg-blue-50 text-[#00468B] flex items-center justify-center text-[10px] font-black shrink-0 mt-1">{idx + 1}</span>
+                 <span className="w-6 h-6 rounded-lg bg-blue-50 text-[#00468B] flex items-center justify-center text-xs font-black shrink-0 mt-1">{idx + 1}</span>
                  <label className="block text-sm font-black text-gray-800 tracking-tight leading-relaxed">
                    {q.label} {q.required && <span className="text-red-500">*</span>}
                  </label>
@@ -629,7 +632,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, init
                 )) && (
                   <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className="flex items-center space-x-2 mb-2 px-1">
-                       <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Detail Required (กรุณาระบุรายละเอียด)</span>
+                       <span className="text-xs font-black text-orange-600 uppercase tracking-widest">Detail Required (กรุณาระบุรายละเอียด)</span>
                     </div>
                     <input 
                       type="text" 

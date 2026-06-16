@@ -33,7 +33,7 @@ export interface DynamicForm {
   department?: string;
 }
 
-export type Shift = 'Morning' | 'Afternoon' | 'Night';
+export type Shift = 'Morning' | 'Afternoon' | 'Night' | 'NightBeforeMorning';
 
 export interface Schedule {
   id: string;
@@ -65,16 +65,19 @@ export interface SystemSettings {
     Morning: number;
     Afternoon: number;
     Night: number;
+    NightBeforeMorning: number;
   };
   lockoutHours: {
     Morning: number;
     Afternoon: number;
     Night: number;
+    NightBeforeMorning: number;
   };
   shifts: {
     Morning: string;
     Afternoon: string;
     Night: string;
+    NightBeforeMorning: string;
   };
   autoBackupEnabled?: boolean;
 }
@@ -104,6 +107,7 @@ export interface AppContextType {
   language: 'TH' | 'EN';
   setLanguage: (lang: 'TH' | 'EN') => void;
   settings: SystemSettings;
+  setSettings: (settings: SystemSettings) => void;
   announcements: string[];
   
   // Keep these global actions here for now or move to separate hooks

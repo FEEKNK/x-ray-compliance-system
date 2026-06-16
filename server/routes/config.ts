@@ -13,12 +13,13 @@ const DEFAULT_SETTINGS = {
   supervisorEmail: "supervisor@hospital.com",
   escalationEmail: "director@hospital.com",
   departments: ["IMAGING", "MRI"],
-  slaHours: { Morning: 3, Afternoon: 2, Night: 2 },
-  lockoutHours: { Morning: 3, Afternoon: 2, Night: 2 },
+  slaHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
+  lockoutHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
   shifts: {
     Morning: "08:00 - 16:00",
     Afternoon: "16:00 - 00:00",
-    Night: "00:00 - 08:00"
+    Night: "00:00 - 08:00",
+    NightBeforeMorning: "04:00 - 08:00"
   }
 };
 

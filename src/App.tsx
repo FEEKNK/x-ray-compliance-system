@@ -83,7 +83,7 @@ const AppContent: React.FC = () => {
                       <UserCircle size={64} />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-800">{currentUser.name}</h2>
-                    <p className="text-gray-500 font-medium uppercase tracking-widest text-[10px] mt-1">{currentUser.role} | {currentUser.department}</p>
+                    <p className="text-gray-500 font-medium uppercase tracking-widest text-xs mt-1">{currentUser.role} | {currentUser.department}</p>
                   </div>
 
                   <div className="bg-white rounded-3xl border border-gray-100 p-6 space-y-4 shadow-sm">

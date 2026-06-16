@@ -23,9 +23,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     supervisorEmail: "supervisor@hospital.com",
     escalationEmail: "director@hospital.com",
     departments: ["IMAGING", "MRI"],
-    slaHours: { Morning: 3, Afternoon: 2, Night: 2 },
-    shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00" },
-    lockoutHours: { Morning: 3, Afternoon: 2, Night: 2 }
+    slaHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
+    shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00", NightBeforeMorning: "04:00 - 08:00" },
+    lockoutHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 }
   });
 
   // Fetch config — uses public endpoint initially (no auth needed for landing page).
@@ -47,15 +47,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           supervisorEmail: "supervisor@hospital.com",
           escalationEmail: "director@hospital.com",
           departments: ["IMAGING", "MRI"],
-          slaHours: { Morning: 1.5, Afternoon: 1.5, Night: 1.5 },
-          lockoutHours: { Morning: 3, Afternoon: 2, Night: 2 },
-          shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00" },
+          slaHours: { Morning: 1.5, Afternoon: 1.5, Night: 1.5, NightBeforeMorning: 1.5 },
+          lockoutHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
+          shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00", NightBeforeMorning: "04:00 - 08:00" },
         };
         const mergedSettings = { ...defaultSettings, ...(configData.settings as Partial<SystemSettings>) };
         
         if (!(configData.settings as SystemSettings)?.slaHours) mergedSettings.slaHours = defaultSettings.slaHours;
+        else mergedSettings.slaHours = { ...defaultSettings.slaHours, ...(configData.settings as SystemSettings).slaHours };
+        
         if (!(configData.settings as SystemSettings)?.lockoutHours) mergedSettings.lockoutHours = defaultSettings.lockoutHours;
+        else mergedSettings.lockoutHours = { ...defaultSettings.lockoutHours, ...(configData.settings as SystemSettings).lockoutHours };
+        
         if (!(configData.settings as SystemSettings)?.shifts) mergedSettings.shifts = defaultSettings.shifts;
+        else mergedSettings.shifts = { ...defaultSettings.shifts, ...(configData.settings as SystemSettings).shifts };
+        
         if (!(configData.settings as SystemSettings)?.departments) mergedSettings.departments = defaultSettings.departments;
         
         setSettings(mergedSettings);
@@ -124,7 +130,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isLoading, loadError,
       currentUser, setCurrentUser,
       language, setLanguage,
-      settings, announcements,
+      settings, setSettings, announcements,
       resetDatabase, resetData, exportData, clearLogs
     }}>
       {children}

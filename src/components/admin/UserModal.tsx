@@ -29,7 +29,7 @@ const UserModal: React.FC<UserModalProps> = ({ editingUser, formData, setFormDat
          <form onSubmit={onSave} className="p-8 space-y-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Full Name</label>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Full Name</label>
                 <input 
                   type="text" 
                   value={formData.name}
@@ -39,7 +39,7 @@ const UserModal: React.FC<UserModalProps> = ({ editingUser, formData, setFormDat
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Employee ID</label>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Employee ID</label>
                 <input 
                   type="text" 
                   value={formData.employeeId}
@@ -50,7 +50,7 @@ const UserModal: React.FC<UserModalProps> = ({ editingUser, formData, setFormDat
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Department</label>
+                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Department</label>
                   <select 
                     value={formData.department}
                     onChange={(e) => setFormData({...formData, department: e.target.value})}
@@ -63,7 +63,7 @@ const UserModal: React.FC<UserModalProps> = ({ editingUser, formData, setFormDat
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">System Role</label>
+                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">System Role</label>
                   <select 
                     value={formData.role}
                     onChange={(e) => setFormData({...formData, role: e.target.value as Role})}
@@ -75,7 +75,7 @@ const UserModal: React.FC<UserModalProps> = ({ editingUser, formData, setFormDat
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Email Address</label>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Email Address</label>
                 <input 
                   type="email" 
                   value={formData.email}

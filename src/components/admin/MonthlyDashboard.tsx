@@ -282,12 +282,12 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
                 <th className="sticky left-0 z-20 bg-white p-5 text-left border-b border-r border-gray-100 min-w-[200px] shadow-[4px_0_12px_rgba(0,0,0,0.02)]">
                   <div className="flex items-center space-x-2">
                     <User size={14} className="text-[#00468B]" />
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">พนักงาน (Staff)</span>
+                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">พนักงาน (Staff)</span>
                   </div>
                 </th>
                 {Array.from({ length: daysInMonth }).map((_, i) => (
                   <th key={i} className="p-3 border-b border-gray-100 min-w-[40px] text-center">
-                    <span className="text-[10px] font-black text-gray-500">{i + 1}</span>
+                    <span className="text-xs font-black text-gray-500">{i + 1}</span>
                   </th>
                 ))}
               </tr>
@@ -298,7 +298,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
                   <td className="sticky left-0 z-10 bg-white p-4 border-r border-gray-100 shadow-[4px_0_12px_rgba(0,0,0,0.02)]">
                     <div className="flex flex-col">
                       <span className="font-bold text-gray-800 text-sm">{s.name}</span>
-                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">{s.department}</span>
+                      <span className="text-xs font-black text-gray-400 uppercase tracking-tighter">{s.department}</span>
                     </div>
                   </td>
                   {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -308,7 +308,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
                         <div className="flex justify-center items-center h-full w-full py-2">
                           {status === 'completed' && <Check size={16} className="text-green-500 stroke-[3]" />}
                           {status === 'missed' && (
-                            <div className="flex items-center justify-center w-5 h-5 rounded-md bg-red-100 text-red-600 font-black text-[10px]">{missedCount}</div>
+                            <div className="flex items-center justify-center w-5 h-5 rounded-md bg-red-100 text-red-600 font-black text-xs">{missedCount}</div>
                           )}
                           {status === 'pending_today' && <Clock size={14} className="text-orange-400" />}
                           {status === 'scheduled' && <div className="w-1.5 h-1.5 rounded-full bg-gray-200"></div>}
@@ -581,7 +581,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept })
               card.color === 'green' ? 'bg-green-50 text-green-600' :
               card.color === 'red' ? 'bg-red-50 text-red-600' : 'bg-purple-50 text-purple-600'
             }`}>{card.icon}</div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{card.label}</p>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{card.label}</p>
             <p className={`text-2xl font-black ${
               card.color === 'blue' ? 'text-blue-700' :
               card.color === 'green' ? 'text-green-700' :
@@ -671,7 +671,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept })
                 <tr key={s.id} className="hover:bg-gray-50/50">
                   <td className="px-4 py-3">
                     <div className="font-bold text-gray-800">{s.name}</div>
-                    <div className="text-[10px] text-gray-400 font-black uppercase">{s.department}</div>
+                    <div className="text-xs text-gray-400 font-black uppercase">{s.department}</div>
                   </td>
                   <td className="px-4 py-3 text-center text-gray-500">{s.total}</td>
                   <td className="px-4 py-3 text-center">
@@ -712,7 +712,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept })
               {yearlyMachineErrors.slice(0, 8).map((m, idx) => (
                 <tr key={m.formId} onClick={() => setSelectedError(m)} className="hover:bg-gray-50 cursor-pointer group transition-colors">
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-black ${idx === 0 ? 'bg-red-500 text-white' : idx === 1 ? 'bg-orange-400 text-white' : idx === 2 ? 'bg-yellow-400 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black ${idx === 0 ? 'bg-red-500 text-white' : idx === 1 ? 'bg-orange-400 text-white' : idx === 2 ? 'bg-yellow-400 text-white' : 'bg-gray-100 text-gray-500'}`}>
                       {idx + 1}
                     </span>
                   </td>

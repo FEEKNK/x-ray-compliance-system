@@ -36,6 +36,7 @@ export const schedules = pgTable("schedules", {
 	supervisorId: uuid("supervisor_id").notNull(),
 	status: text().notNull(),
 	slaAlertSent: boolean("sla_alert_sent").default(false).notNull(),
+	supervisorAlertSent: boolean("supervisor_alert_sent").default(false).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.staffId],

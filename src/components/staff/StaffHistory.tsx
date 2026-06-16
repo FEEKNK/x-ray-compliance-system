@@ -122,10 +122,10 @@ const StaffHistory: React.FC = () => {
                 <div className="min-w-0">
                   <h3 className="font-bold text-gray-800 group-hover:text-[#00468B] transition-colors truncate">{form?.title}</h3>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="flex items-center text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    <span className="flex items-center text-xs font-black text-gray-400 uppercase tracking-widest">
                       <Clock size={12} className="mr-1" /> {parseDbDate(sub.submittedAt).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short', hour12: false })}
                     </span>
-                    <span className={`flex items-center text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                    <span className={`flex items-center text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded ${
                       hasAlert ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50'
                     }`}>
                       {hasAlert ? '🔴 Issue Found' : (
@@ -133,12 +133,12 @@ const StaffHistory: React.FC = () => {
                       )}
                     </span>
                     {lockStatus.isLocked && (
-                      <span className="flex items-center text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                      <span className="flex items-center text-xs font-black text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
                         🔒 ล็อกแล้ว
                       </span>
                     )}
                     {!lockStatus.isLocked && (
-                      <span className="text-[10px] font-bold text-orange-500">
+                      <span className="text-xs font-bold text-orange-500">
                         ✏️ {lockStatus.label}
                       </span>
                     )}

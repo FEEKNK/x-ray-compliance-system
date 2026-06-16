@@ -101,7 +101,8 @@ router.post('/', async (_req, res) => {
           shifts: {
             Morning: "08:00 - 16:00",
             Afternoon: "16:00 - 00:00",
-            Night: "00:00 - 08:00"
+            Night: "00:00 - 08:00",
+            NightBeforeMorning: "04:00 - 08:00"
           }
         },
         announcements: [

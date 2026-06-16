@@ -49,20 +49,20 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({ submissio
         <div className="flex-1 overflow-y-auto p-8 space-y-8 print:overflow-visible print:p-4">
           <div className="grid grid-cols-2 gap-8 border-b border-gray-50 pb-8 print:gap-4 print:pb-4">
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Staff Member</label>
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1">Staff Member</label>
               <p className="font-bold text-gray-800">{staff?.name}</p>
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Form Protocol</label>
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1">Form Protocol</label>
               <p className="font-bold text-[#00468B]">{form?.title}</p>
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Submission Time</label>
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1">Submission Time</label>
               <p className="font-bold text-gray-800">{parseDbDate(submission.submittedAt).toLocaleString('en-GB', { hour12: false })}</p>
             </div>
             <div>
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Integrity Status</label>
-              <span className="text-[10px] font-black uppercase text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100 print:bg-white print:border-green-600">Verified & Certified</span>
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1">Integrity Status</label>
+              <span className="text-xs font-black uppercase text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100 print:bg-white print:border-green-600">Verified & Certified</span>
             </div>
           </div>
 
@@ -76,7 +76,7 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({ submissio
                 
                 return (
                   <div key={key} className={`p-4 rounded-xl border border-gray-100 print:bg-white print:p-2 print:border-gray-200 ${isOther ? 'bg-orange-50/30 border-orange-100 ml-4' : 'bg-gray-50'}`}>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase block mb-1">
                       {isOther ? (language === 'TH' ? `รายละเอียดเพิ่มเติมของ: ${question?.label}` : `Details for: ${question?.label}`) : (question?.label || key)}
                     </label>
                     <p className={`font-bold ${value === 'Fail' || value === 'Alert' ? 'text-red-600' : 'text-gray-800'}`}>
@@ -95,7 +95,7 @@ const SubmissionDetailModal: React.FC<SubmissionDetailModalProps> = ({ submissio
                 {submission.photos.map((_, i) => (
                   <div key={i} className="aspect-video bg-gray-100 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-200 print:bg-white print:border-solid print:border-gray-300">
                      <ImageIcon className="text-gray-300 print:text-gray-400" size={32} />
-                     <span className="text-[10px] font-bold text-gray-400 ml-2">Evidence Photo {i+1}</span>
+                     <span className="text-xs font-bold text-gray-400 ml-2">Evidence Photo {i+1}</span>
                   </div>
                 ))}
               </div>

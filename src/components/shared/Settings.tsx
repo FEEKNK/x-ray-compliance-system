@@ -7,7 +7,7 @@ import type { Shift, SystemSettings } from '../../types';
 import { api } from '../../api';
 
 const Settings: React.FC = () => {
-  const { settings, resetDatabase, language, resetData, exportData } = useApp();
+  const { settings, setSettings, resetDatabase, language, resetData, exportData } = useApp();
   const { mutateAsync: updateSettings } = useUpdateSettings();
   const t = translations[language];
 
@@ -45,6 +45,7 @@ const Settings: React.FC = () => {
     e.preventDefault();
     try {
       await updateSettings(localSettings);
+      setSettings(localSettings);
       
       // Trigger SLA check immediately in the background without waiting 1 minute
       api.config.triggerSla().catch(err => console.error('Failed to trigger SLA check immediately', err));
@@ -178,7 +179,7 @@ const Settings: React.FC = () => {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center">
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center">
                   <Building2 size={12} className="mr-1.5" />
                   {t.hospitalName}
                 </label>
@@ -192,7 +193,7 @@ const Settings: React.FC = () => {
               </div>
 
               <div className="mb-6">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center">
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center">
                   <Mail size={12} className="mr-1.5" />
                   {t.supervisorEmail}
                 </label>
@@ -208,7 +209,7 @@ const Settings: React.FC = () => {
                     type="button"
                     onClick={handleTestEmail}
                     disabled={isTestingEmail}
-                    className="bg-blue-50 text-[#00468B] px-6 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all disabled:opacity-50 flex items-center justify-center min-w-[100px]"
+                    className="bg-blue-50 text-[#00468B] px-6 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-blue-100 transition-all disabled:opacity-50 flex items-center justify-center min-w-[100px]"
                   >
                     {isTestingEmail ? (
                       <div className="w-4 h-4 border-2 border-[#00468B] border-t-transparent rounded-full animate-spin"></div>
@@ -220,7 +221,7 @@ const Settings: React.FC = () => {
               </div>
               
               <div className="pt-4 border-t border-gray-50">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
                   <Layers size={12} className="mr-1.5" />
                   Department Configurations
                 </label>
@@ -270,14 +271,14 @@ const Settings: React.FC = () => {
               </div>
 
               <div className="pt-4 border-t border-gray-50">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
                   <ClockAlert size={12} className="mr-1.5" />
                   SLA Alert Limits (Hours)
                 </label>
                 <div className="grid grid-cols-3 gap-4">
-                  {(['Morning', 'Afternoon', 'Night'] as Shift[]).map(s => (
+                  {(['Morning', 'Afternoon', 'Night', 'NightBeforeMorning'] as Shift[]).map(s => (
                     <div key={`sla-${s}`}>
-                       <label className="block text-[10px] font-black text-[#00468B] uppercase mb-1">{s}</label>
+                       <label className="block text-xs font-black text-[#00468B] uppercase mb-1">{s}</label>
                        <input 
                         type="number"
                         step="0.5"
@@ -295,14 +296,14 @@ const Settings: React.FC = () => {
               </div>
 
               <div className="pt-4 border-t border-gray-50">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
                   <Lock size={12} className="mr-1.5" />
                   Form Lock Limits (Hours after shift start)
                 </label>
                 <div className="grid grid-cols-3 gap-4">
-                  {(['Morning', 'Afternoon', 'Night'] as Shift[]).map(s => (
+                  {(['Morning', 'Afternoon', 'Night', 'NightBeforeMorning'] as Shift[]).map(s => (
                     <div key={`lock-${s}`}>
-                       <label className="block text-[10px] font-black text-[#00468B] uppercase mb-1">{s}</label>
+                       <label className="block text-xs font-black text-[#00468B] uppercase mb-1">{s}</label>
                        <input 
                         type="number"
                         step="0.5"
@@ -320,14 +321,14 @@ const Settings: React.FC = () => {
               </div>
 
               <div className="pt-4">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
                   <Clock size={12} className="mr-1.5" />
                   Shift Time Definitions
                 </label>
                 <div className="grid grid-cols-1 gap-4">
-                  {(['Morning', 'Afternoon', 'Night'] as Shift[]).map(s => (
+                  {(['Morning', 'Afternoon', 'Night', 'NightBeforeMorning'] as Shift[]).map(s => (
                     <div key={s} className="flex items-center space-x-4">
-                       <span className="w-24 text-[10px] font-black text-[#00468B] uppercase">{s}</span>
+                       <span className="w-24 text-xs font-black text-[#00468B] uppercase">{s}</span>
                        <input 
                         type="text" 
                         value={localSettings.shifts[s]}
@@ -346,7 +347,7 @@ const Settings: React.FC = () => {
             </div>
 
             <div className="pt-4 border-t border-gray-50 mb-6">
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
                 <DatabaseBackup size={12} className="mr-1.5" />
                 Automated Backups
               </label>
@@ -390,7 +391,7 @@ const Settings: React.FC = () => {
                   type="button"
                   onClick={handleExport}
                   disabled={isExporting || isImporting}
-                  className="w-full bg-white text-[#00468B] py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest border border-blue-200 hover:bg-blue-50 transition-all flex items-center justify-center space-x-2 shadow-sm"
+                  className="w-full bg-white text-[#00468B] py-3 rounded-xl font-bold text-xs uppercase tracking-widest border border-blue-200 hover:bg-blue-50 transition-all flex items-center justify-center space-x-2 shadow-sm"
                  >
                     {isExporting ? <Loader2 size={14} className="animate-spin" /> : <DatabaseBackup size={14} />}
                     <span>Export Full Backup</span>
@@ -408,7 +409,7 @@ const Settings: React.FC = () => {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isExporting || isImporting}
-                    className="w-full bg-[#00468B] text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-[#003569] transition-all flex items-center justify-center space-x-2 shadow-sm"
+                    className="w-full bg-[#00468B] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-[#003569] transition-all flex items-center justify-center space-x-2 shadow-sm"
                    >
                       {isImporting ? <Loader2 size={14} className="animate-spin" /> : <DatabaseBackup size={14} className="rotate-180" />}
                       <span>Import Full Backup</span>
@@ -431,7 +432,7 @@ const Settings: React.FC = () => {
               <div className="space-y-3 pt-2">
                  <button
                   onClick={() => setShowResetConfirm(true)}
-                  className="w-full bg-white text-orange-600 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest border border-orange-200 hover:bg-orange-50 transition-all flex items-center justify-center space-x-2 shadow-sm"
+                  className="w-full bg-white text-orange-600 py-3 rounded-xl font-bold text-xs uppercase tracking-widest border border-orange-200 hover:bg-orange-50 transition-all flex items-center justify-center space-x-2 shadow-sm"
                  >
                     <Trash2 size={14} />
                     <span>ล้างข้อมูลทั้งหมด</span>
@@ -439,7 +440,7 @@ const Settings: React.FC = () => {
 
                  <button 
                   onClick={() => setShowFactoryResetConfirm(true)}
-                  className="w-full bg-red-600 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm hover:bg-red-700 transition-all flex items-center justify-center space-x-2"
+                  className="w-full bg-red-600 text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-sm hover:bg-red-700 transition-all flex items-center justify-center space-x-2"
                  >
                     <RefreshCw size={14} />
                     <span>{t.resetDatabase}</span>
@@ -520,7 +521,7 @@ const Settings: React.FC = () => {
 
               {/* What WILL be deleted */}
               <div className="bg-red-50 rounded-2xl border border-red-100 p-4 space-y-2">
-                <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-3">❌ ข้อมูลที่จะถูกลบทั้งหมด</p>
+                <p className="text-xs font-black text-red-600 uppercase tracking-widest mb-3">❌ ข้อมูลที่จะถูกลบทั้งหมด</p>
                 {[
                   'พนักงานทุกคน (Users) — รหัสผ่าน PIN จะหายทั้งหมด',
                   'แบบฟอร์มทุกแบบ (Forms) — ที่สร้างและแก้ไขไว้',
@@ -539,7 +540,7 @@ const Settings: React.FC = () => {
 
               {/* What will be loaded */}
               <div className="bg-amber-50 rounded-2xl border border-amber-100 p-4 space-y-2">
-                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3">⚠️ ข้อมูลที่จะถูกโหลดขึ้นมาใหม่</p>
+                <p className="text-xs font-black text-amber-600 uppercase tracking-widest mb-3">⚠️ ข้อมูลที่จะถูกโหลดขึ้นมาใหม่</p>
                 {[
                   'พนักงานตัวอย่าง (Demo Staff) พร้อมรหัสผ่านเริ่มต้น',
                   'แบบฟอร์มตัวอย่าง (Demo Forms)',
@@ -612,30 +613,30 @@ const Settings: React.FC = () => {
                 <p className="text-xs font-bold text-blue-800 mb-2 uppercase tracking-widest">Backup Information</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
-                    <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Created At</span>
+                    <span className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Created At</span>
                     <span className="text-sm font-bold text-gray-800">{new Date(previewPayload.exportedAt || Date.now()).toLocaleDateString()}</span>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
-                    <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Users</span>
+                    <span className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Users</span>
                     <span className="text-sm font-bold text-gray-800">{previewPayload.users?.length || 0}</span>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
-                    <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Forms</span>
+                    <span className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Forms</span>
                     <span className="text-sm font-bold text-gray-800">{previewPayload.forms?.length || 0}</span>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
-                    <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Schedules</span>
+                    <span className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Schedules</span>
                     <span className="text-sm font-bold text-gray-800">{previewPayload.schedules?.length || 0}</span>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
-                    <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Submissions</span>
+                    <span className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Submissions</span>
                     <span className="text-sm font-bold text-gray-800">{previewPayload.submissions?.length || 0}</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Import Mode</label>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Import Mode</label>
                 <div className="flex bg-gray-50 p-1 rounded-xl">
                   <button 
                     onClick={() => setImportMode('merge')}
@@ -650,7 +651,7 @@ const Settings: React.FC = () => {
                     Replace All (Destructive)
                   </button>
                 </div>
-                <p className="text-[10px] text-gray-500 mt-1 px-1">
+                <p className="text-xs text-gray-500 mt-1 px-1">
                   {importMode === 'merge' 
                     ? 'Merges backup data with existing data. Existing matching records will be updated.' 
                     : 'Wipes all current database records and replaces them with this backup entirely.'}
@@ -659,7 +660,7 @@ const Settings: React.FC = () => {
 
               {importMode === 'merge' && (
               <div className="space-y-3">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Select Data to Import</label>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Select Data to Import</label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { id: 'settings', label: 'System Settings' },

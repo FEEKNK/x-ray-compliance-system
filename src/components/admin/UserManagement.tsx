@@ -118,7 +118,7 @@ const UserManagement: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-bold text-lg text-gray-800">{user.name}</h3>
-                <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
+                <span className={`text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
                   user.role === 'ADMIN' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-blue-50 text-blue-700 border-blue-100'
                 }`}>
                   {user.role}
@@ -142,7 +142,7 @@ const UserManagement: React.FC = () => {
                   <button
                     onClick={() => handleTestEmail(user.email, user.id)}
                     disabled={testingEmailId === user.id}
-                    className="ml-2 bg-blue-50 text-[#00468B] px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-blue-100 transition-colors disabled:opacity-50"
+                    className="ml-2 bg-blue-50 text-[#00468B] px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-blue-100 transition-colors disabled:opacity-50"
                   >
                     {testingEmailId === user.id ? '...' : 'Test'}
                   </button>
@@ -153,7 +153,7 @@ const UserManagement: React.FC = () => {
             <div className="mt-8 pt-6 border-t border-gray-50 flex space-x-3 relative">
                <button 
                 onClick={() => handleOpenModal(user)}
-                className="flex-1 py-2 rounded-lg bg-gray-50 text-gray-500 text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 transition-colors"
+                className="flex-1 py-2 rounded-lg bg-gray-50 text-gray-500 text-xs font-black uppercase tracking-widest hover:bg-gray-100 transition-colors"
                >
                 {t.editProfile}
                </button>

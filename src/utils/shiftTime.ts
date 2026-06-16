@@ -14,6 +14,7 @@ export const SHIFT_START: Record<Shift, number> = {
   Morning: 8,    // 08:00
   Afternoon: 16, // 16:00
   Night: 0,      // 00:00
+  NightBeforeMorning: 4, // 04:00
 };
 
 export const parseShiftStartHour = (shiftStr: string | undefined, fallback: number): number => {
@@ -30,6 +31,7 @@ export const DEFAULT_LOCKOUT_HOURS: Record<Shift, number> = {
   Morning: 3,
   Afternoon: 2,
   Night: 2,
+  NightBeforeMorning: 2,
 };
 
 /**
@@ -40,6 +42,7 @@ export const ALERT_AFTER_HOURS: Record<Shift, number> = {
   Morning: 2,
   Afternoon: 1,
   Night: 1,
+  NightBeforeMorning: 1,
 };
 
 export function getShiftStartTime(scheduleDate: string, shift: Shift, shiftsConfig?: Record<string, string>): Date {
@@ -47,6 +50,7 @@ export function getShiftStartTime(scheduleDate: string, shift: Shift, shiftsConf
   
   const startHour = shift === 'Morning' ? parseShiftStartHour(shiftsConfig?.Morning, SHIFT_START.Morning) :
                     shift === 'Afternoon' ? parseShiftStartHour(shiftsConfig?.Afternoon, SHIFT_START.Afternoon) :
+                    shift === 'NightBeforeMorning' ? parseShiftStartHour(shiftsConfig?.NightBeforeMorning, SHIFT_START.NightBeforeMorning) :
                     parseShiftStartHour(shiftsConfig?.Night, SHIFT_START.Night);
 
   return new Date(year, month - 1, day, startHour, 0, 0, 0);
@@ -80,6 +84,7 @@ export function getAlertTime(scheduleDate: string, shift: Shift, shiftsConfig?: 
   
   const startHour = shift === 'Morning' ? parseShiftStartHour(shiftsConfig?.Morning, SHIFT_START.Morning) :
                     shift === 'Afternoon' ? parseShiftStartHour(shiftsConfig?.Afternoon, SHIFT_START.Afternoon) :
+                    shift === 'NightBeforeMorning' ? parseShiftStartHour(shiftsConfig?.NightBeforeMorning, SHIFT_START.NightBeforeMorning) :
                     parseShiftStartHour(shiftsConfig?.Night, SHIFT_START.Night);
   const alertAfter = ALERT_AFTER_HOURS[shift];
 

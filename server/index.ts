@@ -123,7 +123,7 @@ app.post('/api/test-sla-now', authenticateToken, requireAdmin, async (_req, res)
         return fRes[0]?.title || 'Unknown Form';
       }));
 
-      const shiftTh = group.shift === 'Morning' ? 'เช้า' : group.shift === 'Afternoon' ? 'บ่าย' : 'ดึก';
+      const shiftTh = group.shift === 'Morning' ? 'เช้า' : group.shift === 'Afternoon' ? 'บ่าย' : group.shift === 'NightBeforeMorning' ? 'ดึกก่อนเช้า' : 'ดึก';
       const toList = [staff.email, supervisorEmail].filter(Boolean).join(',');
       const listHtml = formTitles.length > 0
         ? formTitles.map(t => `<li style="padding:5px 0;">${escapeHtml(t)}</li>`).join('')
@@ -222,7 +222,7 @@ app.post('/api/send-reminder-email', authenticateToken, async (req, res) => {
         : (slaHoursCfg.Night ?? 2);
     const slaText = slaLimit === 1 ? '1 ชั่วโมง' : `${slaLimit} ชั่วโมง`;
 
-    const shiftTh = shift === 'Morning' ? 'เช้า' : shift === 'Afternoon' ? 'บ่าย' : 'ดึก';
+    const shiftTh = shift === 'Morning' ? 'เช้า' : shift === 'Afternoon' ? 'บ่าย' : shift === 'NightBeforeMorning' ? 'ดึกก่อนเช้า' : 'ดึก';
     const subject = `⚠️ แจ้งเตือน: กรุณาตรวจเช็ค ${formTitle} (เวร${shiftTh})`;
     
     const toList = [staffEmail, supervisorEmail].filter(Boolean).join(',');
@@ -363,6 +363,15 @@ app.post('/api/import-data', authenticateToken, requireAdmin, async (req, res) =
 // ============================================
 // SLA Alert Background Job Logic
 // ============================================
+function parseShiftStartHour(timeRangeStr: string | undefined, defaultHour: number): number {
+  if (!timeRangeStr) return defaultHour;
+  const match = timeRangeStr.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return defaultHour;
+  const hr = parseInt(match[1], 10);
+  const min = parseInt(match[2], 10);
+  return hr + (min / 60);
+}
+
 const runSLAJob = async () => {
   try {
     // Ensure we check SLA against Thailand Timezone (UTC+7)
@@ -379,151 +388,186 @@ const runSLAJob = async () => {
     const settings = sysConfig[0]?.settings as Record<string, unknown> | undefined;
     const supervisorEmail = (settings?.supervisorEmail as string | undefined) || process.env.SUPERVISOR_EMAIL;
     const escalationEmail = (settings?.escalationEmail as string | undefined);
-    const slaHours = (settings?.slaHours as { Morning: number, Afternoon: number, Night: number }) || { Morning: 1.5, Afternoon: 1.5, Night: 1.5 };
-    console.log(`[SLA Job] 📧 Supervisor: ${supervisorEmail} | SLA: Morning=${slaHours.Morning}h, Afternoon=${slaHours.Afternoon}h, Night=${slaHours.Night}h`);
+    const slaHoursCfg = (settings?.slaHours as { Morning?: number, Afternoon?: number, Night?: number, NightBeforeMorning?: number }) || {};
+    const shiftsConfig = settings?.shifts as { Morning?: string, Afternoon?: string, Night?: string, NightBeforeMorning?: string } | undefined;
 
-    // Helper: parse start hour from shift string like "08:00 - 16:00"
-    const parseShiftStartHour = (shiftStr: string | undefined, fallback: number): number => {
-      if (!shiftStr) return fallback;
-      const match = shiftStr.match(/^(\d{1,2}):(\d{2})/);
-      if (!match) return fallback;
-      return parseInt(match[1], 10) + parseInt(match[2], 10) / 60;
-    };
+    const shiftsList = [
+      { name: 'Morning', start: parseShiftStartHour(shiftsConfig?.Morning, 8), sla: slaHoursCfg.Morning ?? 1.5 },
+      { name: 'Afternoon', start: parseShiftStartHour(shiftsConfig?.Afternoon, 16), sla: slaHoursCfg.Afternoon ?? 1.5 },
+      { name: 'Night', start: parseShiftStartHour(shiftsConfig?.Night, 0), sla: slaHoursCfg.Night ?? 1.5 },
+      { name: 'NightBeforeMorning', start: parseShiftStartHour(shiftsConfig?.NightBeforeMorning, 4), sla: slaHoursCfg.NightBeforeMorning ?? 1.5 }
+    ].sort((a, b) => a.start - b.start);
 
-    // Read shift start times from DB config (falls back to 8, 16, 0 if not set)
-    const shiftsConfig = settings?.shifts as { Morning?: string, Afternoon?: string, Night?: string } | undefined;
-    const mStart = parseShiftStartHour(shiftsConfig?.Morning, 8);
-    const aStart = parseShiftStartHour(shiftsConfig?.Afternoon, 16);
-    const nStart = parseShiftStartHour(shiftsConfig?.Night, 0);
-
-    // End of each shift = start of the next shift
-    const mEnd = aStart;
-    const aEnd = 24; // Midnight boundary
-    const nEnd = mStart;
-
-    const mLimit = mStart + slaHours.Morning;
-    const aLimit = aStart + slaHours.Afternoon;
-    const nLimit = nStart + slaHours.Night;
-
-    let targetShift = '';
-    let isEscalated = false;
-
-    if (currentDecimalHour >= mLimit && currentDecimalHour < mEnd) {
-      targetShift = 'Morning';
-      if (currentDecimalHour >= mLimit + 2) isEscalated = true;
-    } else if (currentDecimalHour >= aLimit && currentDecimalHour < aEnd) {
-      targetShift = 'Afternoon';
-      if (currentDecimalHour >= aLimit + 2) isEscalated = true;
-    } else if (nStart === 0) {
-      // Night shift is purely post-midnight (00:00 → mStart)
-      // SLA alert fires only within [nLimit, nEnd)
-      if (currentDecimalHour >= nLimit && currentDecimalHour < nEnd) {
-        targetShift = 'Night';
-        if (currentDecimalHour >= nLimit + 2) isEscalated = true;
+    for (let i = 0; i < shiftsList.length; i++) {
+      const current = shiftsList[i];
+      const next = shiftsList[(i + 1) % shiftsList.length];
+      
+      let end = next.start;
+      if (end <= current.start) {
+        end += 24; // wraps around midnight
       }
-    } else {
-      // Night shift crosses midnight (nStart→24, then 0→nEnd)
-      const inNightWindow = (currentDecimalHour >= nStart && currentDecimalHour < 24) ||
-                            (currentDecimalHour >= 0 && currentDecimalHour < nEnd);
-      if (inNightWindow) {
-        // Check if we are past the SLA limit
-        const isPastLimit = nLimit < 24
-          ? (currentDecimalHour >= nLimit || currentDecimalHour < nEnd)
-          : (currentDecimalHour >= (nLimit - 24) && currentDecimalHour < nEnd);
-        if (isPastLimit) {
-          targetShift = 'Night';
-          const hoursPastLimit = currentDecimalHour >= nLimit
-            ? currentDecimalHour - nLimit
-            : (24 - nLimit) + currentDecimalHour;
-          if (hoursPastLimit >= 2) isEscalated = true;
-        }
-      }
+      (current as any).end = end;
+      (current as any).limit = current.start + current.sla;
     }
 
-    console.log(`[SLA Job] 🔍 Shift windows: Morning=${mStart.toFixed(2)}-${mEnd.toFixed(2)} (SLA@${mLimit.toFixed(2)}), Afternoon=${aStart.toFixed(2)}-${aEnd} (SLA@${aLimit.toFixed(2)}), Night=${nStart.toFixed(2)} (SLA@${nLimit.toFixed(2)})`);
-    console.log(`[SLA Job] 🎯 Detected shift: ${targetShift || 'NONE (not in alert window)'}${isEscalated ? ' [ESCALATED]' : ''}`);
-
-    if (!targetShift) return; // Not time to alert yet
-
-    // Get all pending schedules for today and the target shift
-    const pendingSchedules = await db.select()
-      .from(schedules)
-      .where(
-        and(
-          eq(schedules.date, todayStr),
-          eq(schedules.shift, targetShift),
-          eq(schedules.status, 'Pending'),
-          eq(schedules.slaAlertSent, false)
-        )
-      );
-
-    console.log(`[SLA Job] 📋 Pending schedules for ${targetShift}: ${pendingSchedules.length} found`);
-    if (pendingSchedules.length === 0) return;
-
-    // Group by staffId (include schedules without formId so they still trigger alerts)
-    const staffGroup: Record<string, { staffId: string, formIds: string[], scheduleIds: string[] }> = {};
-    for (const s of pendingSchedules) {
-      if (!staffGroup[s.staffId]) staffGroup[s.staffId] = { staffId: s.staffId, formIds: [], scheduleIds: [] };
-      if (s.formId) staffGroup[s.staffId].formIds.push(s.formId);
-      staffGroup[s.staffId].scheduleIds.push(s.id);
-    }
-
+    const shiftsMap = new Map(shiftsList.map(s => [s.name, s]));
     const transporter = getTransporter();
 
-    // Batch fetch all staff and forms to avoid N+1 queries
-    const allStaffIds = [...new Set(Object.values(staffGroup).map(g => g.staffId))];
-    const allFormIds = [...new Set(Object.values(staffGroup).flatMap(g => g.formIds))];
-    const allStaff = allStaffIds.length > 0 ? await db.select().from(users).where(inArray(users.id, allStaffIds)) : [];
-    const allFormsData = allFormIds.length > 0 ? await db.select().from(forms).where(inArray(forms.id, allFormIds)) : [];
-    const staffMap = new Map(allStaff.map(s => [s.id, s]));
-    const formMap = new Map(allFormsData.map(f => [f.id, f]));
+    // ==========================================
+    // 1. STAFF SLA REMINDER (During Shift)
+    // ==========================================
+    const staffPending = await db.select().from(schedules).where(
+      and(eq(schedules.status, 'Pending'), eq(schedules.slaAlertSent, false))
+    );
+    
+    const staffToAlert: typeof staffPending = [];
+    for (const sched of staffPending) {
+       const s = shiftsMap.get(sched.shift);
+       if (!s) continue;
+       
+       const schedDate = new Date(`${sched.date}T00:00:00.000Z`);
+       const deadlineTime = schedDate.getTime() + ((s as any).limit * 60 * 60 * 1000);
+       const endTime = schedDate.getTime() + ((s as any).end * 60 * 60 * 1000);
+       
+       if (now.getTime() >= deadlineTime && now.getTime() < endTime) {
+          staffToAlert.push(sched);
+       }
+    }
 
-    // Send consolidated email per staff
-    for (const group of Object.values(staffGroup)) {
-      const staff = staffMap.get(group.staffId);
-      if (!staff) continue;
-
-      const formTitles = group.formIds.map(fId => formMap.get(fId)?.title || 'Unknown Form');
-
-      const shiftTh = targetShift === 'Morning' ? 'เช้า' : targetShift === 'Afternoon' ? 'บ่าย' : 'ดึก';
-      const subject = `⚠️ แจ้งเตือน: คิวงานคงค้าง (เวร${shiftTh})${isEscalated ? ' [ESCALATED]' : ''}`;
-      
-      const recipients = [staff.email, supervisorEmail];
-      if (isEscalated && escalationEmail) {
-        recipients.push(escalationEmail);
+    if (staffToAlert.length > 0) {
+      console.log(`[SLA Job] 📋 Pending schedules for STAFF SLA: ${staffToAlert.length} found`);
+      const staffGroup: Record<string, { staffId: string, formIds: string[], scheduleIds: string[], shift: string }> = {};
+      for (const s of staffToAlert) {
+        if (!staffGroup[s.staffId]) staffGroup[s.staffId] = { staffId: s.staffId, formIds: [], scheduleIds: [], shift: s.shift };
+        if (s.formId) staffGroup[s.staffId].formIds.push(s.formId);
+        staffGroup[s.staffId].scheduleIds.push(s.id);
       }
-      const toList = recipients.filter(Boolean).join(',');
 
-      const listHtml = formTitles.map(t => `<li style="padding: 5px 0;">${escapeHtml(t)}</li>`).join('');
+      const allStaffIds = [...new Set(Object.values(staffGroup).map(g => g.staffId))];
+      const allFormIds = [...new Set(Object.values(staffGroup).flatMap(g => g.formIds))];
+      const allStaff = allStaffIds.length > 0 ? await db.select().from(users).where(inArray(users.id, allStaffIds)) : [];
+      const allFormsData = allFormIds.length > 0 ? await db.select().from(forms).where(inArray(forms.id, allFormIds)) : [];
+      const staffMap = new Map(allStaff.map(s => [s.id, s]));
+      const formMap = new Map(allFormsData.map(f => [f.id, f]));
 
-      console.log(`[SLA Job] 📤 Sending to: ${toList} | Forms: ${formTitles.join(', ') || '(no form)'}`);
+      for (const group of Object.values(staffGroup)) {
+        const staff = staffMap.get(group.staffId);
+        if (!staff) continue;
 
-      await transporter.sendMail({
-        from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
-        to: toList,
-        subject,
-        html: `
-          <div style="font-family: sans-serif; color: #333;">
-            <h2 style="color: #d9534f;">⚠️ แจ้งเตือนรายการตรวจเช็คคงค้าง</h2>
-            <p>เรียน คุณ ${escapeHtml(staff.name)}</p>
-            <p>ระบบตรวจพบว่าคุณมีรายการตรวจเช็คที่ <strong>ยังไม่ได้ดำเนินการผ่านกำหนดเวลา</strong> ของเวร${shiftTh} จำนวน ${formTitles.length} รายการ ดังนี้:</p>
-            <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #d9534f; margin: 15px 0;">
-              <ul style="margin: 0; padding-left: 20px;">
-                ${listHtml}
-              </ul>
+        const formTitles = group.formIds.map(fId => formMap.get(fId)?.title || 'Unknown Form');
+        const shiftTh = group.shift === 'Morning' ? 'เช้า' : group.shift === 'Afternoon' ? 'บ่าย' : group.shift === 'NightBeforeMorning' ? 'ดึกก่อนเช้า' : 'ดึก';
+        
+        const listHtml = formTitles.map(t => `<li style="padding: 5px 0;">${escapeHtml(t)}</li>`).join('');
+        
+        await transporter.sendMail({
+          from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
+          to: staff.email,
+          subject: `⚠️ แจ้งเตือน: คิวงานคงค้าง (เวร${shiftTh})`,
+          html: `
+            <div style="font-family: sans-serif; color: #333;">
+              <h2 style="color: #d9534f;">⚠️ แจ้งเตือนรายการตรวจเช็คคงค้าง</h2>
+              <p>เรียน คุณ ${escapeHtml(staff.name)}</p>
+              <p>ระบบตรวจพบว่าคุณมีรายการตรวจเช็คที่ <strong>เลยกำหนดเวลา (SLA)</strong> ของเวร${shiftTh} จำนวน ${formTitles.length} รายการ ดังนี้:</p>
+              <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #d9534f; margin: 15px 0;">
+                <ul style="margin: 0; padding-left: 20px;">
+                  ${listHtml}
+                </ul>
+              </div>
+              <p>กรุณาเข้าสู่ระบบเพื่อดำเนินการตรวจสอบโดยด่วน ก่อนหมดเวลาเวร</p>
+              <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+              <small style="color: #999;">อีเมลฉบับนี้ถูกส่งอัตโนมัติจาก Imaging Compliance System (Staff Reminder)</small>
             </div>
-            <p>กรุณาเข้าสู่ระบบเพื่อดำเนินการตรวจสอบโดยด่วน</p>
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-            <small style="color: #999;">อีเมลฉบับนี้ถูกส่งอัตโนมัติจาก Imaging Compliance System (Consolidated Alert)</small>
-          </div>
-        `,
-      });
+          `,
+        });
 
-      // Update SLA sent status to prevent duplicate emails
-      await db.update(schedules)
-        .set({ slaAlertSent: true })
-        .where(inArray(schedules.id, group.scheduleIds));
-      console.log(`[SLA Job] ✅ Email sent & slaAlertSent=true for schedules: ${group.scheduleIds.join(', ')}`);
+        await db.update(schedules)
+          .set({ slaAlertSent: true })
+          .where(inArray(schedules.id, group.scheduleIds));
+        console.log(`[SLA Job] ✅ Staff Reminder sent to ${staff.email} for schedules: ${group.scheduleIds.join(', ')}`);
+      }
+    }
+
+    // ==========================================
+    // 2. SUPERVISOR SHIFT-END SUMMARY
+    // ==========================================
+    // Send only to supervisor (and escalation) when the shift is completely OVER
+    const supervisorPending = await db.select().from(schedules).where(
+      and(eq(schedules.status, 'Pending'), eq(schedules.supervisorAlertSent, false))
+    );
+    
+    const supToAlert: typeof supervisorPending = [];
+    for (const sched of supervisorPending) {
+       const s = shiftsMap.get(sched.shift);
+       if (!s) continue;
+       
+       const schedDate = new Date(`${sched.date}T00:00:00.000Z`);
+       const endTime = schedDate.getTime() + ((s as any).end * 60 * 60 * 1000);
+       
+       if (now.getTime() >= endTime) {
+          supToAlert.push(sched);
+       }
+    }
+
+    if (supToAlert.length > 0 && supervisorEmail) {
+      console.log(`[SLA Job] 📋 Shift-End Overdue tasks: ${supToAlert.length} found`);
+      
+      // Group by shift to send one summary per shift
+      const shiftGroups: Record<string, typeof supervisorPending> = {};
+      for (const s of supToAlert) {
+        if (!shiftGroups[s.shift]) shiftGroups[s.shift] = [];
+        shiftGroups[s.shift].push(s);
+      }
+
+      for (const [shiftName, scheds] of Object.entries(shiftGroups)) {
+        const allStaffIds = [...new Set(scheds.map(s => s.staffId))];
+        const allFormIds = [...new Set(scheds.map(s => s.formId).filter(Boolean) as string[])];
+        const allStaff = allStaffIds.length > 0 ? await db.select().from(users).where(inArray(users.id, allStaffIds)) : [];
+        const allFormsData = allFormIds.length > 0 ? await db.select().from(forms).where(inArray(forms.id, allFormIds)) : [];
+        const staffMap = new Map(allStaff.map(s => [s.id, s]));
+        const formMap = new Map(allFormsData.map(f => [f.id, f]));
+
+        const shiftTh = shiftName === 'Morning' ? 'เช้า' : shiftName === 'Afternoon' ? 'บ่าย' : shiftName === 'NightBeforeMorning' ? 'ดึกก่อนเช้า' : 'ดึก';
+        
+        let reportHtml = '';
+        for (const sched of scheds) {
+          const staff = staffMap.get(sched.staffId);
+          const form = sched.formId ? formMap.get(sched.formId) : null;
+          const staffName = staff ? escapeHtml(staff.name) : 'Unknown Staff';
+          const formTitle = form ? escapeHtml(form.title) : 'Unknown Form';
+          reportHtml += `<li style="padding: 5px 0;"><strong>${staffName}</strong> - ลืมทำ: ${formTitle}</li>`;
+        }
+
+        const recipients = [supervisorEmail];
+        if (escalationEmail) recipients.push(escalationEmail); // If they missed the entire shift, escalate it.
+        const toList = recipients.join(',');
+
+        await transporter.sendMail({
+          from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
+          to: toList,
+          subject: `🚨 สรุปงานคงค้าง: สิ้นสุดเวร${shiftTh}`,
+          html: `
+            <div style="font-family: sans-serif; color: #333;">
+              <h2 style="color: #d9534f;">🚨 รายงานสรุปงานคงค้าง (สิ้นสุดเวร)</h2>
+              <p>เรียน หัวหน้างาน</p>
+              <p>ระบบขอรายงานสรุปรายการตรวจเช็คของ <strong>เวร${shiftTh}</strong> ที่สิ้นสุดลงแล้ว แต่ยังมีพนักงานที่ <strong>ไม่ได้ดำเนินการ</strong> จนหมดเวลาเวร จำนวน ${scheds.length} รายการ ดังนี้:</p>
+              <div style="background-color: #fcf8e3; padding: 15px; border-left: 4px solid #f0ad4e; margin: 15px 0;">
+                <ul style="margin: 0; padding-left: 20px;">
+                  ${reportHtml}
+                </ul>
+              </div>
+              <p>โปรดพิจารณาติดตามหรือตรวจสอบเพิ่มเติม</p>
+              <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+              <small style="color: #999;">อีเมลฉบับนี้ถูกส่งอัตโนมัติจาก Imaging Compliance System (Shift-End Summary)</small>
+            </div>
+          `,
+        });
+
+        const schedIds = scheds.map(s => s.id);
+        await db.update(schedules)
+          .set({ supervisorAlertSent: true })
+          .where(inArray(schedules.id, schedIds));
+        console.log(`[SLA Job] ✅ Shift-End Summary sent to ${toList} for ${scheds.length} schedules.`);
+      }
     }
 
   } catch (err: unknown) {

@@ -47,7 +47,7 @@ const Scheduler: React.FC = () => {
   
   // Modal States
   const [selectedShifts, setSelectedShifts] = useState<Shift[]>([]);
-  const [selectedFormsByShift, setSelectedFormsByShift] = useState<Record<Shift, string[]>>({ Morning: [], Afternoon: [], Night: [] });
+  const [selectedFormsByShift, setSelectedFormsByShift] = useState<Record<Shift, string[]>>({ Morning: [], Afternoon: [], Night: [], NightBeforeMorning: [] });
   const [activeShiftTab, setActiveShiftTab] = useState<Shift>('Morning');
 
   const deptBundles = useMemo(() => 
@@ -57,11 +57,8 @@ const Scheduler: React.FC = () => {
 
   const filteredForms = useMemo(() => {
     return forms
-      .filter(f => !f.department || f.department === selectedDept)
-      .filter(f => {
-        return f.shifts?.includes(activeShiftTab) ?? true;
-      });
-  }, [forms, selectedDept, activeShiftTab]);
+      .filter(f => !f.department || f.department === selectedDept);
+  }, [forms, selectedDept]);
 
   const allFilteredSelected = filteredForms.length > 0 && filteredForms.every(f => selectedFormsByShift[activeShiftTab].includes(f.id));
 
@@ -94,7 +91,7 @@ const Scheduler: React.FC = () => {
     if (shifts.length > 0) setActiveShiftTab(shifts[0]);
     else setActiveShiftTab('Morning');
     
-    const formsByShift: Record<Shift, string[]> = { Morning: [], Afternoon: [], Night: [] };
+    const formsByShift: Record<Shift, string[]> = { Morning: [], Afternoon: [], Night: [], NightBeforeMorning: [] };
     existing.forEach(s => {
       if (s.formId) {
         formsByShift[s.shift].push(s.formId);
@@ -331,14 +328,14 @@ const Scheduler: React.FC = () => {
         <div className="flex flex-wrap items-center gap-3">
           <button 
             onClick={handleClearMonth}
-            className="flex items-center space-x-2 bg-red-50 text-red-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-red-100 transition-all border border-red-100"
+            className="flex items-center space-x-2 bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm hover:bg-red-100 transition-all border border-red-100"
           >
             <Trash2 size={14} />
             <span>{language === 'TH' ? 'ล้างทั้งเดือน' : 'Clear Month'}</span>
           </button>
           <button 
             onClick={handleCopyPreviousMonth}
-            className="flex items-center space-x-2 bg-blue-50 text-[#00468B] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-blue-100 transition-all border border-blue-100"
+            className="flex items-center space-x-2 bg-blue-50 text-[#00468B] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm hover:bg-blue-100 transition-all border border-blue-100"
           >
             <Copy size={14} />
             <span>{language === 'TH' ? 'ก๊อปปี้เดือนก่อนหน้า' : 'Copy Prev Month'}</span>
@@ -371,7 +368,7 @@ const Scheduler: React.FC = () => {
               <button
                 key={dept}
                 onClick={() => setSelectedDept(dept)}
-                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
                   selectedDept === dept
                     ? 'bg-[#00468B] text-white shadow-md'
                     : 'text-gray-400 hover:bg-gray-100'
@@ -398,7 +395,7 @@ const Scheduler: React.FC = () => {
           <div className="w-px h-6 bg-gray-100 mx-2 shrink-0"></div>
           <button 
             onClick={() => setViewMode('List')}
-            className="text-[10px] font-black uppercase tracking-widest px-4 py-2 hover:bg-gray-50 rounded-xl transition-all text-gray-400 shrink-0"
+            className="text-xs font-black uppercase tracking-widest px-4 py-2 hover:bg-gray-50 rounded-xl transition-all text-gray-400 shrink-0"
           >
             {t.listView}
           </button>
@@ -413,12 +410,12 @@ const Scheduler: React.FC = () => {
                 <th className="sticky left-0 z-20 bg-white p-5 text-left border-b border-r border-gray-100 min-w-[200px]">
                   <div className="flex items-center space-x-2">
                     <User size={14} className="text-[#00468B]" />
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.personnelDay}</span>
+                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.personnelDay}</span>
                   </div>
                 </th>
                 {Array.from({ length: daysInMonth }).map((_, i) => (
                   <th key={i} className="p-3 border-b border-gray-100 min-w-[45px] text-center">
-                    <span className="text-[10px] font-black text-gray-500">{i + 1}</span>
+                    <span className="text-xs font-black text-gray-500">{i + 1}</span>
                   </th>
                 ))}
               </tr>
@@ -436,11 +433,11 @@ const Scheduler: React.FC = () => {
                       <div className="flex flex-col">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-bold text-gray-800 text-sm">{s.name}</span>
-                          <span className="text-[8px] font-black bg-blue-50 text-[#00468B] px-1.5 py-0.5 rounded-full border border-blue-100">
+                          <span className="text-xs font-black bg-blue-50 text-[#00468B] px-1.5 py-0.5 rounded-full border border-blue-100">
                             {monthlyCount}
                           </span>
                         </div>
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">{s.department}</span>
+                        <span className="text-xs font-black text-gray-400 uppercase tracking-tighter">{s.department}</span>
                       </div>
                     </td>
                     {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -449,6 +446,7 @@ const Scheduler: React.FC = () => {
                       const hasMorning = cellSchedules.some(sc => sc.shift === 'Morning');
                       const hasAfternoon = cellSchedules.some(sc => sc.shift === 'Afternoon');
                       const hasNight = cellSchedules.some(sc => sc.shift === 'Night');
+                      const hasNightBeforeMorning = cellSchedules.some(sc => sc.shift === 'NightBeforeMorning');
                       const hasFormsAssigned = cellSchedules.some(sc => !!sc.formId);
                       
                       return (
@@ -464,8 +462,9 @@ const Scheduler: React.FC = () => {
                             {hasMorning && <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-sm shadow-orange-200"></div>}
                             {hasAfternoon && <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm shadow-blue-200"></div>}
                             {hasNight && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm shadow-indigo-200"></div>}
-                            {!hasMorning && !hasAfternoon && !hasNight && (
-                              <div className="opacity-0 group-hover/cell:opacity-100 text-[10px] text-gray-300 transition-opacity">
+                            {hasNightBeforeMorning && <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-sm shadow-purple-200"></div>}
+                            {!hasMorning && !hasAfternoon && !hasNight && !hasNightBeforeMorning && (
+                              <div className="opacity-0 group-hover/cell:opacity-100 text-xs text-gray-300 transition-opacity">
                                 <Plus size={10} />
                               </div>
                             )}
@@ -486,22 +485,26 @@ const Scheduler: React.FC = () => {
         <div className="flex items-center justify-center space-x-8">
           <div className="flex items-center space-x-2">
             <div className="w-2.5 h-2.5 rounded-full bg-orange-400"></div>
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.morning}</span>
+            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.morning}</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-2.5 h-2.5 rounded-full bg-blue-400"></div>
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.afternoon}</span>
+            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.afternoon}</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.night}</span>
+            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.night}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
+            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.nightBeforeMorning}</span>
           </div>
         </div>
         <div className="flex items-center space-x-2 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100">
            <div className="relative w-3 h-3">
              <div className="absolute top-0 right-0 w-0 h-0 border-t-[6px] border-r-[6px] border-t-[#00468B] border-r-[#00468B] border-l-[6px] border-l-transparent border-b-[6px] border-b-transparent"></div>
            </div>
-           <span className="text-[9px] font-black text-[#00468B] uppercase tracking-widest">
+           <span className="text-xs font-black text-[#00468B] uppercase tracking-widest">
              {language === 'TH' ? 'มีแบบฟอร์มงานที่มอบหมายแล้ว' : 'Has Assigned Protocols'}
            </span>
         </div>
@@ -527,10 +530,10 @@ const Scheduler: React.FC = () => {
               {/* Step 1: Days Selection */}
               <div className="space-y-4">
                 <div className="flex justify-between items-end px-1">
-                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{language === 'TH' ? 'เลือกวันที่' : 'Select Days'}</h4>
+                   <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">{language === 'TH' ? 'เลือกวันที่' : 'Select Days'}</h4>
                    <button 
                     onClick={() => setSelectedDays(Array.from({length: daysInMonth}, (_, i) => i + 1))} 
-                    className="text-[10px] font-black text-[#00468B] uppercase tracking-widest hover:underline"
+                    className="text-xs font-black text-[#00468B] uppercase tracking-widest hover:underline"
                    >
                     {language === 'TH' ? 'เลือกทั้งเดือน' : 'Select Full Month'}
                    </button>
@@ -562,7 +565,7 @@ const Scheduler: React.FC = () => {
                         {hasAssignments && (
                           <div className={`absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/60' : 'bg-green-500'} shadow-sm`}></div>
                         )}
-                        <span className={`text-[9px] font-bold uppercase tracking-widest mb-0.5 ${isSelected ? 'text-blue-200' : isWeekend ? 'text-red-300' : 'text-gray-400'}`}>
+                        <span className={`text-xs font-bold uppercase tracking-widest mb-0.5 ${isSelected ? 'text-blue-200' : isWeekend ? 'text-red-300' : 'text-gray-400'}`}>
                           {dayOfWeek}
                         </span>
                         <span className="text-sm font-black">
@@ -576,9 +579,9 @@ const Scheduler: React.FC = () => {
 
               {/* Step 2: Shifts */}
               <div className="space-y-4">
-                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{t.selectShiftRotation}</h4>
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest px-1">{t.selectShiftRotation}</h4>
                 <div className="grid grid-cols-3 gap-4">
-                  {(['Morning', 'Afternoon', 'Night'] as Shift[]).map(s => {
+                  {(['Morning', 'Afternoon', 'Night', 'NightBeforeMorning'] as Shift[]).map(s => {
                     const isSelected = selectedShifts.includes(s);
                     return (
                       <button
@@ -603,9 +606,9 @@ const Scheduler: React.FC = () => {
                         }`}
                       >
                         <div className={`w-3 h-3 rounded-full mb-2 ${
-                          s === 'Morning' ? 'bg-orange-400' : s === 'Afternoon' ? 'bg-blue-400' : 'bg-indigo-500'
+                          s === 'Morning' ? 'bg-orange-400' : s === 'Afternoon' ? 'bg-blue-400' : s === 'NightBeforeMorning' ? 'bg-purple-500' : 'bg-indigo-500'
                         }`}></div>
-                        <span className="text-xs font-black uppercase tracking-tighter">{s === 'Morning' ? t.morning : s === 'Afternoon' ? t.afternoon : t.night}</span>
+                        <span className="text-xs font-black uppercase tracking-tighter">{s === 'Morning' ? t.morning : s === 'Afternoon' ? t.afternoon : s === 'NightBeforeMorning' ? t.nightBeforeMorning : t.night}</span>
                       </button>
                     );
                   })}
@@ -617,19 +620,19 @@ const Scheduler: React.FC = () => {
               <div className="space-y-6">
                 <div className="flex flex-col space-y-4">
                    <div className="flex justify-between items-center px-1">
-                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.assignProtocols}</h4>
+                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.assignProtocols}</h4>
                       <div className="flex space-x-2 bg-gray-50 p-1 rounded-xl">
                         {selectedShifts.map(s => (
                           <button
                             key={s}
                             onClick={() => setActiveShiftTab(s)}
-                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                            className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
                               activeShiftTab === s
                                 ? 'bg-white text-[#00468B] shadow-sm border border-gray-200'
                                 : 'text-gray-400 hover:bg-gray-100'
                             }`}
                           >
-                            {s === 'Morning' ? t.morning : s === 'Afternoon' ? t.afternoon : t.night}
+                            {s === 'Morning' ? t.morning : s === 'Afternoon' ? t.afternoon : s === 'NightBeforeMorning' ? t.nightBeforeMorning : t.night}
                           </button>
                         ))}
                       </div>
@@ -645,18 +648,18 @@ const Scheduler: React.FC = () => {
                                [activeShiftTab]: [...new Set([...prev[activeShiftTab], ...bundle.formIds])]
                              }));
                            }} 
-                           className="text-[9px] font-black bg-blue-50 text-[#00468B] px-2.5 py-1.5 rounded-lg border border-blue-100 uppercase tracking-tight hover:bg-blue-100 transition-colors"
+                           className="text-xs font-black bg-blue-50 text-[#00468B] px-2.5 py-1.5 rounded-lg border border-blue-100 uppercase tracking-tight hover:bg-blue-100 transition-colors"
                          >
                            {bundle.name}
                          </button>
                        ))}
                        {deptBundles.length === 0 && (
-                         <p className="text-[9px] text-gray-400 italic">{t.noGroupsDefined}</p>
+                         <p className="text-xs text-gray-400 italic">{t.noGroupsDefined}</p>
                        )}
                        <div className="w-px h-4 bg-gray-200 mx-1 self-center"></div>
                        <button 
                          onClick={toggleSelectCategory}
-                         className={`text-[9px] font-black px-2.5 py-1.5 rounded-lg border uppercase tracking-tight transition-colors ${
+                         className={`text-xs font-black px-2.5 py-1.5 rounded-lg border uppercase tracking-tight transition-colors ${
                            allFilteredSelected 
                              ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
                              : 'bg-blue-50 text-[#00468B] border-blue-100 hover:bg-blue-100'
@@ -668,7 +671,7 @@ const Scheduler: React.FC = () => {
                        </button>
                        <button 
                          onClick={() => setSelectedFormsByShift(prev => ({ ...prev, [activeShiftTab]: [] }))} 
-                         className="text-[9px] font-black bg-gray-50 text-gray-400 px-2.5 py-1.5 rounded-lg border border-gray-100 uppercase tracking-tight hover:bg-gray-100 transition-colors"
+                         className="text-xs font-black bg-gray-50 text-gray-400 px-2.5 py-1.5 rounded-lg border border-gray-100 uppercase tracking-tight hover:bg-gray-100 transition-colors"
                        >
                          Clear
                        </button>
@@ -707,13 +710,13 @@ const Scheduler: React.FC = () => {
                           <div className="flex items-center space-x-2">
                             <span className="text-xs font-bold truncate">{f.title}</span>
                             {assignedToOthers.length > 0 && (
-                              <span className="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded font-black uppercase">
+                              <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded font-black uppercase">
                                 Already Assigned ({assignedToOthers.length})
                               </span>
                             )}
                           </div>
                           <div className="flex items-center space-x-2 mt-0.5">
-                             <span className={`text-[9px] font-medium uppercase tracking-widest ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}>
+                             <span className={`text-xs font-medium uppercase tracking-widest ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}>
                                {f.department} | {f.questions.length} {t.auditPoints}
                              </span>
                           </div>
@@ -795,7 +798,7 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
         </div>
         <button 
           onClick={() => setViewMode('Matrix')}
-          className="bg-[#00468B] text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg"
+          className="bg-[#00468B] text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg"
         >
           {t.matrixView}
         </button>
@@ -806,7 +809,7 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
           <form onSubmit={handleSchedule} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6 sticky top-6">
              <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">{language === 'TH' ? 'วันที่' : 'Date'}</label>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">{language === 'TH' ? 'วันที่' : 'Date'}</label>
                 <input 
                   type="date" 
                   value={date}
@@ -815,26 +818,26 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">{language === 'TH' ? 'เวร' : 'Shift'}</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['Morning', 'Afternoon', 'Night'] as Shift[]).map(s => (
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">{language === 'TH' ? 'เวร' : 'Shift'}</label>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                  {(['Morning', 'Afternoon', 'Night', 'NightBeforeMorning'] as Shift[]).map(s => (
                     <button
                       key={s}
                       type="button"
                       onClick={() => setShift(s)}
-                      className={`py-2.5 text-[10px] font-black rounded-lg border-2 transition-all uppercase tracking-tighter ${
+                      className={`py-2.5 px-2 text-xs font-black rounded-lg border-2 transition-all uppercase tracking-tighter ${
                         shift === s 
                           ? 'bg-[#00468B] border-[#00468B] text-white shadow-md' 
                           : 'bg-white border-gray-50 text-gray-400 hover:border-gray-200'
                       }`}
                     >
-                      {s === 'Morning' ? t.morning : s === 'Afternoon' ? t.afternoon : t.night}
+                      {s === 'Morning' ? t.morning : s === 'Afternoon' ? t.afternoon : s === 'NightBeforeMorning' ? t.nightBeforeMorning : t.night}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">{t.staffMember}</label>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">{t.staffMember}</label>
                 <select 
                   value={staffId}
                   onChange={(e) => setStaffId(e.target.value)}
@@ -845,7 +848,7 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">{t.formProtocol}</label>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">{t.formProtocol}</label>
                 <select 
                   value={formId}
                   onChange={(e) => setFormId(e.target.value)}
@@ -871,7 +874,7 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
                       <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">{s.shift.charAt(0)}</div>
                       <div>
                         <p className="font-bold text-gray-700">{users.find(u => u.id === s.staffId)?.name}</p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{s.date} | {forms.find(f => f.id === s.formId)?.title}</p>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{s.date} | {forms.find(f => f.id === s.formId)?.title}</p>
                       </div>
                    </div>
                    <button 

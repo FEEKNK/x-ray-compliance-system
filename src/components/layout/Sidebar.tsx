@@ -47,7 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
   const items = [...(role === 'ADMIN' ? adminItems : staffItems), ...commonItems];
 
   return (
-    <div className="w-64 bg-white border-r border-gray-100 flex flex-col h-full shadow-sm z-40">
+    <div className="w-72 bg-white border-r border-gray-100 flex flex-col h-full shadow-sm z-40">
       <div className="p-6">
         <div 
           className="flex items-center justify-center mb-10 cursor-pointer hover:opacity-80 transition-opacity"
@@ -70,8 +70,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
                     : 'text-gray-500 hover:bg-gray-50 hover:text-[#00468B]'
                 }`}
               >
-                <Icon size={20} className={isActive ? 'text-[#00468B]' : 'text-gray-400'} />
-                <span className="text-sm">{item.label}</span>
+                <Icon size={22} className={isActive ? 'text-[#00468B]' : 'text-gray-400'} />
+                <span className="text-base font-medium">{item.label}</span>
               </button>
             );
           })}
@@ -83,13 +83,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
           onClick={() => setCurrentUser(null)}
           className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl border border-gray-100 text-gray-400 hover:text-red-600 hover:bg-red-50 hover:border-red-100 transition-all group"
         >
-          <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
-          <span className="text-xs font-bold uppercase tracking-widest">Exit Terminal</span>
+          <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
+          <span className="text-sm font-bold uppercase tracking-widest">Exit Terminal</span>
         </button>
       </div>
 
       <div className="p-4 border-t border-gray-50">
-        <div className="flex items-center justify-between text-[10px] text-gray-300 font-bold uppercase tracking-tighter">
+        <div className="flex items-center justify-between text-xs text-gray-300 font-bold uppercase tracking-tighter">
           <span>v2.2.1</span>
           <span>Quality & Safety</span>
         </div>

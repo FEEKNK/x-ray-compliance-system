@@ -110,7 +110,7 @@ const BundleManager: React.FC = () => {
                    >
                       <div className="flex-1 min-w-0 mr-2">
                          <p className={`text-xs font-bold truncate ${selectedBundle?.id === b.id ? 'text-[#00468B]' : 'text-gray-700'}`}>{b.name}</p>
-                         <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">{b.department} | {b.formIds.length} forms</p>
+                         <p className="text-xs text-gray-400 font-medium uppercase tracking-tighter">{b.department} | {b.formIds.length} forms</p>
                       </div>
                       <div className="flex items-center space-x-1">
                         <button 
@@ -154,7 +154,7 @@ const BundleManager: React.FC = () => {
                       <button
                         key={d}
                         onClick={() => setDepartment(d)}
-                        className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        className={`px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
                           department === d ? 'bg-[#00468B] text-white shadow-md' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
                         }`}
                       >
@@ -168,7 +168,7 @@ const BundleManager: React.FC = () => {
              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest">Select Forms for this Bundle</h3>
-                   <span className="text-[10px] font-black text-[#00468B]">{selectedFormIds.length} Selected</span>
+                   <span className="text-xs font-black text-[#00468B]">{selectedFormIds.length} Selected</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                    {forms.filter(f => f.department === department).map(f => {

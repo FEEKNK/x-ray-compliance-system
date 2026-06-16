@@ -85,7 +85,7 @@ const PinPad: React.FC<PinPadProps> = ({ selectedUser, onSuccess, onBack }) => {
           {selectedUser.name.charAt(0)}
         </div>
         <h2 className="text-xl font-black text-gray-800">{selectedUser.name}</h2>
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+        <p className="text-xs font-black text-gray-400 uppercase tracking-widest mt-1">
           {selectedUser.role} | {selectedUser.department}
         </p>
       </div>
@@ -153,7 +153,7 @@ const PinPad: React.FC<PinPadProps> = ({ selectedUser, onSuccess, onBack }) => {
         </button>
       </div>
 
-      <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+      <p className="text-center text-xs text-gray-400 font-bold uppercase tracking-widest">
         กรอกเลขประจำตัวพนักงานเพื่อเข้าระบบ
       </p>
 
@@ -234,7 +234,7 @@ const LandingPage: React.FC = () => {
                       </div>
                       <div>
                         <p className="font-black text-gray-800 group-hover:text-[#00468B] transition-colors">{user.name}</p>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{user.role} | {user.department}</p>
+                        <p className="text-xs font-black text-gray-400 uppercase tracking-widest">{user.role} | {user.department}</p>
                       </div>
                     </div>
                     <ChevronRight size={20} className="text-gray-300 group-hover:text-[#00468B] transition-colors" />
@@ -257,15 +257,15 @@ const LandingPage: React.FC = () => {
           <div className="pt-8 border-t border-gray-50 flex items-center justify-between text-gray-400 relative z-10">
             <div className="flex items-center space-x-2">
               <LayoutGrid size={16} />
-              <span className="text-[10px] font-black uppercase tracking-widest">
+              <span className="text-xs font-black uppercase tracking-widest">
                 {selectedUser ? 'PIN Authentication' : 'Shared Terminal Mode'}
               </span>
             </div>
-            <p className="text-[10px] font-black uppercase tracking-widest">v2.3.0 Secure Access</p>
+            <p className="text-xs font-black uppercase tracking-widest">v2.3.0 Secure Access</p>
           </div>
         </div>
 
-        <p className="text-center text-gray-300 text-[10px] font-black uppercase tracking-[0.2em]">
+        <p className="text-center text-gray-300 text-xs font-black uppercase tracking-[0.2em]">
           Restricted Access for Authorized Personnel Only
         </p>
       </div>

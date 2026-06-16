@@ -134,7 +134,7 @@ const FormBuilder: React.FC = () => {
                    >
                       <div className="flex-1 min-w-0 mr-2">
                          <p className={`text-xs font-bold truncate ${selectedForm?.id === f.id ? 'text-[#00468B]' : 'text-gray-700'}`}>{f.title}</p>
-                         <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">{f.department || 'IMAGING'} | {f.questions.length} fields</p>
+                         <p className="text-xs text-gray-400 font-medium uppercase tracking-tighter">{f.department || 'IMAGING'} | {f.questions.length} fields</p>
                       </div>
                       <div className="flex items-center space-x-1">
                         <button 
@@ -221,7 +221,7 @@ const FormBuilder: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="md:col-span-2">
                     <div className="flex items-center space-x-2 mb-2">
-                       <span className="w-6 h-6 rounded-full bg-blue-100 text-[#00468B] flex items-center justify-center text-[10px] font-black">{index + 1}</span>
+                       <span className="w-6 h-6 rounded-full bg-blue-100 text-[#00468B] flex items-center justify-center text-xs font-black">{index + 1}</span>
                        <label className="block text-xs font-black text-[#00468B] uppercase tracking-wider">Field Label</label>
                     </div>
                     <input 
