@@ -3,7 +3,7 @@ import { useSchedules, useForms } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
 import { translations } from '../../i18n';
 import { Calendar, ChevronLeft, ChevronRight, CheckCircle, Info, MapPin } from 'lucide-react';
-import type { Schedule } from '../../types';
+
 
 const MySchedule: React.FC = () => {
   const { currentUser, language } = useApp();
