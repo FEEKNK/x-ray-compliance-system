@@ -39,6 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
 
   const staffItems = [
     { id: 'dashboard', label: t.myDutyCard, icon: LayoutDashboard },
+    { id: 'schedule', label: 'ตารางเวรของฉัน', icon: Calendar },
     { id: 'history', label: t.myHistory, icon: ClipboardList },
   ];
 

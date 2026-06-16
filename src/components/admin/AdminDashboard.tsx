@@ -52,7 +52,11 @@ const AdminDashboard: React.FC = () => {
       
       const failedFields = Object.entries(sub.data)
         .filter(([_, v]) => v === 'Fail' || v === 'Alert')
-        .map(([k, _]) => k);
+        .map(([k, _]) => {
+          if (!form) return k;
+          const q = form.questions?.find(q => q.id === k);
+          return q ? q.label : k;
+        });
         
       return {
         submissionId: sub.id,

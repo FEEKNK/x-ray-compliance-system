@@ -29,6 +29,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, role, on
 
   const staffItems = [
     { id: 'dashboard', label: 'แบบฟอร์ม', icon: ClipboardList },
+    { id: 'schedule', label: 'ตารางเวร', icon: CalendarDays },
     { id: 'history', label: 'ประวัติ', icon: History },
     { id: 'profile', label: 'โปรไฟล์', icon: UserCircle },
   ];

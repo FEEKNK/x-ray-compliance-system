@@ -9,6 +9,7 @@ import Scheduler from './components/admin/Scheduler';
 import MasterLogs from './components/admin/MasterLogs';
 import UserManagement from './components/admin/UserManagement';
 import StaffHistory from './components/staff/StaffHistory';
+import MySchedule from './components/staff/MySchedule';
 import Settings from './components/shared/Settings';
 import LandingPage from './components/shared/LandingPage';
 import BottomNav from './components/layout/BottomNav';
@@ -75,6 +76,7 @@ const AppContent: React.FC = () => {
           ) : (
             <>
               {activeTab === 'dashboard' && <StaffDashboard />}
+              {activeTab === 'schedule' && <MySchedule />}
               {activeTab === 'history' && <StaffHistory />}
               {activeTab === 'profile' && (
                 <div className="max-w-md mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
