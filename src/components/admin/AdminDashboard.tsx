@@ -53,9 +53,16 @@ const AdminDashboard: React.FC = () => {
       const failedFields = Object.entries(sub.data)
         .filter(([_, v]) => v === 'Fail' || v === 'Alert')
         .map(([k, _]) => {
-          if (!form) return k;
-          const q = form.questions?.find(q => q.id === k);
-          return q ? q.label : k;
+          let label = k;
+          if (form) {
+            const q = form.questions?.find(q => q.id === k);
+            if (q) label = q.label;
+          }
+          const detail = sub.data[`${k}_other`];
+          if (detail && typeof detail === 'string' && detail.trim() !== '') {
+            return `${label}: ${detail}`;
+          }
+          return label;
         });
         
       return {
