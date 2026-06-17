@@ -7,7 +7,7 @@ import {
   CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine
 } from 'recharts';
-import { Calendar, Users, AlertCircle, ChevronLeft, ChevronRight, User, Check, Clock, TrendingUp, BarChart2, X, Download } from 'lucide-react';
+import { Calendar, Users, AlertCircle, ChevronLeft, ChevronRight, User, Check, Clock, TrendingUp, BarChart2, X, Download, FileText } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { Schedule } from '../../types';
 import { getLocalTodayStr, parseDbDate } from '../../utils/shiftTime';
@@ -107,6 +107,12 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
     return s;
   }, [users, selectedDept]);
 
+  const filteredForms = useMemo(() => {
+    let f = forms;
+    if (selectedDept !== 'ALL') f = f.filter(form => form.department === selectedDept);
+    return f;
+  }, [forms, selectedDept]);
+
   // ── Staff KPI ────────────────────────────
   const staffKPI = useMemo(() => {
     return filteredStaff.map(s => {
@@ -179,6 +185,21 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
     return { status: 'none', missedCount: 0 };
   };
 
+  const getFormCellStatus = (formId: string, day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const cellSchedules = schedules.filter(s => s.formId === formId && s.date === dateStr);
+    if (cellSchedules.length === 0) return { status: 'none', missedCount: 0 };
+    const pending = cellSchedules.filter(s => s.status === 'Pending');
+    const completed = cellSchedules.filter(s => s.status === 'Completed');
+    if (pending.length === 0 && completed.length > 0) return { status: 'completed', missedCount: 0 };
+    if (pending.length > 0) {
+      if (dateStr < todayStr) return { status: 'missed', missedCount: pending.length };
+      if (dateStr === todayStr) return { status: 'pending_today', missedCount: 0 };
+      return { status: 'scheduled', missedCount: 0 };
+    }
+    return { status: 'none', missedCount: 0 };
+  };
+
   // ── Download Compliance Matrix as Excel ──
   const downloadMatrix = () => {
     const wb = XLSX.utils.book_new();
@@ -226,6 +247,37 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
     const ws2 = XLSX.utils.aoa_to_sheet(kpiRows);
     ws2['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 8 }];
     XLSX.utils.book_append_sheet(wb, ws2, 'Staff KPI');
+
+    // === Sheet 3: Form Compliance Matrix ===
+    const formHeader = ['แบบฟอร์ม (Form)', 'แผนก'];
+    for (let d = 1; d <= daysInMonth; d++) formHeader.push(String(d));
+    formHeader.push('รวมงาน', 'สำเร็จ', 'ค้าง/ลืม', 'KPI %');
+
+    const formRows: (string | number)[][] = [formHeader];
+
+    filteredForms.forEach(f => {
+      const row: (string | number)[] = [f.title, f.department];
+      let total = 0, completed = 0, missed = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const { status, missedCount } = getFormCellStatus(f.id, d);
+        if (status === 'completed')     { row.push('✓'); total++; completed++; }
+        else if (status === 'missed')   { row.push(`✗(${missedCount})`); total++; missed += missedCount; }
+        else if (status === 'pending_today') { row.push('○'); total++; }
+        else if (status === 'scheduled')    { row.push('·'); total++; }
+        else row.push('-');
+      }
+      const kpi = total > 0 ? Math.round((completed / total) * 100) : 0;
+      row.push(total, completed, missed, `${kpi}%`);
+      formRows.push(row);
+    });
+
+    const ws3 = XLSX.utils.aoa_to_sheet(formRows);
+    ws3['!cols'] = [
+      { wch: 30 }, { wch: 12 },
+      ...Array(daysInMonth).fill({ wch: 5 }),
+      { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws3, 'Form Matrix');
 
     XLSX.writeFile(wb, `Compliance_Matrix_${monthLabel}_${deptLabel}.xlsx`);
   };
@@ -303,6 +355,75 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
                   </td>
                   {Array.from({ length: daysInMonth }).map((_, i) => {
                     const { status, missedCount } = getCellStatus(s.id, i + 1);
+                    return (
+                      <td key={i} className="p-1 border-r border-gray-50 text-center">
+                        <div className="flex justify-center items-center h-full w-full py-2">
+                          {status === 'completed' && <Check size={16} className="text-green-500 stroke-[3]" />}
+                          {status === 'missed' && (
+                            <div className="flex items-center justify-center w-5 h-5 rounded-md bg-red-100 text-red-600 font-black text-xs">{missedCount}</div>
+                          )}
+                          {status === 'pending_today' && <Clock size={14} className="text-orange-400" />}
+                          {status === 'scheduled' && <div className="w-1.5 h-1.5 rounded-full bg-gray-200"></div>}
+                          {status === 'none' && <span className="text-gray-200">-</span>}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Form Compliance Matrix */}
+      <div className="bg-white rounded-[32px] border border-gray-100 shadow-xl overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <FileText size={20} />
+            </div>
+            <div>
+              <span className="font-bold text-gray-700 block">ตารางสรุปการทำงานตามแบบฟอร์ม (Form Compliance Matrix)</span>
+              <span className="text-xs text-gray-400">ภาพรวมการตรวจสอบงานแต่ละวันแยกตามแบบฟอร์ม</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="hidden md:flex items-center space-x-4 text-xs font-bold text-gray-500">
+              <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-green-500 mr-1.5"></span>ทำครบถ้วน</div>
+              <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-red-500 mr-1.5"></span>ลืมทำ/ค้าง</div>
+              <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-orange-400 mr-1.5"></span>รอทำวันนี้</div>
+            </div>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse min-w-[800px]">
+            <thead>
+              <tr className="bg-gray-50/50">
+                <th className="sticky left-0 z-20 bg-white p-5 text-left border-b border-r border-gray-100 min-w-[200px] shadow-[4px_0_12px_rgba(0,0,0,0.02)]">
+                  <div className="flex items-center space-x-2">
+                    <FileText size={14} className="text-indigo-600" />
+                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">แบบฟอร์ม (Form)</span>
+                  </div>
+                </th>
+                {Array.from({ length: daysInMonth }).map((_, i) => (
+                  <th key={i} className="p-3 border-b border-gray-100 min-w-[40px] text-center">
+                    <span className="text-xs font-black text-gray-500">{i + 1}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredForms.map(f => (
+                <tr key={f.id} className="group hover:bg-gray-50/50 transition-all">
+                  <td className="sticky left-0 z-10 bg-white p-4 border-r border-gray-100 shadow-[4px_0_12px_rgba(0,0,0,0.02)]">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-gray-800 text-sm">{f.title}</span>
+                      <span className="text-xs font-black text-gray-400 uppercase tracking-tighter">{f.department}</span>
+                    </div>
+                  </td>
+                  {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const { status, missedCount } = getFormCellStatus(f.id, i + 1);
                     return (
                       <td key={i} className="p-1 border-r border-gray-50 text-center">
                         <div className="flex justify-center items-center h-full w-full py-2">

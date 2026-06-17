@@ -47,12 +47,12 @@ const Header: React.FC = () => {
           <div className={`px-2 py-1 rounded-lg border flex items-center space-x-1.5 ${
             currentShift === 'Morning' ? 'bg-orange-50 border-orange-100 text-orange-600' :
             currentShift === 'Afternoon' ? 'bg-blue-50 border-blue-100 text-blue-600' : 
-            currentShift === 'NightBeforeMorning' ? 'bg-purple-50 border-purple-100 text-purple-600' : 'bg-indigo-50 border-indigo-100 text-indigo-600'
+            currentShift === 'NightBeforeMorning' ? 'bg-green-50 border-green-100 text-green-600' : 'bg-indigo-50 border-indigo-100 text-indigo-600'
           }`}>
             <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
               currentShift === 'Morning' ? 'bg-orange-400' : 
               currentShift === 'Afternoon' ? 'bg-blue-400' : 
-              currentShift === 'NightBeforeMorning' ? 'bg-purple-400' : 'bg-indigo-400'
+              currentShift === 'NightBeforeMorning' ? 'bg-green-400' : 'bg-indigo-400'
             }`}></div>
             <span className="text-xs md:text-xs font-black uppercase tracking-widest">
               {currentShift === 'Morning' ? 'เช้า' : currentShift === 'Afternoon' ? 'บ่าย' : currentShift === 'NightBeforeMorning' ? 'ดึกก่อนเช้า' : 'ดึก'}

@@ -204,7 +204,7 @@ const AdminDashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <div className={`w-3 h-3 rounded-full ${
-                    shift === 'Morning' ? 'bg-orange-400' : shift === 'Afternoon' ? 'bg-blue-400' : shift === 'NightBeforeMorning' ? 'bg-purple-500' : 'bg-indigo-500'
+                    shift === 'Morning' ? 'bg-orange-400' : shift === 'Afternoon' ? 'bg-blue-400' : shift === 'NightBeforeMorning' ? 'bg-green-500' : 'bg-indigo-500'
                   }`}></div>
                   <h3 className="text-sm font-black uppercase tracking-wider text-gray-500">
                     {shift === 'Morning' ? t.morning : shift === 'Afternoon' ? t.afternoon : shift === 'NightBeforeMorning' ? t.nightBeforeMorning : t.night}
@@ -228,7 +228,7 @@ const AdminDashboard: React.FC = () => {
               <div className="absolute bottom-0 left-0 h-1 bg-gray-50 w-full">
                 <div 
                   className={`h-full transition-all duration-1000 ${
-                    shift === 'Morning' ? 'bg-orange-400' : shift === 'Afternoon' ? 'bg-blue-400' : shift === 'NightBeforeMorning' ? 'bg-purple-500' : 'bg-indigo-500'
+                    shift === 'Morning' ? 'bg-orange-400' : shift === 'Afternoon' ? 'bg-blue-400' : shift === 'NightBeforeMorning' ? 'bg-green-500' : 'bg-indigo-500'
                   }`}
                   style={{ width: `${shiftRate}%` }}
                 ></div>
@@ -347,7 +347,7 @@ const AdminDashboard: React.FC = () => {
                       <span className={`font-black uppercase tracking-tight ${
                         item.shift === 'Morning' ? 'text-orange-500' :
                         item.shift === 'Afternoon' ? 'text-blue-500' : 
-                        item.shift === 'NightBeforeMorning' ? 'text-purple-500' : 'text-indigo-500'
+                        item.shift === 'NightBeforeMorning' ? 'text-green-500' : 'text-indigo-500'
                       }`}>{item.shift}</span>
                       {item.location !== '—' && <><span className="mx-1.5">·</span>{item.location}</>}
                     </p>
@@ -393,7 +393,7 @@ const AdminDashboard: React.FC = () => {
                       <span className={`font-black uppercase tracking-tight ${
                         item.shift === 'Morning' ? 'text-orange-500' :
                         item.shift === 'Afternoon' ? 'text-blue-500' : 
-                        item.shift === 'NightBeforeMorning' ? 'text-purple-500' : 'text-indigo-500'
+                        item.shift === 'NightBeforeMorning' ? 'text-green-500' : 'text-indigo-500'
                       }`}>{item.shift}</span>
                       {item.location !== '—' && <><span className="mx-1.5">·</span>{item.location}</>}
                     </p>

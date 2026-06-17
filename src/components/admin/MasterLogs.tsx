@@ -211,7 +211,7 @@ const MasterLogs: React.FC = () => {
                       <span className={`text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
                         schedule?.shift === 'Morning' ? 'bg-orange-50 text-orange-600 border-orange-100' : 
                         schedule?.shift === 'Afternoon' ? 'bg-blue-50 text-blue-700 border-blue-100' : 
-                        schedule?.shift === 'NightBeforeMorning' ? 'bg-purple-50 text-purple-700 border-purple-100' : 
+                        schedule?.shift === 'NightBeforeMorning' ? 'bg-green-50 text-green-700 border-green-100' : 
                         'bg-indigo-50 text-indigo-700 border-indigo-100'
                       }`}>
                         {schedule?.shift}

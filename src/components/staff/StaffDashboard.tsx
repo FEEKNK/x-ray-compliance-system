@@ -248,7 +248,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
             <span className={`text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${
               s.shift === 'Morning' ? 'bg-orange-50 text-orange-600' : 
               s.shift === 'Afternoon' ? 'bg-blue-50 text-blue-600' :
-              s.shift === 'NightBeforeMorning' ? 'bg-purple-50 text-purple-600' :
+              s.shift === 'NightBeforeMorning' ? 'bg-green-50 text-green-600' :
               'bg-indigo-50 text-indigo-600'
             }`}>{s.shift}</span>
             {isCompleted && !cd.isLocked && <CheckCircle2 className="text-green-500" size={16} />}

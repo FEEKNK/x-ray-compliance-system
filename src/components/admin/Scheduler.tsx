@@ -33,10 +33,10 @@ const Scheduler: React.FC = () => {
   const t = translations[language];
   const [selectedDept, setSelectedDept] = useState<string>(settings?.departments?.[0] || 'IMAGING');
   
-  const staff = useMemo(() => 
-    users.filter(u => u.role === 'STAFF' && u.department === selectedDept), 
-    [users, selectedDept]
-  );
+  const staff = useMemo(() => {
+    const filtered = users.filter(u => u.role === 'STAFF' && u.department === selectedDept);
+    return filtered.sort((a, b) => a.name.localeCompare(b.name, 'th-TH'));
+  }, [users, selectedDept]);
   
   const [viewMode, setViewMode] = useState<'Matrix' | 'List'>('Matrix');
   
@@ -403,18 +403,18 @@ const Scheduler: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-[32px] border border-gray-100 shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        <div className="overflow-auto max-h-[70vh]">
+          <table className="w-full border-collapse relative">
             <thead>
-              <tr className="bg-gray-50/50">
-                <th className="sticky left-0 z-20 bg-white p-5 text-left border-b border-r border-gray-100 min-w-[200px]">
+              <tr className="bg-gray-50">
+                <th className="sticky top-0 left-0 z-40 bg-gray-50 p-5 text-left border-b border-r border-gray-200 min-w-[200px]">
                   <div className="flex items-center space-x-2">
                     <User size={14} className="text-[#00468B]" />
                     <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.personnelDay}</span>
                   </div>
                 </th>
                 {Array.from({ length: daysInMonth }).map((_, i) => (
-                  <th key={i} className="p-3 border-b border-gray-100 min-w-[45px] text-center">
+                  <th key={i} className="sticky top-0 z-30 bg-gray-50 p-3 border-b border-gray-200 min-w-[45px] text-center">
                     <span className="text-xs font-black text-gray-500">{i + 1}</span>
                   </th>
                 ))}
@@ -462,7 +462,7 @@ const Scheduler: React.FC = () => {
                             {hasMorning && <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-sm shadow-orange-200"></div>}
                             {hasAfternoon && <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm shadow-blue-200"></div>}
                             {hasNight && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm shadow-indigo-200"></div>}
-                            {hasNightBeforeMorning && <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-sm shadow-purple-200"></div>}
+                            {hasNightBeforeMorning && <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-sm shadow-green-200"></div>}
                             {!hasMorning && !hasAfternoon && !hasNight && !hasNightBeforeMorning && (
                               <div className="opacity-0 group-hover/cell:opacity-100 text-xs text-gray-300 transition-opacity">
                                 <Plus size={10} />
@@ -496,7 +496,7 @@ const Scheduler: React.FC = () => {
             <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.night}</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
             <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.nightBeforeMorning}</span>
           </div>
         </div>
@@ -606,7 +606,7 @@ const Scheduler: React.FC = () => {
                         }`}
                       >
                         <div className={`w-3 h-3 rounded-full mb-2 ${
-                          s === 'Morning' ? 'bg-orange-400' : s === 'Afternoon' ? 'bg-blue-400' : s === 'NightBeforeMorning' ? 'bg-purple-500' : 'bg-indigo-500'
+                          s === 'Morning' ? 'bg-orange-400' : s === 'Afternoon' ? 'bg-blue-400' : s === 'NightBeforeMorning' ? 'bg-green-500' : 'bg-indigo-500'
                         }`}></div>
                         <span className="text-xs font-black uppercase tracking-tighter">{s === 'Morning' ? t.morning : s === 'Afternoon' ? t.afternoon : s === 'NightBeforeMorning' ? t.nightBeforeMorning : t.night}</span>
                       </button>
@@ -766,7 +766,7 @@ const OldSchedulerView: React.FC<{setViewMode: (v: 'Matrix' | 'List') => void}> 
   const { mutate: addSchedule } = useAddSchedule();
   const { mutate: deleteSchedule } = useDeleteSchedule();
   const t = translations[language];
-  const staff = users.filter(u => u.role === 'STAFF');
+  const staff = users.filter(u => u.role === 'STAFF').sort((a, b) => a.name.localeCompare(b.name, 'th-TH'));
 
   const [date, setDate] = useState(getLocalTodayStr());
   const [shift, setShift] = useState<Shift>('Morning');

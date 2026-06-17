@@ -80,8 +80,8 @@ const FormBuilder: React.FC = () => {
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">{t.formBuilder}</h1>
-          <p className="text-sm text-gray-500 font-medium">Create and manage digital compliance checklists</p>
+          <h1 className="text-4xl font-bold text-gray-800">{t.formBuilder}</h1>
+          <p className="text-lg text-gray-500 font-medium">Create and manage digital compliance checklists</p>
         </div>
         <button 
           onClick={handleSave}
@@ -96,7 +96,7 @@ const FormBuilder: React.FC = () => {
         <div className="lg:col-span-1 space-y-6">
            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
               <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Library ({filteredForms.length})</h3>
+                 <h3 className="text-base font-black text-gray-400 uppercase tracking-widest">Library ({filteredForms.length})</h3>
                  <button onClick={() => {
                    setSelectedForm(null);
                    setTitle('');
@@ -111,7 +111,7 @@ const FormBuilder: React.FC = () => {
                 <select 
                   value={filterDepartment} 
                   onChange={(e) => setFilterDepartment(e.target.value)}
-                  className="w-full text-xs font-bold text-gray-600 bg-gray-50 border border-gray-100 rounded-lg p-2.5 outline-none focus:border-[#00468B] transition-all"
+                  className="w-full text-base font-bold text-gray-600 bg-gray-50 border border-gray-100 rounded-lg p-4 outline-none focus:border-[#00468B] transition-all"
                 >
                   <option value="ALL">All Departments (ทั้งหมด)</option>
                   {(settings?.departments || []).map(d => (
@@ -133,8 +133,8 @@ const FormBuilder: React.FC = () => {
                     className={`p-4 flex items-center justify-between cursor-pointer transition-all group ${selectedForm?.id === f.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                    >
                       <div className="flex-1 min-w-0 mr-2">
-                         <p className={`text-xs font-bold truncate ${selectedForm?.id === f.id ? 'text-[#00468B]' : 'text-gray-700'}`}>{f.title}</p>
-                         <p className="text-xs text-gray-400 font-medium uppercase tracking-tighter">{f.department || 'IMAGING'} | {f.questions.length} fields</p>
+                         <p className={`text-base font-bold truncate ${selectedForm?.id === f.id ? 'text-[#00468B]' : 'text-gray-700'}`}>{f.title}</p>
+                         <p className="text-base text-gray-400 font-medium uppercase tracking-tighter">{f.department || 'IMAGING'} | {f.questions.length} fields</p>
                       </div>
                       <div className="flex items-center space-x-1">
                         <button 
@@ -165,27 +165,27 @@ const FormBuilder: React.FC = () => {
 
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest">General Information</h3>
+            <h3 className="text-lg font-black text-gray-400 uppercase tracking-widest">General Information</h3>
             <div className="grid grid-cols-1 gap-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-bold text-[#00468B] uppercase mb-2">Form Title</label>
+                  <label className="block text-base font-bold text-[#00468B] uppercase mb-2">Form Title</label>
                   <input 
                     type="text" 
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g., Daily MRI Safety Check"
-                    className="w-full border-2 border-gray-50 rounded-xl p-4 text-lg font-bold focus:border-blue-500 bg-gray-50 outline-none transition-all"
+                    className="w-full border-2 border-gray-50 rounded-xl p-5 text-2xl font-bold focus:border-blue-500 bg-gray-50 outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#00468B] uppercase mb-2">Department</label>
+                  <label className="block text-base font-bold text-[#00468B] uppercase mb-2">Department</label>
                   <div className="flex flex-wrap gap-2">
                     {(settings?.departments || []).map(d => (
                       <button
                         key={d}
                         onClick={() => setDepartment(d)}
-                        className={`px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                        className={`px-5 py-4 rounded-xl text-base font-black uppercase tracking-widest transition-all ${
                           department === d ? 'bg-[#00468B] text-white shadow-lg' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
                         }`}
                       >
@@ -196,19 +196,19 @@ const FormBuilder: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-[#00468B] uppercase mb-2">Instructions / Description</label>
+                <label className="block text-base font-bold text-[#00468B] uppercase mb-2">Instructions / Description</label>
                 <textarea 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Provide guidance for the staff member..."
-                  className="w-full border-2 border-gray-50 rounded-xl p-4 h-24 focus:border-blue-500 bg-gray-50 outline-none transition-all font-medium"
+                  className="w-full border-2 border-gray-50 rounded-xl p-5 h-32 text-lg focus:border-blue-500 bg-gray-50 outline-none transition-all font-medium"
                 ></textarea>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest px-2">Question Blocks</h3>
+            <h3 className="text-lg font-black text-gray-400 uppercase tracking-widest px-2">Question Blocks</h3>
             {questions.map((q, index) => (
               <div key={q.id} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative group animate-in slide-in-from-top-2">
                 <button 
@@ -221,24 +221,24 @@ const FormBuilder: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="md:col-span-2">
                     <div className="flex items-center space-x-2 mb-2">
-                       <span className="w-6 h-6 rounded-full bg-blue-100 text-[#00468B] flex items-center justify-center text-xs font-black">{index + 1}</span>
-                       <label className="block text-xs font-black text-[#00468B] uppercase tracking-wider">Field Label</label>
+                       <span className="w-8 h-8 rounded-full bg-blue-100 text-[#00468B] flex items-center justify-center text-base font-black">{index + 1}</span>
+                       <label className="block text-base font-black text-[#00468B] uppercase tracking-wider">Field Label</label>
                     </div>
                     <input 
                       type="text" 
                       value={q.label}
                       onChange={(e) => updateQuestionState(q.id, { label: e.target.value })}
                       placeholder="e.g., Is the backup power system functional?"
-                      className="w-full border-b-2 border-gray-50 py-3 text-gray-800 font-bold focus:border-blue-500 outline-none transition-all"
+                      className="w-full border-b-2 border-gray-50 py-4 text-lg text-gray-800 font-bold focus:border-blue-500 outline-none transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-widest">Input Type</label>
+                    <label className="block text-base font-bold text-gray-400 uppercase mb-2 tracking-widest">Input Type</label>
                     <select 
                       value={q.type}
                       onChange={(e) => updateQuestionState(q.id, { type: e.target.value as QuestionBlock['type'] })}
-                      className="w-full border-2 border-gray-50 rounded-xl p-3 bg-gray-50 font-bold text-gray-700 outline-none focus:border-blue-500 transition-all"
+                      className="w-full border-2 border-gray-50 rounded-xl p-4 text-lg bg-gray-50 font-bold text-gray-700 outline-none focus:border-blue-500 transition-all"
                     >
                       <option value="text">Short Text</option>
                       <option value="number">Numeric Value</option>
@@ -251,7 +251,7 @@ const FormBuilder: React.FC = () => {
 
                   {q.type === 'select' && (
                     <div className="md:col-span-2 space-y-3 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-                      <label className="block text-xs font-bold text-[#00468B] uppercase tracking-widest">Dropdown Options</label>
+                      <label className="block text-base font-bold text-[#00468B] uppercase tracking-widest">Dropdown Options</label>
                       
                       <div className="space-y-2">
                         {(q.options || []).map((opt, optIndex) => (
@@ -264,7 +264,7 @@ const FormBuilder: React.FC = () => {
                                 newOpts[optIndex] = e.target.value;
                                 updateQuestionState(q.id, { options: newOpts });
                               }}
-                              className="flex-1 border-2 border-gray-100 rounded-lg p-2.5 text-sm font-bold text-gray-700 outline-none focus:border-[#00468B] transition-all"
+                              className="flex-1 border-2 border-gray-100 rounded-lg p-4 text-lg font-bold text-gray-700 outline-none focus:border-[#00468B] transition-all"
                               placeholder={`Option ${optIndex + 1}`}
                             />
                             <button
@@ -282,7 +282,7 @@ const FormBuilder: React.FC = () => {
 
                       <button
                         onClick={() => updateQuestionState(q.id, { options: [...(q.options || []), `Option ${(q.options?.length || 0) + 1}`] })}
-                        className="inline-flex items-center space-x-2 text-xs font-bold text-[#00468B] bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+                        className="inline-flex items-center space-x-2 text-base font-bold text-[#00468B] bg-blue-50 px-5 py-3 rounded-lg hover:bg-blue-100 transition-colors"
                       >
                         <Plus size={14} />
                         <span>Add Option</span>
@@ -301,7 +301,7 @@ const FormBuilder: React.FC = () => {
                         onChange={(e) => updateQuestionState(q.id, { required: e.target.checked })}
                         className="hidden"
                       />
-                      <span className="text-sm font-bold text-gray-600">Required (บังคับกรอก)</span>
+                      <span className="text-lg font-bold text-gray-600">Required (บังคับกรอก)</span>
                     </label>
 
                     {(q.type === 'select' || q.type === 'yesno' || q.type === 'composite') && (
@@ -315,7 +315,7 @@ const FormBuilder: React.FC = () => {
                           onChange={(e) => updateQuestionState(q.id, { allowCustomInput: e.target.checked })}
                           className="hidden"
                         />
-                        <span className="text-sm font-bold text-gray-600">Allow Custom Input (เปิดให้ระบุเอง)</span>
+                        <span className="text-lg font-bold text-gray-600">Allow Custom Input (เปิดให้ระบุเอง)</span>
                       </label>
                     )}
 
@@ -330,7 +330,7 @@ const FormBuilder: React.FC = () => {
                           onChange={(e) => updateQuestionState(q.id, { config: { ...q.config, autoFillToday: e.target.checked } })}
                           className="hidden"
                         />
-                        <span className="text-sm font-bold text-gray-600">Auto-fill Current Date (ใช้วันที่ปัจจุบันอัตโนมัติ)</span>
+                        <span className="text-lg font-bold text-gray-600">Auto-fill Current Date (ใช้วันที่ปัจจุบันอัตโนมัติ)</span>
                       </label>
                     )}
                   </div>
@@ -343,7 +343,7 @@ const FormBuilder: React.FC = () => {
               className="w-full py-6 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 flex items-center justify-center space-x-3 hover:border-[#00468B] hover:text-[#00468B] hover:bg-blue-50 transition-all group"
             >
               <Plus size={24} className="group-hover:scale-110 transition-transform" />
-              <span className="font-bold text-sm uppercase tracking-widest">Add Inspection Field</span>
+              <span className="font-bold text-lg uppercase tracking-widest">Add Inspection Field</span>
             </button>
           </div>
         </div>
