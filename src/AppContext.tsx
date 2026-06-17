@@ -30,51 +30,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Fetch config — uses public endpoint initially (no auth needed for landing page).
   // Full config (with sensitive emails) is fetched after login via setCurrentUser.
-  useEffect(() => {
-    const fetchConfig = async () => {
-      try {
-        setIsLoading(true);
-        setLoadError(null);
-        
-        const saved = localStorage.getItem('xray_currentUser');
-        // If user is already logged in, fetch full config; otherwise fetch public config
-        const configData = saved
-          ? await api.config.get().catch(() => api.config.getPublic())
-          : await api.config.getPublic();
+  const fetchConfig = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setLoadError(null);
+      
+      const saved = localStorage.getItem('xray_currentUser');
+      // If user is already logged in, fetch full config; otherwise fetch public config
+      const configData = saved
+        ? await api.config.get().catch(() => api.config.getPublic())
+        : await api.config.getPublic();
 
-        const defaultSettings: SystemSettings = {
-          hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
-          supervisorEmail: "supervisor@hospital.com",
-          escalationEmail: "director@hospital.com",
-          departments: ["IMAGING", "MRI"],
-          slaHours: { Morning: 1.5, Afternoon: 1.5, Night: 1.5, NightBeforeMorning: 1.5 },
-          lockoutHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
-          shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00", NightBeforeMorning: "04:00 - 08:00" },
-        };
-        const mergedSettings = { ...defaultSettings, ...(configData.settings as Partial<SystemSettings>) };
-        
-        if (!(configData.settings as SystemSettings)?.slaHours) mergedSettings.slaHours = defaultSettings.slaHours;
-        else mergedSettings.slaHours = { ...defaultSettings.slaHours, ...(configData.settings as SystemSettings).slaHours };
-        
-        if (!(configData.settings as SystemSettings)?.lockoutHours) mergedSettings.lockoutHours = defaultSettings.lockoutHours;
-        else mergedSettings.lockoutHours = { ...defaultSettings.lockoutHours, ...(configData.settings as SystemSettings).lockoutHours };
-        
-        if (!(configData.settings as SystemSettings)?.shifts) mergedSettings.shifts = defaultSettings.shifts;
-        else mergedSettings.shifts = { ...defaultSettings.shifts, ...(configData.settings as SystemSettings).shifts };
-        
-        if (!(configData.settings as SystemSettings)?.departments) mergedSettings.departments = defaultSettings.departments;
-        
-        setSettings(mergedSettings);
-        setAnnouncements(configData.announcements as string[]);
-      } catch (error) {
-        console.error('Failed to load config from API:', error);
-        setLoadError(error instanceof Error ? error.message : 'Failed to connect to server');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchConfig();
+      const defaultSettings: SystemSettings = {
+        hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
+        supervisorEmail: "supervisor@hospital.com",
+        escalationEmail: "director@hospital.com",
+        departments: ["IMAGING", "MRI"],
+        slaHours: { Morning: 1.5, Afternoon: 1.5, Night: 1.5, NightBeforeMorning: 1.5 },
+        lockoutHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
+        shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00", NightBeforeMorning: "04:00 - 08:00" },
+      };
+      const mergedSettings = { ...defaultSettings, ...(configData.settings as Partial<SystemSettings>) };
+      
+      if (!(configData.settings as SystemSettings)?.slaHours) mergedSettings.slaHours = defaultSettings.slaHours;
+      else mergedSettings.slaHours = { ...defaultSettings.slaHours, ...(configData.settings as SystemSettings).slaHours };
+      
+      if (!(configData.settings as SystemSettings)?.lockoutHours) mergedSettings.lockoutHours = defaultSettings.lockoutHours;
+      else mergedSettings.lockoutHours = { ...defaultSettings.lockoutHours, ...(configData.settings as SystemSettings).lockoutHours };
+      
+      if (!(configData.settings as SystemSettings)?.shifts) mergedSettings.shifts = defaultSettings.shifts;
+      else mergedSettings.shifts = { ...defaultSettings.shifts, ...(configData.settings as SystemSettings).shifts };
+      
+      if (!(configData.settings as SystemSettings)?.departments) mergedSettings.departments = defaultSettings.departments;
+      
+      setSettings(mergedSettings);
+      setAnnouncements(configData.announcements as string[]);
+    } catch (error) {
+      console.error('Failed to load config from API:', error);
+      setLoadError(error instanceof Error ? error.message : 'Failed to connect to server');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  // Initial fetch and fetch when currentUser changes
+  useEffect(() => {
+    fetchConfig();
+  }, [currentUser?.id, fetchConfig]);
 
   const setCurrentUser = useCallback((user: User | null) => {
     setCurrentUserState(user);
