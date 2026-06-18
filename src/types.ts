@@ -7,6 +7,7 @@ export interface User {
   department: string;
   email: string;
   role: Role;
+  sortOrder?: number;
 }
 
 export interface QuestionBlock {

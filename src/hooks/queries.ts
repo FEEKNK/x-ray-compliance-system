@@ -10,6 +10,7 @@ export const usePublicUsers = () => useQuery({ queryKey: ['users', 'public'], qu
 export const useAddUser = () => { const qc = useQueryClient(); return useMutation({ mutationFn: api.users.create, onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }) }); };
 export const useUpdateUser = () => { const qc = useQueryClient(); return useMutation({ mutationFn: (user: Partial<User> & {id: string}) => api.users.update(user.id, user), onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }) }); };
 export const useDeleteUser = () => { const qc = useQueryClient(); return useMutation({ mutationFn: api.users.delete, onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }) }); };
+export const useReorderUsers = () => { const qc = useQueryClient(); return useMutation({ mutationFn: api.users.reorder, onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }) }); };
 
 // ============================================
 // Forms

@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { useUsers, useForms, useBundles, useAddSchedule, useSchedules, useBulkDeleteSchedules, useDeleteSchedule } from '../../hooks/queries';
+import { useUsers, useForms, useBundles, useAddSchedule, useSchedules, useBulkDeleteSchedules, useDeleteSchedule, useReorderUsers } from '../../hooks/queries';
+import { useQueryClient } from '@tanstack/react-query';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import type { DropResult } from '@hello-pangea/dnd';
 import { useApp } from '../../AppContext';
 import { 
   ChevronLeft, 
@@ -15,13 +18,15 @@ import {
 } from 'lucide-react';
 import { translations } from '../../i18n';
 import { getLocalTodayStr } from '../../utils/shiftTime';
-import type { Schedule, Shift } from '../../types';
+import type { Schedule, Shift, User as UserType } from '../../types';
 
 const Scheduler: React.FC = () => {
   const { language, currentUser, settings } = useApp();
   const { mutate: addSchedule } = useAddSchedule();
   const { mutate: bulkDeleteSchedules } = useBulkDeleteSchedules();
   const { data: users = [] } = useUsers();
+  const { mutate: reorderUsers } = useReorderUsers();
+  const queryClient = useQueryClient();
   const { data: forms = [] } = useForms();
   const [currentDate, setCurrentDate] = useState(new Date());
   
@@ -35,10 +40,44 @@ const Scheduler: React.FC = () => {
   
   const staff = useMemo(() => {
     const filtered = users.filter(u => u.role === 'STAFF' && u.department === selectedDept);
-    return filtered.sort((a, b) => a.name.localeCompare(b.name, 'th-TH'));
+    return filtered.sort((a, b) => {
+      const orderA = a.sortOrder ?? 0;
+      const orderB = b.sortOrder ?? 0;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.name.localeCompare(b.name, 'th-TH');
+    });
   }, [users, selectedDept]);
   
   const [viewMode, setViewMode] = useState<'Matrix' | 'List'>('Matrix');
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+    
+    if (sourceIndex === destinationIndex) return;
+
+    const newStaff = Array.from(staff);
+    const [removed] = newStaff.splice(sourceIndex, 1);
+    newStaff.splice(destinationIndex, 0, removed);
+
+    // Optimistic update
+    const allUsers = queryClient.getQueryData<UserType[]>(['users']) || [];
+    const updatedUsers = allUsers.map(u => {
+      const newIndex = newStaff.findIndex(s => s.id === u.id);
+      if (newIndex !== -1) {
+        return { ...u, sortOrder: newIndex };
+      }
+      return u;
+    });
+    
+    queryClient.setQueryData(['users'], updatedUsers);
+
+    // API update
+    const updates = newStaff.map((s, index) => ({ id: s.id, sortOrder: index }));
+    reorderUsers(updates);
+  };
   
   // Selection States
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
@@ -420,62 +459,89 @@ const Scheduler: React.FC = () => {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {staff.map(s => {
-                const monthlyCount = schedules.filter(sc => 
-                  sc.staffId === s.id && 
-                  sc.date.startsWith(`${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`)
-                ).length;
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="matrix-staff">
+                {(provided) => (
+                  <tbody 
+                    className="divide-y divide-gray-100"
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                  >
+                    {staff.map((s, index) => {
+                      const monthlyCount = schedules.filter(sc => 
+                        sc.staffId === s.id && 
+                        sc.date.startsWith(`${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`)
+                      ).length;
 
-                return (
-                  <tr key={s.id} className="group hover:bg-blue-50/20 transition-all">
-                    <td className="sticky left-0 z-10 bg-white group-hover:bg-blue-50 p-5 border-r border-gray-100">
-                      <div className="flex flex-col">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-gray-800 text-sm">{s.name}</span>
-                          <span className="text-xs font-black bg-blue-50 text-[#00468B] px-1.5 py-0.5 rounded-full border border-blue-100">
-                            {monthlyCount}
-                          </span>
-                        </div>
-                        <span className="text-xs font-black text-gray-400 uppercase tracking-tighter">{s.department}</span>
-                      </div>
-                    </td>
-                    {Array.from({ length: daysInMonth }).map((_, i) => {
-                      const day = i + 1;
-                      const cellSchedules = getSchedulesForCell(s.id, day);
-                      const hasMorning = cellSchedules.some(sc => sc.shift === 'Morning');
-                      const hasAfternoon = cellSchedules.some(sc => sc.shift === 'Afternoon');
-                      const hasNight = cellSchedules.some(sc => sc.shift === 'Night');
-                      const hasNightBeforeMorning = cellSchedules.some(sc => sc.shift === 'NightBeforeMorning');
-                      const hasFormsAssigned = cellSchedules.some(sc => !!sc.formId);
-                      
                       return (
-                        <td 
-                          key={i} 
-                          onClick={() => handleCellClick(s.id, day)}
-                          className="p-1 border-r border-gray-50 cursor-pointer hover:bg-white transition-all relative group/cell"
-                        >
-                          {hasFormsAssigned && (
-                            <div className="absolute top-0 right-0 w-0 h-0 border-t-[6px] border-r-[6px] border-t-[#00468B] border-r-[#00468B] border-l-[6px] border-l-transparent border-b-[6px] border-b-transparent opacity-80"></div>
+                        <Draggable key={s.id} draggableId={s.id} index={index}>
+                          {(provided, snapshot) => (
+                            <tr 
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={`group transition-all ${snapshot.isDragging ? 'bg-blue-50/80 shadow-xl relative z-50 ring-1 ring-blue-200' : 'hover:bg-blue-50/20'}`}
+                            >
+                              <td className="sticky left-0 z-10 bg-white group-hover:bg-blue-50 p-5 border-r border-gray-100">
+                                <div className="flex flex-col">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center space-x-2">
+                                      <div 
+                                        {...provided.dragHandleProps}
+                                        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing p-1 -ml-2 shrink-0"
+                                      >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                                      </div>
+                                      <span className="font-bold text-gray-800 text-sm">{s.name}</span>
+                                    </div>
+                                    <span className="text-xs font-black bg-blue-50 text-[#00468B] px-1.5 py-0.5 rounded-full border border-blue-100 shrink-0">
+                                      {monthlyCount}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs font-black text-gray-400 uppercase tracking-tighter ml-8">{s.department}</span>
+                                </div>
+                              </td>
+                              {Array.from({ length: daysInMonth }).map((_, i) => {
+                                const day = i + 1;
+                                const cellSchedules = getSchedulesForCell(s.id, day);
+                                const hasMorning = cellSchedules.some(sc => sc.shift === 'Morning');
+                                const hasAfternoon = cellSchedules.some(sc => sc.shift === 'Afternoon');
+                                const hasNight = cellSchedules.some(sc => sc.shift === 'Night');
+                                const hasNightBeforeMorning = cellSchedules.some(sc => sc.shift === 'NightBeforeMorning');
+                                const hasFormsAssigned = cellSchedules.some(sc => !!sc.formId);
+                                
+                                return (
+                                  <td 
+                                    key={i} 
+                                    onClick={() => handleCellClick(s.id, day)}
+                                    className="p-1 border-r border-gray-50 cursor-pointer hover:bg-white transition-all relative group/cell"
+                                  >
+                                    {hasFormsAssigned && (
+                                      <div className="absolute top-0 right-0 w-0 h-0 border-t-[6px] border-r-[6px] border-t-[#00468B] border-r-[#00468B] border-l-[6px] border-l-transparent border-b-[6px] border-b-transparent opacity-80"></div>
+                                    )}
+                                    <div className="flex flex-col items-center justify-center space-y-0.5 h-10">
+                                      {hasMorning && <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-sm shadow-orange-200"></div>}
+                                      {hasAfternoon && <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm shadow-blue-200"></div>}
+                                      {hasNight && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm shadow-indigo-200"></div>}
+                                      {hasNightBeforeMorning && <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-sm shadow-green-200"></div>}
+                                      {!hasMorning && !hasAfternoon && !hasNight && !hasNightBeforeMorning && (
+                                        <div className="opacity-0 group-hover/cell:opacity-100 text-xs text-gray-300 transition-opacity">
+                                          <Plus size={10} />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                            </tr>
                           )}
-                          <div className="flex flex-col items-center justify-center space-y-0.5 h-10">
-                            {hasMorning && <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-sm shadow-orange-200"></div>}
-                            {hasAfternoon && <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm shadow-blue-200"></div>}
-                            {hasNight && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm shadow-indigo-200"></div>}
-                            {hasNightBeforeMorning && <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-sm shadow-green-200"></div>}
-                            {!hasMorning && !hasAfternoon && !hasNight && !hasNightBeforeMorning && (
-                              <div className="opacity-0 group-hover/cell:opacity-100 text-xs text-gray-300 transition-opacity">
-                                <Plus size={10} />
-                              </div>
-                            )}
-                          </div>
-                        </td>
+                        </Draggable>
                       );
                     })}
-                  </tr>
-                );
-              })}
-            </tbody>
+                    {provided.placeholder}
+                  </tbody>
+                )}
+              </Droppable>
+            </DragDropContext>
           </table>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { users } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
@@ -14,7 +14,7 @@ router.get('/public', async (_req, res) => {
       name: users.name,
       department: users.department,
       role: users.role
-    }).from(users);
+    }).from(users).orderBy(asc(users.sortOrder), asc(users.name));
     res.json(publicUsers);
   } catch (error) {
     console.error('Error fetching public users:', error);
@@ -25,7 +25,7 @@ router.get('/public', async (_req, res) => {
 // GET /api/users — fetch all users
 router.get('/', authenticateToken, async (_req, res) => {
   try {
-    const allUsers = await db.select().from(users);
+    const allUsers = await db.select().from(users).orderBy(asc(users.sortOrder), asc(users.name));
     res.json(allUsers);
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -48,6 +48,30 @@ router.post('/', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error creating user:', error);
     res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// PUT /api/users/reorder — update sort order
+router.put('/reorder', authenticateToken, async (req, res) => {
+  try {
+    const { updates } = req.body; // Expecting [{ id: string, sortOrder: number }]
+    if (!Array.isArray(updates)) {
+      return res.status(400).json({ error: 'Invalid payload' });
+    }
+
+    // Process updates sequentially or use transaction if needed
+    for (const update of updates) {
+      if (update.id && typeof update.sortOrder === 'number') {
+        await db.update(users)
+          .set({ sortOrder: update.sortOrder })
+          .where(eq(users.id, update.id));
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error reordering users:', error);
+    res.status(500).json({ error: 'Failed to reorder users' });
   }
 });
 

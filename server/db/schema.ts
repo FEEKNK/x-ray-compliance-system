@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, jsonb, boolean, timestamp, foreignKey, date } from "drizzle-orm/pg-core"
+import { pgTable, uuid, text, jsonb, boolean, timestamp, foreignKey, date, integer } from "drizzle-orm/pg-core"
 
 
 
@@ -89,6 +89,7 @@ export const users = pgTable("users", {
 	email: text().notNull(),
 	role: text().notNull(),
 	pinHash: text("pin_hash"),
+	sortOrder: integer("sort_order").default(0).notNull(),
 });
 
 export const alerts = pgTable("alerts", {
