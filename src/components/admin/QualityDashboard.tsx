@@ -79,7 +79,7 @@ const QualityDashboard: React.FC = () => {
   const [showColMenu, setShowColMenu] = useState(false);
   const [newColName, setNewColName] = useState('');
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'matrix' | 'list'>('matrix');
+  const [viewMode, setViewMode] = useState<'matrix' | 'list' | 'fails'>('matrix');
   const [searchTerm, setSearchTerm] = useState('');
   const colMenuRef = useRef<HTMLDivElement>(null);
 
@@ -884,6 +884,13 @@ const QualityDashboard: React.FC = () => {
                                   >
                                     <LayoutList size={14} />
                                   </button>
+                                  <button
+                                    onClick={() => setViewMode('fails')}
+                                    className={`p-1.5 rounded-md flex items-center justify-center transition-all ${viewMode === 'fails' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-400 hover:text-red-500'}`}
+                                    title="Failure Logs"
+                                  >
+                                    <AlertTriangle size={14} />
+                                  </button>
                                 </div>
 
                                 {/* Download Buttons */}
@@ -946,6 +953,31 @@ const QualityDashboard: React.FC = () => {
                                               )}
                                             </div>
                                           </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : viewMode === 'fails' ? (
+                                <div className="bg-white rounded-2xl border border-red-100 overflow-hidden">
+                                  <table className="w-full text-sm">
+                                    <thead className="bg-red-50/50">
+                                      <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-black text-red-400 uppercase tracking-widest">วันที่</th>
+                                        <th className="px-4 py-3 text-left text-xs font-black text-red-400 uppercase tracking-widest">รายการที่ Fail</th>
+                                        <th className="px-4 py-3 text-left text-xs font-black text-red-400 uppercase tracking-widest">รายละเอียด</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-red-50">
+                                      {detailSubs.flatMap(sub => 
+                                        Object.entries(sub.data)
+                                          .filter(([_, val]) => val === 'Fail' || val === 'Alert')
+                                          .map(([key, val]) => ({ sub, key, val }))
+                                      ).map((fail, i) => (
+                                        <tr key={i} className="hover:bg-red-50/30">
+                                          <td className="px-4 py-3 text-xs font-bold text-gray-700">{parseDbDate(fail.sub.submittedAt).toLocaleDateString()}</td>
+                                          <td className="px-4 py-3 text-xs font-bold text-gray-800">{forms.find(f => f.id === stat.id)?.questions.find(q => q.id === fail.key)?.label || fail.key}</td>
+                                          <td className="px-4 py-3"><StatusBadge status={String(fail.val)} /></td>
                                         </tr>
                                       ))}
                                     </tbody>
