@@ -19,7 +19,7 @@ export const SHIFT_START: Record<Shift, number> = {
 
 export const parseShiftStartHour = (shiftStr: string | undefined, fallback: number): number => {
   if (!shiftStr) return fallback;
-  const match = shiftStr.match(/^(\d{1,2}):(\d{2})/);
+  const match = shiftStr.match(/^(\d{1,2})[:.](\d{2})/);
   if (match) return parseInt(match[1], 10) + parseInt(match[2], 10) / 60;
   return fallback;
 };
@@ -53,7 +53,15 @@ export function getShiftStartTime(scheduleDate: string, shift: Shift, shiftsConf
                     shift === 'NightBeforeMorning' ? parseShiftStartHour(shiftsConfig?.NightBeforeMorning, SHIFT_START.NightBeforeMorning) :
                     parseShiftStartHour(shiftsConfig?.Night, SHIFT_START.Night);
 
-  return new Date(year, month - 1, day, startHour, 0, 0, 0);
+  const nightStartHour = parseShiftStartHour(shiftsConfig?.Night, SHIFT_START.Night);
+  const date = new Date(year, month - 1, day, startHour, 0, 0, 0);
+
+  // Adjust date for Night shifts that roll over midnight
+  if (nightStartHour >= 18 && startHour < 12 && (shift === 'Night' || shift === 'NightBeforeMorning')) {
+    date.setDate(date.getDate() + 1);
+  }
+
+  return date;
 }
 
 export function getShiftAllowStartTime(scheduleDate: string, shift: Shift, shiftsConfig?: Record<string, string>): Date {

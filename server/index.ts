@@ -365,8 +365,17 @@ app.post('/api/import-data', authenticateToken, requireAdmin, async (req, res) =
 // ============================================
 function parseShiftStartHour(timeRangeStr: string | undefined, defaultHour: number): number {
   if (!timeRangeStr) return defaultHour;
-  const match = timeRangeStr.match(/^(\d{1,2}):(\d{2})/);
+  const match = timeRangeStr.match(/^(\d{1,2})[:.](\d{2})/);
   if (!match) return defaultHour;
+  const hr = parseInt(match[1], 10);
+  const min = parseInt(match[2], 10);
+  return hr + (min / 60);
+}
+
+function parseShiftEndHour(timeRangeStr: string | undefined, defaultEnd: number): number {
+  if (!timeRangeStr) return defaultEnd;
+  const match = timeRangeStr.match(/-\s*(\d{1,2})[:.](\d{2})/);
+  if (!match) return defaultEnd;
   const hr = parseInt(match[1], 10);
   const min = parseInt(match[2], 10);
   return hr + (min / 60);
@@ -392,17 +401,14 @@ const runSLAJob = async () => {
     const shiftsConfig = settings?.shifts as { Morning?: string, Afternoon?: string, Night?: string, NightBeforeMorning?: string } | undefined;
 
     const shiftsList = [
-      { name: 'Morning', start: parseShiftStartHour(shiftsConfig?.Morning, 8), sla: slaHoursCfg.Morning ?? 1.5 },
-      { name: 'Afternoon', start: parseShiftStartHour(shiftsConfig?.Afternoon, 16), sla: slaHoursCfg.Afternoon ?? 1.5 },
-      { name: 'Night', start: parseShiftStartHour(shiftsConfig?.Night, 0), sla: slaHoursCfg.Night ?? 1.5 },
-      { name: 'NightBeforeMorning', start: parseShiftStartHour(shiftsConfig?.NightBeforeMorning, 4), sla: slaHoursCfg.NightBeforeMorning ?? 1.5 }
-    ].sort((a, b) => a.start - b.start);
+      { name: 'Morning', start: parseShiftStartHour(shiftsConfig?.Morning, 8), endStr: shiftsConfig?.Morning, defaultEnd: 16, sla: slaHoursCfg.Morning ?? 1.5 },
+      { name: 'Afternoon', start: parseShiftStartHour(shiftsConfig?.Afternoon, 16), endStr: shiftsConfig?.Afternoon, defaultEnd: 0, sla: slaHoursCfg.Afternoon ?? 1.5 },
+      { name: 'Night', start: parseShiftStartHour(shiftsConfig?.Night, 0), endStr: shiftsConfig?.Night, defaultEnd: 8, sla: slaHoursCfg.Night ?? 1.5 },
+      { name: 'NightBeforeMorning', start: parseShiftStartHour(shiftsConfig?.NightBeforeMorning, 4), endStr: shiftsConfig?.NightBeforeMorning, defaultEnd: 8, sla: slaHoursCfg.NightBeforeMorning ?? 1.5 }
+    ];
 
-    for (let i = 0; i < shiftsList.length; i++) {
-      const current = shiftsList[i];
-      const next = shiftsList[(i + 1) % shiftsList.length];
-      
-      let end = next.start;
+    for (const current of shiftsList) {
+      let end = parseShiftEndHour(current.endStr, current.defaultEnd);
       if (end <= current.start) {
         end += 24; // wraps around midnight
       }
@@ -412,6 +418,8 @@ const runSLAJob = async () => {
 
     const shiftsMap = new Map(shiftsList.map(s => [s.name, s]));
     const transporter = getTransporter();
+
+    const nightStartHour = parseShiftStartHour(shiftsConfig?.Night, 0);
 
     // ==========================================
     // 1. STAFF SLA REMINDER (During Shift)
@@ -426,6 +434,12 @@ const runSLAJob = async () => {
        if (!s) continue;
        
        const schedDate = new Date(`${sched.date}T00:00:00.000Z`);
+       
+       // Adjust date for Night shifts that roll over midnight
+       if (nightStartHour >= 18 && (s as any).start < 12 && (sched.shift === 'Night' || sched.shift === 'NightBeforeMorning')) {
+         schedDate.setDate(schedDate.getDate() + 1);
+       }
+       
        const deadlineTime = schedDate.getTime() + ((s as any).limit * 60 * 60 * 1000);
        const endTime = schedDate.getTime() + ((s as any).end * 60 * 60 * 1000);
        
@@ -501,6 +515,12 @@ const runSLAJob = async () => {
        if (!s) continue;
        
        const schedDate = new Date(`${sched.date}T00:00:00.000Z`);
+       
+       // Adjust date for Night shifts that roll over midnight
+       if (nightStartHour >= 18 && (s as any).start < 12 && (sched.shift === 'Night' || sched.shift === 'NightBeforeMorning')) {
+         schedDate.setDate(schedDate.getDate() + 1);
+       }
+       
        const endTime = schedDate.getTime() + ((s as any).end * 60 * 60 * 1000);
        
        if (now.getTime() >= endTime) {
