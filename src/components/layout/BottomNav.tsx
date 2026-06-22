@@ -13,7 +13,8 @@ import {
   X,
   ShieldCheck,
   LogOut,
-  Layers
+  Layers,
+  KeyRound
 } from 'lucide-react';
 
 
@@ -22,9 +23,10 @@ interface BottomNavProps {
   setActiveTab: (tab: string) => void;
   role: 'ADMIN' | 'STAFF';
   onLogout?: () => void;
+  onChangePassword?: () => void;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, role, onLogout }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, role, onLogout, onChangePassword }) => {
   const [showAdminMenu, setShowAdminMenu] = useState(false);
 
   const staffItems = [
@@ -118,16 +120,29 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, role, on
               })}
             </div>
 
-            {/* Logout Button */}
-            {onLogout && (
-              <button
-                onClick={() => { onLogout(); setShowAdminMenu(false); }}
-                className="mt-4 w-full flex items-center justify-center space-x-3 py-4 rounded-2xl bg-red-50 text-red-500 font-black text-sm hover:bg-red-100 active:scale-95 transition-all border border-red-100"
-              >
-                <LogOut size={18} />
-                <span>ออกจากระบบ</span>
-              </button>
-            )}
+            <div className="mt-6 space-y-3">
+              {/* Change Password Button */}
+              {onChangePassword && (
+                <button
+                  onClick={() => { onChangePassword(); setShowAdminMenu(false); }}
+                  className="w-full flex items-center justify-center space-x-3 py-3 rounded-2xl bg-amber-50 text-amber-600 font-black text-sm hover:bg-amber-100 active:scale-95 transition-all border border-amber-100"
+                >
+                  <KeyRound size={18} />
+                  <span>เปลี่ยนรหัสผ่าน</span>
+                </button>
+              )}
+
+              {/* Logout Button */}
+              {onLogout && (
+                <button
+                  onClick={() => { onLogout(); setShowAdminMenu(false); }}
+                  className="w-full flex items-center justify-center space-x-3 py-3 rounded-2xl bg-red-50 text-red-500 font-black text-sm hover:bg-red-100 active:scale-95 transition-all border border-red-100"
+                >
+                  <LogOut size={18} />
+                  <span>ออกจากระบบ</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

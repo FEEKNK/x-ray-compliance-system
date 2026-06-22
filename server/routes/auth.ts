@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { users } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -11,25 +11,22 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_development_on
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
-    const { userId, pin } = req.body;
+    const { loginId, pin } = req.body;
     
-    if (!userId || !pin) {
-      return res.status(400).json({ error: 'Missing userId or pin' });
+    if (!loginId || !pin) {
+      return res.status(400).json({ error: 'Missing loginId or pin' });
     }
 
-    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const [user] = await db.select().from(users).where(
+      or(eq(users.employeeId, loginId), eq(users.email, loginId))
+    ).limit(1);
     
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     if (!user.pinHash) {
-      // For backward compatibility before seed is updated
-      if (pin === user.employeeId) {
-        // Automatically hash and save if missing
-        const pinHash = await bcrypt.hash(pin, 10);
-        await db.update(users).set({ pinHash }).where(eq(users.id, user.id));
-      } else {
+      if (pin !== user.employeeId) {
         return res.status(401).json({ error: 'Invalid PIN' });
       }
     } else {
@@ -61,7 +58,9 @@ router.post('/login', async (req, res) => {
         department: user.department,
         role: user.role,
         email: user.email,
-        // Exclude employeeId and pinHash for security
+        employeeId: user.employeeId,
+        requirePasswordChange: user.requirePasswordChange,
+        // Exclude pinHash for security
       }
     });
 
@@ -75,6 +74,37 @@ router.post('/login', async (req, res) => {
 router.post('/logout', (req, res) => {
   res.clearCookie('xray_jwt_token');
   res.json({ success: true });
+});
+
+// POST /api/auth/change-password
+router.post('/change-password', async (req, res) => {
+  try {
+    const { userId, oldPassword, newPassword } = req.body;
+    
+    if (!userId || !newPassword) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Verify old password
+    if (user.pinHash && oldPassword) {
+      const isValid = await bcrypt.compare(oldPassword, user.pinHash);
+      if (!isValid) return res.status(401).json({ error: 'Invalid old password' });
+    } else if (!user.pinHash && oldPassword !== user.employeeId) {
+       return res.status(401).json({ error: 'Invalid old password' });
+    }
+
+    // Hash new password
+    const pinHash = await bcrypt.hash(newPassword, 10);
+    await db.update(users).set({ pinHash, requirePasswordChange: false }).where(eq(users.id, userId));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 export default router;

@@ -15,13 +15,16 @@ import {
 import logo from '../../assets/logo.svg';
 import type { Role } from '../../types';
 import { translations } from '../../i18n';
+import { KeyRound } from 'lucide-react';
+
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   role: Role;
+  onChangePassword?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role, onChangePassword }) => {
   const { language, setCurrentUser } = useApp();
   const t = translations[language];
 
@@ -79,7 +82,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
         </nav>
       </div>
 
-      <div className="mt-auto p-6 space-y-4">
+      <div className="mt-auto p-6 space-y-3">
+        {onChangePassword && (
+          <button 
+            onClick={onChangePassword}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl border border-gray-100 text-amber-500 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100 transition-all group"
+          >
+            <KeyRound size={20} className="group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-bold uppercase tracking-widest">Change Password</span>
+          </button>
+        )}
         <button 
           onClick={() => setCurrentUser(null)}
           className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl border border-gray-100 text-gray-400 hover:text-red-600 hover:bg-red-50 hover:border-red-100 transition-all group"

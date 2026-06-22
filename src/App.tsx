@@ -16,13 +16,15 @@ import BottomNav from './components/layout/BottomNav';
 import MonthlyDashboard from './components/admin/MonthlyDashboard';
 import BundleManager from './components/admin/BundleManager';
 import QualityDashboard from './components/admin/QualityDashboard';
-import { LogOut, UserCircle } from 'lucide-react';
+import { LogOut, UserCircle, KeyRound } from 'lucide-react';
 import GlobalLoader from './components/shared/GlobalLoader';
+import ForceChangePassword from './components/shared/ForceChangePassword';
 
 const AppContent: React.FC = () => {
   const { currentUser, setCurrentUser, isLoading, loadError } = useApp();
   const [activeTab, setActiveTab] = React.useState('dashboard');
   const [showNotice, setShowNotice] = React.useState(false);
+  const [showChangePassword, setShowChangePassword] = React.useState(false);
   const prevUserRef = React.useRef<string | null>(null);
 
   // Show popup whenever a NEW user logs in
@@ -54,7 +56,7 @@ const AppContent: React.FC = () => {
     <div className="flex h-screen bg-white md:bg-gray-50 overflow-hidden">
       {/* Sidebar for Desktop */}
       <div className="hidden md:flex h-full">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role={currentUser.role} />
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role={currentUser.role} onChangePassword={() => setShowChangePassword(true)} />
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -90,12 +92,22 @@ const AppContent: React.FC = () => {
 
                   <div className="bg-white rounded-3xl border border-gray-100 p-6 space-y-4 shadow-sm">
                     <button 
+                      onClick={() => setShowChangePassword(true)}
+                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-amber-50 text-amber-600 hover:bg-amber-100 font-bold transition-all active:scale-95"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <KeyRound size={20} />
+                        <span>เปลี่ยนรหัสผ่าน (Change Password)</span>
+                      </div>
+                    </button>
+                    
+                    <button 
                       onClick={() => setCurrentUser(null)}
-                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-red-50 text-red-600 font-bold transition-all active:scale-95"
+                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 font-bold transition-all active:scale-95"
                     >
                       <div className="flex items-center space-x-3">
                         <LogOut size={20} />
-                        <span>Exit Terminal</span>
+                        <span>ออกจากระบบ (Exit Terminal)</span>
                       </div>
                     </button>
                   </div>
@@ -106,7 +118,7 @@ const AppContent: React.FC = () => {
         </main>
 
         {/* Bottom Nav for Mobile */}
-        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} role={currentUser.role} onLogout={() => setCurrentUser(null)} />
+        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} role={currentUser.role} onLogout={() => setCurrentUser(null)} onChangePassword={() => setShowChangePassword(true)} />
       </div>
 
       {/* ── Notice Popup ── */}
@@ -175,6 +187,14 @@ const AppContent: React.FC = () => {
             }
           `}</style>
         </div>
+      )}
+
+      {/* ── Voluntary Change Password ── */}
+      {showChangePassword && (
+        <ForceChangePassword 
+          isVoluntary={true} 
+          onCancel={() => setShowChangePassword(false)} 
+        />
       )}
     </div>
   );

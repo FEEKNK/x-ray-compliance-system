@@ -6,7 +6,7 @@ import SubmissionDetailModal from '../shared/SubmissionDetailModal';
 import { translations } from '../../i18n';
 import type { Submission, DynamicForm, Schedule } from '../../types';
 import { getLockStatus, isSubmitAllowed } from '../../utils/shiftTime';
-import { FormRenderer } from './StaffDashboard';
+import { FormRenderer } from '../shared/FormRenderer';
 import { useForms, useSchedules, useSubmissions, useAddSubmission } from '../../hooks/queries';
 
 const StaffHistory: React.FC = () => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useUsers, useAddUser, useUpdateUser, useDeleteUser } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
-import { Mail, Building2, Tag, ShieldCheck, UserPlus, Trash2 } from 'lucide-react';
+import { Mail, Building2, Tag, ShieldCheck, UserPlus, Trash2, KeyRound } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { User } from '../../types';
 import { api } from '../../api';
@@ -18,6 +18,21 @@ const UserManagement: React.FC = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [testingEmailId, setTestingEmailId] = useState<string | null>(null);
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
+  const [isResetting, setIsResetting] = useState<string | null>(null);
+
+  const handleResetPassword = async (user: User) => {
+    if (confirm(`คุณแน่ใจหรือไม่ที่จะรีเซ็ตรหัสผ่านของ ${user.name} ให้เป็นรหัสพนักงาน?\n(ระบบจะบังคับให้เปลี่ยนรหัสผ่านเมื่อล็อกอินครั้งถัดไป)`)) {
+      setIsResetting(user.id);
+      try {
+        await api.users.resetPassword(user.id);
+        alert('รีเซ็ตรหัสผ่านสำเร็จ!');
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน');
+      } finally {
+        setIsResetting(null);
+      }
+    }
+  };
 
   const filteredUsers = React.useMemo(() => {
     if (selectedDept === 'ALL') return users;
@@ -156,6 +171,14 @@ const UserManagement: React.FC = () => {
                 className="flex-1 py-2 rounded-lg bg-gray-50 text-gray-500 text-xs font-black uppercase tracking-widest hover:bg-gray-100 transition-colors"
                >
                 {t.editProfile}
+               </button>
+               <button 
+                onClick={() => handleResetPassword(user)}
+                disabled={isResetting === user.id}
+                title="รีเซ็ตรหัสผ่าน (Reset Password)"
+                className="w-10 rounded-lg bg-gray-50 text-amber-500 hover:text-amber-600 hover:bg-amber-50 transition-all flex items-center justify-center disabled:opacity-50"
+               >
+                 <KeyRound size={16} />
                </button>
                <button 
                 onClick={() => {

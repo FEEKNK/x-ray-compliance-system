@@ -105,4 +105,20 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// POST /api/users/:id/reset-password — reset user password
+router.post('/:id/reset-password', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [updated] = await db.update(users)
+      .set({ pinHash: null, requirePasswordChange: true })
+      .where(eq(users.id, id as string))
+      .returning();
+    if (!updated) return res.status(404).json({ error: 'User not found' });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
 export default router;

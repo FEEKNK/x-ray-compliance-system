@@ -31,15 +31,21 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
 export const api = {
   // ─── Auth ─────────────────────────────────────────
   auth: {
-    login: (userId: string, pin: string): Promise<{ user: User }> =>
+    login: (loginId: string, pin: string): Promise<{ user: User }> =>
       apiFetch(`/auth/login`, {
         method: 'POST',
-        body: JSON.stringify({ userId, pin })
+        body: JSON.stringify({ loginId, pin })
       }).then(r => handleResponse(r)),
       
     logout: (): Promise<{ success: boolean }> =>
       apiFetch(`/auth/logout`, {
         method: 'POST'
+      }).then(r => handleResponse(r)),
+
+    changePassword: (userId: string, oldPassword: string, newPassword: string): Promise<{ success: boolean }> =>
+      apiFetch(`/auth/change-password`, {
+        method: 'POST',
+        body: JSON.stringify({ userId, oldPassword, newPassword })
       }).then(r => handleResponse(r)),
   },
 
@@ -70,6 +76,11 @@ export const api = {
       apiFetch(`/users/reorder`, {
         method: 'PUT',
         body: JSON.stringify({ updates }),
+      }).then(r => handleResponse(r)),
+
+    resetPassword: (id: string): Promise<{ success: boolean }> =>
+      apiFetch(`/users/${id}/reset-password`, {
+        method: 'POST'
       }).then(r => handleResponse(r)),
   },
 

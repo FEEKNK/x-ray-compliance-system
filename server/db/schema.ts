@@ -89,6 +89,7 @@ export const users = pgTable("users", {
 	email: text().notNull(),
 	role: text().notNull(),
 	pinHash: text("pin_hash"),
+	requirePasswordChange: boolean("require_password_change").default(true).notNull(),
 	sortOrder: integer("sort_order").default(0).notNull(),
 });
 
