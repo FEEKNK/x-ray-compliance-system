@@ -971,7 +971,7 @@ const QualityDashboard: React.FC = () => {
                                     <tbody className="divide-y divide-red-50">
                                       {detailSubs.flatMap(sub => 
                                         Object.entries(sub.data)
-                                          .filter(([_, val]) => val === 'Fail' || val === 'Alert' || val === false || val === 'no')
+                                          .filter((entry) => entry[1] === 'Fail' || entry[1] === 'Alert' || entry[1] === false || entry[1] === 'no')
                                           .map(([key, val]) => {
                                             const otherVal = sub.data[`${key}_other`];
                                             const detail = otherVal ? String(otherVal) : String(val);

@@ -614,7 +614,7 @@ const Settings: React.FC = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
                     <span className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Created At</span>
-                    <span className="text-sm font-bold text-gray-800">{new Date(previewPayload.exportedAt || Date.now()).toLocaleDateString()}</span>
+                    <span className="text-sm font-bold text-gray-800">{previewPayload.exportedAt ? new Date(previewPayload.exportedAt).toLocaleDateString() : '—'}</span>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
                     <span className="text-xs text-gray-500 uppercase tracking-widest block mb-1">Users</span>

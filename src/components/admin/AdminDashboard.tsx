@@ -14,7 +14,7 @@ const AdminDashboard: React.FC = () => {
   const { data: forms = [] } = useForms();
   const { data: schedules = [] } = useSchedules();
   const { data: submissionsData } = useSubmissions();
-  const submissions = submissionsData?.data || [];
+  const submissions = React.useMemo(() => submissionsData?.data || [], [submissionsData?.data]);
   const getCompletionRate = React.useCallback((date: string, department?: string) => {
       let dailySchedules = schedules.filter(s => s.date === date);
       if (department) {
@@ -41,8 +41,7 @@ const AdminDashboard: React.FC = () => {
   const completed = dailySchedules.filter(s => s.status === 'Completed').length;
 
   // Dynamic Critical Alerts from Submissions (Filtered for today and selected department)
-  const criticalSubmissionItems = React.useMemo(() => {
-    return submissions.filter(sub => {
+  const criticalSubmissionItems = submissions.filter(sub => {
       const isDaily = dailySchedules.some(s => s.id === sub.scheduleId);
       return isDaily && Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert');
     }).map(sub => {
@@ -51,8 +50,8 @@ const AdminDashboard: React.FC = () => {
       const form = forms.find(f => f.id === schedule?.formId);
       
       const failedFields = Object.entries(sub.data)
-        .filter(([_, v]) => v === 'Fail' || v === 'Alert')
-        .map(([k, _]) => {
+        .filter((entry) => entry[1] === 'Fail' || entry[1] === 'Alert')
+        .map(([k]) => {
           let label = k;
           if (form) {
             const q = form.questions?.find(q => q.id === k);
@@ -74,7 +73,6 @@ const AdminDashboard: React.FC = () => {
         failedFields
       };
     });
-  }, [submissions, dailySchedules, users, forms]);
 
   const criticalSubmissions = criticalSubmissionItems.length;
 
@@ -106,7 +104,7 @@ const AdminDashboard: React.FC = () => {
     });
 
   // Overdue: Pending schedules whose submission deadline has already passed
-  const overdueItems = React.useMemo(() => {
+  const overdueItems = (() => {
     const now = new Date();
     return dailySchedules
       .filter(s => s.status === 'Pending')
@@ -124,7 +122,7 @@ const AdminDashboard: React.FC = () => {
         const form = forms.find(f => f.id === s.formId);
         return { scheduleId: s.id, staffName: staff?.name || '—', formTitle: form?.title || '—', shift: s.shift, location: s.location || '—' };
       });
-  }, [dailySchedules, users, forms, settings]);
+  })();
 
   const runComplianceAudit = () => {
     const overdue = dailySchedules.filter(s => s.status === 'Pending');

@@ -75,6 +75,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Initial fetch and fetch when currentUser changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchConfig();
   }, [currentUser?.id, fetchConfig]);
 

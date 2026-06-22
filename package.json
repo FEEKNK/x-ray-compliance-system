@@ -37,6 +37,7 @@
     "recharts": "^3.8.1",
     "tailwind-merge": "^3.6.0",
     "tsx": "^4.22.3",
+    "winston": "^3.19.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

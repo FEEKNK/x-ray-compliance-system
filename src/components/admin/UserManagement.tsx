@@ -26,7 +26,7 @@ const UserManagement: React.FC = () => {
       try {
         await api.users.resetPassword(user.id);
         alert('รีเซ็ตรหัสผ่านสำเร็จ!');
-      } catch (err) {
+      } catch {
         alert('เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน');
       } finally {
         setIsResetting(null);

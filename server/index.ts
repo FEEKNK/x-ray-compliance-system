@@ -1,4 +1,5 @@
 import express from 'express';
+import { logger } from './logger';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 import path from 'path';
@@ -7,7 +8,7 @@ import { fileURLToPath } from 'url';
 // Load the environment variables from the root directory
 dotenv.config({ path: '../.env' });
 
-console.log('[Startup] Loading database schema...');
+logger.info('[Startup] Loading database schema...');
 
 import { db } from './db';
 import { schedules, forms, users, config, submissions, alerts, bundles } from './db/schema';
@@ -28,7 +29,7 @@ function getBangkokDateStr(d?: Date): string {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
 }
 
-console.log('[Startup] Setting up Express app...');
+logger.info('[Startup] Setting up Express app...');
 
 // Import route handlers
 import usersRouter from './routes/users';
@@ -131,8 +132,8 @@ app.post('/api/test-sla-now', authenticateToken, requireAdmin, async (_req, res)
         : '<li style="padding:5px 0;">(ไม่มีแบบฟอร์มระบุ)</li>';
 
       const safeStaffName = escapeHtml(staff.name);
-      console.log(`[Test SLA] 👤 Staff: ${staff.name} | email in DB: "${staff.email}" | Supervisor: "${supervisorEmail}"`);
-      console.log(`[Test SLA] 📤 Final toList: "${toList}"`);
+      logger.info(`[Test SLA] 👤 Staff: ${staff.name} | email in DB: "${staff.email}" | Supervisor: "${supervisorEmail}"`);
+      logger.info(`[Test SLA] 📤 Final toList: "${toList}"`);
 
       await transporter.sendMail({
         from: `"Imaging Alert System (TEST)" <${process.env.GMAIL_USER}>`,
@@ -155,13 +156,13 @@ app.post('/api/test-sla-now', authenticateToken, requireAdmin, async (_req, res)
       });
 
       results.push(`✅ ส่งถึง ${staff.name} (${toList})`);
-      console.log(`[Test SLA] ✅ Sent to ${staff.name} — ${toList}`);
+      logger.info(`[Test SLA] ✅ Sent to ${staff.name} — ${toList}`);
     }
 
     res.json({ success: true, sent: results, total: results.length });
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err));
-    console.error('[Test SLA] ❌ Error:', error.message);
+    logger.error('[Test SLA] ❌ Error:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -178,7 +179,7 @@ app.post('/api/reset-data', authenticateToken, requireAdmin, async (_req, res) =
     await db.delete(bundles);
     res.json({ success: true, message: 'All submissions, schedules, alerts, and bundles have been cleared.' });
   } catch (error) {
-    console.error('Error resetting data:', error);
+    logger.error('Error resetting data:', error);
     res.status(500).json({ error: 'Failed to reset data' });
   }
 });
@@ -202,7 +203,7 @@ app.post('/api/test-email', authenticateToken, async (req, res) => {
     res.json({ success: true, messageId: info.messageId });
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err));
-    console.error('Error sending test email:', error);
+    logger.error('Error sending test email:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -252,7 +253,7 @@ app.post('/api/send-reminder-email', authenticateToken, async (req, res) => {
     res.json({ success: true, messageId: info.messageId });
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err));
-    console.error('Error sending reminder email:', error);
+    logger.error('Error sending reminder email:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -281,7 +282,7 @@ app.get('/api/export-data', authenticateToken, requireAdmin, async (_req, res) =
       config: allConfig
     });
   } catch (error) {
-    console.error('Error exporting data:', error);
+    logger.error('Error exporting data:', error);
     res.status(500).json({ error: 'Failed to export data' });
   }
 });
@@ -356,7 +357,7 @@ app.post('/api/import-data', authenticateToken, requireAdmin, async (req, res) =
 
     res.json({ success: true, message: 'Database imported successfully' });
   } catch (error) {
-    console.error('Error importing data:', error);
+    logger.error('Error importing data:', error);
     res.status(500).json({ error: 'Failed to import data: ' + (error instanceof Error ? error.message : String(error)) });
   }
 });
@@ -391,7 +392,7 @@ const runSLAJob = async () => {
     const currentDecimalHour = currentHour + (now.getUTCMinutes() / 60);
     const todayStr = getBangkokDateStr(now);
     
-    console.log(`[SLA Job] ⏰ Running at ${currentHour}:${String(now.getUTCMinutes()).padStart(2,'0')} BKK (${currentDecimalHour.toFixed(2)} decimal) | Date: ${todayStr}`);
+    logger.info(`[SLA Job] ⏰ Running at ${currentHour}:${String(now.getUTCMinutes()).padStart(2,'0')} BKK (${currentDecimalHour.toFixed(2)} decimal) | Date: ${todayStr}`);
     
     // Fetch config first to get SLA hours and emails
     const sysConfig = await db.select().from(config).limit(1);
@@ -402,10 +403,10 @@ const runSLAJob = async () => {
     const shiftsConfig = settings?.shifts as { Morning?: string, Afternoon?: string, Night?: string, NightBeforeMorning?: string } | undefined;
 
     const shiftsList = [
-      { name: 'Morning', start: parseShiftStartHour(shiftsConfig?.Morning, 8), endStr: shiftsConfig?.Morning, defaultEnd: 16, sla: slaHoursCfg.Morning ?? 1.5 },
-      { name: 'Afternoon', start: parseShiftStartHour(shiftsConfig?.Afternoon, 16), endStr: shiftsConfig?.Afternoon, defaultEnd: 0, sla: slaHoursCfg.Afternoon ?? 1.5 },
-      { name: 'Night', start: parseShiftStartHour(shiftsConfig?.Night, 0), endStr: shiftsConfig?.Night, defaultEnd: 8, sla: slaHoursCfg.Night ?? 1.5 },
-      { name: 'NightBeforeMorning', start: parseShiftStartHour(shiftsConfig?.NightBeforeMorning, 4), endStr: shiftsConfig?.NightBeforeMorning, defaultEnd: 8, sla: slaHoursCfg.NightBeforeMorning ?? 1.5 }
+      { name: 'Morning', start: parseShiftStartHour(shiftsConfig?.Morning, 8), endStr: shiftsConfig?.Morning, defaultEnd: 16, sla: slaHoursCfg.Morning ?? 1.5, end: 0, limit: 0 },
+      { name: 'Afternoon', start: parseShiftStartHour(shiftsConfig?.Afternoon, 16), endStr: shiftsConfig?.Afternoon, defaultEnd: 0, sla: slaHoursCfg.Afternoon ?? 1.5, end: 0, limit: 0 },
+      { name: 'Night', start: parseShiftStartHour(shiftsConfig?.Night, 0), endStr: shiftsConfig?.Night, defaultEnd: 8, sla: slaHoursCfg.Night ?? 1.5, end: 0, limit: 0 },
+      { name: 'NightBeforeMorning', start: parseShiftStartHour(shiftsConfig?.NightBeforeMorning, 4), endStr: shiftsConfig?.NightBeforeMorning, defaultEnd: 8, sla: slaHoursCfg.NightBeforeMorning ?? 1.5, end: 0, limit: 0 }
     ];
 
     for (const current of shiftsList) {
@@ -413,8 +414,8 @@ const runSLAJob = async () => {
       if (end <= current.start) {
         end += 24; // wraps around midnight
       }
-      (current as any).end = end;
-      (current as any).limit = current.start + current.sla;
+      current.end = end;
+      current.limit = current.start + current.sla;
     }
 
     const shiftsMap = new Map(shiftsList.map(s => [s.name, s]));
@@ -441,12 +442,12 @@ const runSLAJob = async () => {
        const schedDate = new Date(`${sched.date}T00:00:00.000Z`);
        
        // Adjust date for Night shifts that roll over midnight
-       if (nightStartHour >= 18 && (s as any).start < 12 && (sched.shift === 'Night' || sched.shift === 'NightBeforeMorning')) {
+       if (nightStartHour >= 18 && s.start < 12 && (sched.shift === 'Night' || sched.shift === 'NightBeforeMorning')) {
          schedDate.setDate(schedDate.getDate() + 1);
        }
        
-       const deadlineTime = schedDate.getTime() + ((s as any).limit * 60 * 60 * 1000);
-       const endTime = schedDate.getTime() + ((s as any).end * 60 * 60 * 1000);
+       const deadlineTime = schedDate.getTime() + (s.limit * 60 * 60 * 1000);
+       const endTime = schedDate.getTime() + (s.end * 60 * 60 * 1000);
        
        if (now.getTime() >= deadlineTime && now.getTime() < endTime) {
           staffToAlert.push(sched);
@@ -454,7 +455,7 @@ const runSLAJob = async () => {
     }
 
     if (staffToAlert.length > 0) {
-      console.log(`[SLA Job] 📋 Pending schedules for STAFF SLA: ${staffToAlert.length} found`);
+      logger.info(`[SLA Job] 📋 Pending schedules for STAFF SLA: ${staffToAlert.length} found`);
       const staffGroup: Record<string, { staffId: string, formIds: string[], scheduleIds: string[], shift: string }> = {};
       for (const s of staffToAlert) {
         if (!staffGroup[s.staffId]) staffGroup[s.staffId] = { staffId: s.staffId, formIds: [], scheduleIds: [], shift: s.shift };
@@ -502,7 +503,7 @@ const runSLAJob = async () => {
         await db.update(schedules)
           .set({ slaAlertSent: true })
           .where(inArray(schedules.id, group.scheduleIds));
-        console.log(`[SLA Job] ✅ Staff Reminder sent to ${staff.email} for schedules: ${group.scheduleIds.join(', ')}`);
+        logger.info(`[SLA Job] ✅ Staff Reminder sent to ${staff.email} for schedules: ${group.scheduleIds.join(', ')}`);
       }
     }
 
@@ -526,11 +527,11 @@ const runSLAJob = async () => {
        const schedDate = new Date(`${sched.date}T00:00:00.000Z`);
        
        // Adjust date for Night shifts that roll over midnight
-       if (nightStartHour >= 18 && (s as any).start < 12 && (sched.shift === 'Night' || sched.shift === 'NightBeforeMorning')) {
+       if (nightStartHour >= 18 && s.start < 12 && (sched.shift === 'Night' || sched.shift === 'NightBeforeMorning')) {
          schedDate.setDate(schedDate.getDate() + 1);
        }
        
-       const endTime = schedDate.getTime() + ((s as any).end * 60 * 60 * 1000);
+       const endTime = schedDate.getTime() + (s.end * 60 * 60 * 1000);
        
        if (now.getTime() >= endTime) {
           supToAlert.push(sched);
@@ -538,7 +539,7 @@ const runSLAJob = async () => {
     }
 
     if (supToAlert.length > 0 && supervisorEmail) {
-      console.log(`[SLA Job] 📋 Shift-End Overdue tasks: ${supToAlert.length} found`);
+      logger.info(`[SLA Job] 📋 Shift-End Overdue tasks: ${supToAlert.length} found`);
       
       // Group by shift to send one summary per shift
       const shiftGroups: Record<string, typeof supervisorPending> = {};
@@ -595,12 +596,12 @@ const runSLAJob = async () => {
         await db.update(schedules)
           .set({ supervisorAlertSent: true })
           .where(inArray(schedules.id, schedIds));
-        console.log(`[SLA Job] ✅ Shift-End Summary sent to ${toList} for ${scheds.length} schedules.`);
+        logger.info(`[SLA Job] ✅ Shift-End Summary sent to ${toList} for ${scheds.length} schedules.`);
       }
     }
 
   } catch (err: unknown) {
-    console.error('[SLA Job] ❌ Error in background job:', err instanceof Error ? err.message : String(err));
+    logger.error('[SLA Job] ❌ Error in background job:', err instanceof Error ? err.message : String(err));
   }
 };
 
@@ -662,7 +663,7 @@ const runWeeklyBackupJob = async () => {
              }
            ]
          });
-         console.log(`[Backup Job] ✅ Weekly backup sent to ${supervisorEmail}`);
+         logger.info(`[Backup Job] ✅ Weekly backup sent to ${supervisorEmail}`);
        }
 
        // Update lastAutoBackupDate
@@ -671,7 +672,7 @@ const runWeeklyBackupJob = async () => {
        });
     }
   } catch (err) {
-    console.error('[Backup Job] ❌ Error:', err);
+    logger.error('[Backup Job] ❌ Error:', err);
   }
 };
 
@@ -680,7 +681,7 @@ setInterval(runWeeklyBackupJob, 5 * 60 * 1000);
 // Endpoint to trigger SLA job immediately (called by frontend when settings are saved)
 app.post('/api/trigger-sla', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    console.log('[API] Manual SLA trigger requested');
+    logger.info('[API] Manual SLA trigger requested');
     await runSLAJob();
     res.json({ success: true, message: 'SLA job triggered immediately' });
   } catch (error) {
@@ -712,28 +713,28 @@ app.use((_req, res) => {
 // ============================================
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('[Global Error]', err);
+  logger.error('[Global Error]', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
 try {
   if (!process.env.DATABASE_URL) {
-    console.error('❌ CRITICAL ERROR: DATABASE_URL environment variable is missing!');
+    logger.error('❌ CRITICAL ERROR: DATABASE_URL environment variable is missing!');
     process.exit(1);
   }
   
   if (!process.env.JWT_SECRET) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('❌ CRITICAL ERROR: JWT_SECRET environment variable is required in production!');
+      logger.error('❌ CRITICAL ERROR: JWT_SECRET environment variable is required in production!');
       process.exit(1);
     }
-    console.warn('⚠️ WARNING: JWT_SECRET environment variable is missing, using fallback (dev only).');
+    logger.warn('⚠️ WARNING: JWT_SECRET environment variable is missing, using fallback (dev only).');
   }
 
   app.listen(PORT, () => {
-    console.log(`✅ Server is running on port ${PORT}`);
+    logger.info(`✅ Server is running on port ${PORT}`);
   });
 } catch (e) {
-  console.error('❌ CRITICAL ERROR during startup:', e);
+  logger.error('❌ CRITICAL ERROR during startup:', e);
   process.exit(1);
 }

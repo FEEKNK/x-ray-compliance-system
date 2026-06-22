@@ -94,7 +94,7 @@ router.post('/', async (req, res) => {
     const isAdhoc = scheduleId && String(scheduleId).startsWith('manual-');
     const dbScheduleId = isAdhoc ? null : (scheduleId || null);
 
-    let newSubmission: any;
+    let newSubmission: Record<string, unknown> | undefined;
 
     if (dbScheduleId) {
       const existing = await db.select().from(submissions).where(eq(submissions.scheduleId, dbScheduleId)).limit(1);

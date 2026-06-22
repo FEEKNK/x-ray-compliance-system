@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../../AppContext';
 import { 
   Clock, 
@@ -14,8 +14,8 @@ import { FormRenderer } from '../shared/FormRenderer';
 
 /** Live countdown: re-renders every second until deadline */
 function useCountdown(scheduleDate: string, shift: import('../../types').Shift, lockoutHours?: Record<string, number>, shiftsConfig?: Record<string, string>) {
-  const [now, setNow] = React.useState(() => new Date());
-  React.useEffect(() => {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
@@ -225,16 +225,15 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
   const lockoutHours = settings?.lockoutHours as Record<string, number> | undefined;
   const shiftsConfig = settings?.shifts as Record<string, string> | undefined;
   const isCompleted = s.status === 'Completed';
-  const lockStatus = getLockStatus(s.date, s.shift, lockoutHours, shiftsConfig);
   const cd = useCountdown(s.date, s.shift, lockoutHours, shiftsConfig);
 
   return (
     <div 
       className={`${fullWidth ? 'w-full' : 'min-w-[280px] md:min-w-[320px]'} snap-start p-6 rounded-3xl border-2 transition-all flex flex-col justify-between ${
-        lockStatus.isLocked
-          ? (lockStatus.isEarly ? 'bg-orange-50/60 border-orange-100 opacity-80' : 'bg-red-50/60 border-red-100 opacity-80')
-          : isCompleted 
-          ? 'bg-gray-50 border-gray-100 opacity-70' 
+        isCompleted
+          ? 'bg-green-50/60 border-green-200 opacity-80'
+          : cd.isLocked
+          ? (cd.isEarly ? 'bg-orange-50/60 border-orange-100 opacity-80' : 'bg-red-50/60 border-red-100 opacity-80')
           : 'bg-white border-[#00468B]/10 shadow-lg shadow-blue-900/5'
       }`}
     >
@@ -247,7 +246,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
               s.shift === 'NightBeforeMorning' ? 'bg-green-50 text-green-600' :
               'bg-indigo-50 text-indigo-600'
             }`}>{s.shift}</span>
-            {isCompleted && !cd.isLocked && <CheckCircle2 className="text-green-500" size={16} />}
+            {isCompleted && <CheckCircle2 className="text-green-500" size={16} />}
         </div>
         <h4 className="font-bold text-gray-800 text-lg leading-tight line-clamp-2">{form?.title}</h4>
 
@@ -272,18 +271,20 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
               <TrendingUpIcon className="mr-1" /> {s.location || 'N/A'}
           </div>
         </div>
-        {cd.isLocked ? (
+        {isCompleted ? (
+          <span className="px-5 py-2 rounded-xl text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+            ✓ {t.completed || 'เสร็จแล้ว'}
+          </span>
+        ) : cd.isLocked ? (
           <span className={`px-5 py-2 rounded-xl text-xs font-bold ${cd.isEarly ? 'bg-orange-50 text-orange-400 border border-orange-100' : 'bg-red-50 text-red-400 border border-red-100'}`}>
             {cd.isEarly ? 'ยังไม่ถึงเวลา' : (t.notDone || 'ไม่ได้ทำ')}
           </span>
         ) : (
           <button 
             onClick={onAudit}
-            className={`px-5 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all ${
-              isCompleted ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'bg-[#00468B] text-white'
-            }`}
+            className="px-5 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all bg-[#00468B] text-white"
           >
-            {isCompleted ? (t.edit || 'แก้ไข') : 'Audit Now'}
+            Audit Now
           </button>
         )}
       </div>

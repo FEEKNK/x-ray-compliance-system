@@ -9,6 +9,7 @@ vi.mock('../../db', () => {
     db: {
       select: vi.fn().mockReturnThis(),
       from: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
       where: vi.fn(),
       insert: vi.fn().mockReturnThis(),
       values: vi.fn().mockReturnThis(),
@@ -43,7 +44,9 @@ describe('Users API', () => {
     
     // Setup db chain mock
     (db.select as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      from: vi.fn().mockResolvedValue(mockUsers)
+      from: vi.fn().mockReturnValue({
+        orderBy: vi.fn().mockResolvedValue(mockUsers)
+      })
     });
 
     const res = await request(app).get('/api/users');

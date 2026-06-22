@@ -13,7 +13,7 @@ vi.mock('./api', () => ({
     submissions: { getAll: vi.fn() },
     bundles: { getAll: vi.fn() },
     alerts: { getAll: vi.fn() },
-    config: { get: vi.fn() },
+    config: { get: vi.fn(), getPublic: vi.fn() },
   }
 }));
 
@@ -41,6 +41,10 @@ describe('AppContext', () => {
     (api.bundles.getAll as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (api.alerts.getAll as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (api.config.get as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      settings: { hospitalName: "Mock Hospital" },
+      announcements: []
+    });
+    (api.config.getPublic as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       settings: { hospitalName: "Mock Hospital" },
       announcements: []
     });
