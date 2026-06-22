@@ -11,7 +11,7 @@ console.log('[Startup] Loading database schema...');
 
 import { db } from './db';
 import { schedules, forms, users, config, submissions, alerts, bundles } from './db/schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, isNotNull } from 'drizzle-orm';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 import { getTransporter, escapeHtml } from './services/email';
 
@@ -94,7 +94,8 @@ app.post('/api/test-sla-now', authenticateToken, requireAdmin, async (_req, res)
       .where(
         and(
           eq(schedules.date, todayStr),
-          eq(schedules.status, 'Pending')
+          eq(schedules.status, 'Pending'),
+          isNotNull(schedules.formId)
         )
       );
 
@@ -425,7 +426,11 @@ const runSLAJob = async () => {
     // 1. STAFF SLA REMINDER (During Shift)
     // ==========================================
     const staffPending = await db.select().from(schedules).where(
-      and(eq(schedules.status, 'Pending'), eq(schedules.slaAlertSent, false))
+      and(
+        eq(schedules.status, 'Pending'),
+        eq(schedules.slaAlertSent, false),
+        isNotNull(schedules.formId)
+      )
     );
     
     const staffToAlert: typeof staffPending = [];
@@ -506,7 +511,11 @@ const runSLAJob = async () => {
     // ==========================================
     // Send only to supervisor (and escalation) when the shift is completely OVER
     const supervisorPending = await db.select().from(schedules).where(
-      and(eq(schedules.status, 'Pending'), eq(schedules.supervisorAlertSent, false))
+      and(
+        eq(schedules.status, 'Pending'),
+        eq(schedules.supervisorAlertSent, false),
+        isNotNull(schedules.formId)
+      )
     );
     
     const supToAlert: typeof supervisorPending = [];
