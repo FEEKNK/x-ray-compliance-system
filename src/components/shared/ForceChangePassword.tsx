@@ -119,7 +119,7 @@ export default function ForceChangePassword({ onCancel, isVoluntary }: { onCance
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-black text-gray-400 uppercase tracking-wider mb-2">
-                รหัสผ่านเดิม (รหัสพนักงาน)
+                รหัสผ่านเดิม
               </label>
               <input
                 type="password"

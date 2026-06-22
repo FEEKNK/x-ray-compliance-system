@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../AppContext';
 import type { User } from '../../types';
 import { usePublicUsers } from '../../hooks/queries';
-import { Clock, User as UserIcon } from 'lucide-react';
+import { Clock, User as UserIcon, KeyRound, LogOut } from 'lucide-react';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onChangePassword?: () => void;
+  onLogout?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onChangePassword, onLogout }) => {
   const { currentUser, setCurrentUser, language, setLanguage } = useApp();
   const { data: users = [] } = usePublicUsers();
   const [time, setTime] = useState(new Date());
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -91,15 +97,47 @@ const Header: React.FC = () => {
             </select>
           </div>
           
-          {/* Desktop profile chip */}
-          <div className="hidden md:flex items-center space-x-3 pl-4 border-l border-gray-100">
-            <div className="text-right">
-              <p className="text-xs font-bold text-[#00468B] leading-none mb-1">{currentUser?.name}</p>
-              <p className="text-xs text-gray-400 font-medium leading-none">{currentUser?.department}</p>
-            </div>
-            <div className="w-10 h-10 rounded-2xl bg-blue-100 border-2 border-white shadow-sm flex items-center justify-center text-[#00468B] font-bold overflow-hidden">
-               {currentUser?.name.charAt(0)}
-            </div>
+          {/* Profile Menu */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center space-x-3 pl-4 border-l border-gray-100 focus:outline-none"
+            >
+              <div className="hidden md:block text-right">
+                <p className="text-xs font-bold text-[#00468B] leading-none mb-1">{currentUser?.name}</p>
+                <p className="text-xs text-gray-400 font-medium leading-none">{currentUser?.department}</p>
+              </div>
+              <div className="w-10 h-10 rounded-2xl bg-blue-100 border-2 border-white shadow-sm flex items-center justify-center text-[#00468B] font-bold overflow-hidden">
+                 {currentUser?.name.charAt(0)}
+              </div>
+            </button>
+
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 py-2 animate-in fade-in slide-in-from-top-2">
+                <div className="md:hidden px-4 py-3 border-b border-gray-50 mb-2">
+                  <p className="font-bold text-[#00468B] text-sm">{currentUser?.name}</p>
+                  <p className="text-xs text-gray-400 font-medium">{currentUser?.department}</p>
+                </div>
+                {onChangePassword && (
+                  <button 
+                    onClick={() => { setShowProfileMenu(false); onChangePassword(); }}
+                    className="w-full px-4 py-3 flex items-center space-x-3 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <KeyRound size={16} className="text-gray-400" />
+                    <span>เปลี่ยนรหัสผ่าน</span>
+                  </button>
+                )}
+                {onLogout && (
+                  <button 
+                    onClick={() => { setShowProfileMenu(false); onLogout(); }}
+                    className="w-full px-4 py-3 flex items-center space-x-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut size={16} className="text-red-400" />
+                    <span>ออกจากระบบ</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

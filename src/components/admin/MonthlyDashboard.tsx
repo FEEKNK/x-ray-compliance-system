@@ -328,18 +328,18 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
             </button>
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[65vh] relative">
           <table className="w-full border-collapse min-w-[800px]">
             <thead>
-              <tr className="bg-gray-50/50">
-                <th className="sticky left-0 z-20 bg-white p-5 text-left border-b border-r border-gray-100 min-w-[200px] shadow-[4px_0_12px_rgba(0,0,0,0.02)]">
+              <tr>
+                <th className="sticky top-0 left-0 z-30 bg-white p-5 text-left border-b border-r border-gray-100 min-w-[200px] shadow-[4px_4px_12px_rgba(0,0,0,0.02)]">
                   <div className="flex items-center space-x-2">
                     <User size={14} className="text-[#00468B]" />
                     <span className="text-xs font-black text-gray-400 uppercase tracking-widest">พนักงาน (Staff)</span>
                   </div>
                 </th>
                 {Array.from({ length: daysInMonth }).map((_, i) => (
-                  <th key={i} className="p-3 border-b border-gray-100 min-w-[40px] text-center">
+                  <th key={i} className="sticky top-0 z-20 bg-gray-50 p-3 border-b border-gray-100 min-w-[40px] text-center shadow-[0_4px_12px_rgba(0,0,0,0.02)]">
                     <span className="text-xs font-black text-gray-500">{i + 1}</span>
                   </th>
                 ))}
@@ -397,18 +397,18 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
             </div>
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[65vh] relative">
           <table className="w-full border-collapse min-w-[800px]">
             <thead>
-              <tr className="bg-gray-50/50">
-                <th className="sticky left-0 z-20 bg-white p-5 text-left border-b border-r border-gray-100 min-w-[200px] shadow-[4px_0_12px_rgba(0,0,0,0.02)]">
+              <tr>
+                <th className="sticky top-0 left-0 z-30 bg-white p-5 text-left border-b border-r border-gray-100 min-w-[200px] shadow-[4px_4px_12px_rgba(0,0,0,0.02)]">
                   <div className="flex items-center space-x-2">
                     <FileText size={14} className="text-indigo-600" />
                     <span className="text-xs font-black text-gray-400 uppercase tracking-widest">แบบฟอร์ม (Form)</span>
                   </div>
                 </th>
                 {Array.from({ length: daysInMonth }).map((_, i) => (
-                  <th key={i} className="p-3 border-b border-gray-100 min-w-[40px] text-center">
+                  <th key={i} className="sticky top-0 z-20 bg-gray-50 p-3 border-b border-gray-100 min-w-[40px] text-center shadow-[0_4px_12px_rgba(0,0,0,0.02)]">
                     <span className="text-xs font-black text-gray-500">{i + 1}</span>
                   </th>
                 ))}
