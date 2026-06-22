@@ -77,7 +77,7 @@ const StaffDashboard: React.FC = () => {
   const today = getLocalTodayStr();
   
   const mySchedules = currentUser 
-    ? schedules.filter(s => s.staffId === currentUser.id && s.date === today).sort((a, b) => {
+    ? schedules.filter(s => s.staffId === currentUser.id && s.date === today && s.formId).sort((a, b) => {
         const getPriority = (schedule: Schedule) => {
            const lock = getLockStatus(schedule.date, schedule.shift, lockoutHours, shiftsConfig);
            if (!lock.isLocked) {

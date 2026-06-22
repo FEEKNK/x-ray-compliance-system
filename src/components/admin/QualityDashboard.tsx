@@ -971,13 +971,21 @@ const QualityDashboard: React.FC = () => {
                                     <tbody className="divide-y divide-red-50">
                                       {detailSubs.flatMap(sub => 
                                         Object.entries(sub.data)
-                                          .filter(([_, val]) => val === 'Fail' || val === 'Alert')
-                                          .map(([key, val]) => ({ sub, key, val }))
+                                          .filter(([_, val]) => val === 'Fail' || val === 'Alert' || val === false || val === 'no')
+                                          .map(([key, val]) => {
+                                            const otherVal = sub.data[`${key}_other`];
+                                            const detail = otherVal ? String(otherVal) : String(val);
+                                            return { sub, key, detail };
+                                          })
                                       ).map((fail, i) => (
                                         <tr key={i} className="hover:bg-red-50/30">
-                                          <td className="px-4 py-3 text-xs font-bold text-gray-700">{parseDbDate(fail.sub.submittedAt).toLocaleDateString()}</td>
+                                          <td className="px-4 py-3 text-xs font-bold text-gray-700">{parseDbDate(fail.sub.submittedAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}</td>
                                           <td className="px-4 py-3 text-xs font-bold text-gray-800">{forms.find(f => f.id === stat.id)?.questions.find(q => q.id === fail.key)?.label || fail.key}</td>
-                                          <td className="px-4 py-3"><StatusBadge status={String(fail.val)} /></td>
+                                          <td className="px-4 py-3">
+                                            <span className="px-2 py-1 rounded-md bg-red-50 text-red-700 text-xs font-bold border border-red-100 line-clamp-2" title={fail.detail}>
+                                              {fail.detail}
+                                            </span>
+                                          </td>
                                         </tr>
                                       ))}
                                     </tbody>
@@ -1029,7 +1037,7 @@ const QualityDashboard: React.FC = () => {
                                                       }
 
                                                       return (
-                                                        <div key={i} className={`flex-1 flex items-center justify-center p-0.5 ${i > 0 ? 'border-t border-gray-100' : ''} ${color}`} title={`${sub.staffName} (${sub.shift}): ${val}`}>
+                                                        <div key={i} className={`flex-1 flex items-center justify-center p-0.5 ${i > 0 ? 'border-t border-gray-100' : ''} ${color}`} title={`${sub.staffName} (${sub.shift}): ${val === 'Fail' || val === 'Alert' || val === 'no' || val === false ? (otherVal || val) : val}`}>
                                                           {display}
                                                         </div>
                                                       );

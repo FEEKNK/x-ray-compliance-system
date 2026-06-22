@@ -118,7 +118,8 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
     return filteredStaff.map(s => {
       const staffSchedules = schedules.filter(sch =>
         sch.staffId === s.id &&
-        (filterDate ? sch.date === filterDate : sch.date.startsWith(selectedMonthStr))
+        (filterDate ? sch.date === filterDate : sch.date.startsWith(selectedMonthStr)) &&
+        sch.formId
       );
       const total = staffSchedules.length;
       const completed = staffSchedules.filter(sch => sch.status === 'Completed').length;
@@ -172,7 +173,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
   const staff = filteredStaff;
   const getCellStatus = (staffId: string, day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const cellSchedules = schedules.filter(s => s.staffId === staffId && s.date === dateStr);
+    const cellSchedules = schedules.filter(s => s.staffId === staffId && s.date === dateStr && s.formId);
     if (cellSchedules.length === 0) return { status: 'none', missedCount: 0 };
     const pending = cellSchedules.filter(s => s.status === 'Pending');
     const completed = cellSchedules.filter(s => s.status === 'Completed');
@@ -287,7 +288,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
     const details: Array<Schedule & { staffName: string; formTitle: string }> = [];
     const staffIdsInDept = new Set(filteredStaff.map(s => s.id));
     monthlySchedules.forEach(s => {
-      if (s.status === 'Pending' && s.date < todayStr && staffIdsInDept.has(s.staffId)) {
+      if (s.status === 'Pending' && s.date < todayStr && staffIdsInDept.has(s.staffId) && s.formId) {
         details.push({
           ...s,
           staffName: users.find(u => u.id === s.staffId)?.name || 'Unknown',
@@ -630,7 +631,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept })
   const yearlyStaffKPI = useMemo(() => {
     return filteredStaff.map(s => {
       const staffSchedules = schedules.filter(sch =>
-        sch.staffId === s.id && sch.date.startsWith(`${year}-`)
+        sch.staffId === s.id && sch.date.startsWith(`${year}-`) && sch.formId
       );
       const total = staffSchedules.length;
       const completed = staffSchedules.filter(sch => sch.status === 'Completed').length;
@@ -680,7 +681,7 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept })
 
   // ── Year summary stats ──
   const staffIdsInDept = new Set(filteredStaff.map(s => s.id));
-  const yearSchedules = schedules.filter(s => s.date.startsWith(`${year}-`) && staffIdsInDept.has(s.staffId));
+  const yearSchedules = schedules.filter(s => s.date.startsWith(`${year}-`) && staffIdsInDept.has(s.staffId) && s.formId);
   const totalTasks = yearSchedules.length;
   const completedTasks = yearSchedules.filter(s => s.status === 'Completed').length;
   const missedTasks = yearSchedules.filter(s => s.status === 'Pending' && s.date < getLocalTodayStr()).length;

@@ -94,7 +94,9 @@ const MySchedule: React.FC = () => {
              const today = new Date();
              const isToday = today.getDate() === day && today.getMonth() === currentMonth - 1 && today.getFullYear() === currentYear;
              const isSelected = selectedDay === day;
-             const isCompletedAll = daySchedules.length > 0 && daySchedules.every(sc => sc.status === 'Completed');
+             const formSchedules = daySchedules.filter(sc => sc.formId);
+             const isCompletedAll = formSchedules.length > 0 && formSchedules.every(sc => sc.status === 'Completed');
+             const hasPendingForms = formSchedules.some(sc => sc.status === 'Pending');
 
              return (
                <button 
@@ -120,7 +122,7 @@ const MySchedule: React.FC = () => {
                      <CheckCircle size={10} className="md:w-3 md:h-3" />
                    </div>
                  )}
-                 {daySchedules.length > 0 && !isCompletedAll && (
+                 {hasPendingForms && (
                    <div className={`absolute top-1 right-1 ${isSelected ? 'text-white/80' : 'text-amber-500'}`}>
                      <Info size={10} className="md:w-3 md:h-3" />
                    </div>
@@ -166,11 +168,13 @@ const MySchedule: React.FC = () => {
                           }`}>
                             {schedule.shift}
                           </span>
-                          <span className={isCompleted ? 'text-xs font-bold text-green-600' : 'text-xs font-bold text-amber-600'}>
-                            {isCompleted ? 'Completed' : 'Pending'}
-                          </span>
+                          {schedule.formId && (
+                            <span className={isCompleted ? 'text-xs font-bold text-green-600' : 'text-xs font-bold text-amber-600'}>
+                              {isCompleted ? 'Completed' : 'Pending'}
+                            </span>
+                          )}
                         </div>
-                        <h4 className="font-bold text-gray-800 text-sm">{form?.title || 'Unknown Form'}</h4>
+                        <h4 className="font-bold text-gray-800 text-sm">{schedule.formId ? (form?.title || 'Unknown Form') : 'เข้าเวรปกติ (Shift Only)'}</h4>
                         {schedule.location && (
                           <div className="flex items-center text-xs font-medium text-gray-500 mt-1">
                             <MapPin size={12} className="mr-1" />
