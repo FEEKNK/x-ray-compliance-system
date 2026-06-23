@@ -33,11 +33,10 @@ const MasterLogs: React.FC = () => {
     const fetchLogs = async () => {
       setIsLoading(true);
       try {
-        const res = await api.submissions.getAll(page, 20);
+        // Fetch all records for client-side filtering and pagination
+        const res = await api.submissions.getAll(1, 10000);
         if (!ignore) {
           setSubmissions(res.data);
-          setTotalPages(res.totalPages);
-          setTotalRecords(res.total);
         }
       } catch (err) {
         console.error(err);
@@ -47,7 +46,7 @@ const MasterLogs: React.FC = () => {
     };
     fetchLogs();
     return () => { ignore = true; };
-  }, [page]);
+  }, []);
 
   const filteredSubmissions = submissions.filter(sub => {
     const staff = users.find(u => u.id === sub.staffId);
@@ -64,6 +63,15 @@ const MasterLogs: React.FC = () => {
 
     return matchesSearch && matchesShift && matchesDept && matchesDate;
   });
+
+  const computedTotalRecords = filteredSubmissions.length;
+  const computedTotalPages = Math.ceil(computedTotalRecords / 20) || 1;
+
+  React.useEffect(() => {
+    if (page > computedTotalPages) setPage(1);
+  }, [computedTotalPages, page]);
+
+  const paginatedSubmissions = filteredSubmissions.slice((page - 1) * 20, page * 20);
 
   const stats = {
     total: filteredSubmissions.length,
@@ -185,7 +193,7 @@ const MasterLogs: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredSubmissions.length > 0 ? filteredSubmissions.map(sub => {
+              {paginatedSubmissions.length > 0 ? paginatedSubmissions.map(sub => {
                 const staff = users.find(u => u.id === sub.staffId);
                 const form = forms.find(f => f.id === sub.formId);
                 const schedule = schedules.find(s => s.id === sub.scheduleId);
@@ -255,7 +263,7 @@ const MasterLogs: React.FC = () => {
       {/* Pagination Controls */}
       <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <p className="text-xs font-bold text-gray-500">
-          Showing page {page} of {totalPages} ({totalRecords} total records)
+          Showing page {page} of {computedTotalPages} ({computedTotalRecords} total records)
         </p>
         <div className="flex items-center space-x-4">
           <button 
@@ -266,8 +274,8 @@ const MasterLogs: React.FC = () => {
             Previous
           </button>
           <button 
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages || isLoading}
+            onClick={() => setPage(p => Math.min(computedTotalPages, p + 1))}
+            disabled={page === computedTotalPages || isLoading}
             className="px-4 py-2 border-2 border-gray-100 rounded-xl text-xs font-black uppercase tracking-widest text-gray-600 disabled:opacity-50 hover:bg-gray-50 transition-all"
           >
             Next

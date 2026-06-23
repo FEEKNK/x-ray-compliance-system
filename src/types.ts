@@ -22,6 +22,9 @@ export interface QuestionBlock {
     photoRequired?: boolean;
     autoFillToday?: boolean;
   };
+  alertOnFail?: boolean;
+  failOptions?: string[];
+  alertOnCustomInput?: boolean;
 }
 
 export interface DynamicForm {

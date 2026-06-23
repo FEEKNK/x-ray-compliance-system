@@ -140,12 +140,13 @@ export const api = {
 
   // ─── Submissions ──────────────────────────────────
   submissions: {
-    getAll: (page = 1, limit = 50, filters?: { month?: number; year?: number }): Promise<{ data: Submission[], total: number, page: number, totalPages: number }> => {
+    getAll: (page = 1, limit = 50, filters?: { month?: number; year?: number; date?: string }): Promise<{ data: Submission[], total: number, page: number, totalPages: number }> => {
       const params = new URLSearchParams();
       params.append('page', page.toString());
       params.append('limit', limit.toString());
       if (filters?.month) params.append('month', filters.month.toString());
       if (filters?.year) params.append('year', filters.year.toString());
+      if (filters?.date) params.append('date', filters.date);
       return apiFetch(`/submissions?${params.toString()}`).then(r => handleResponse(r));
     },
 

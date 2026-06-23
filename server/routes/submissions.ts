@@ -8,10 +8,15 @@ const router = Router();
 // GET /api/submissions — fetch paginated submissions
 router.get('/', async (req, res) => {
   try {
-    const { month, year } = req.query;
+    const { month, year, date } = req.query;
     let whereClause = undefined;
 
-    if (month && year) {
+    if (date) {
+      const { and, gte, lte } = await import('drizzle-orm');
+      const startOfDay = `${date}T00:00:00.000Z`;
+      const endOfDay = `${date}T23:59:59.999Z`;
+      whereClause = and(gte(submissions.submittedAt, startOfDay), lte(submissions.submittedAt, endOfDay));
+    } else if (month && year) {
       // Filter by specific month
       const { and, gte, lte } = await import('drizzle-orm');
       const mStr = String(month).padStart(2, '0');

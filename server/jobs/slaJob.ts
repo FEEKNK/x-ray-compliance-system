@@ -1,5 +1,6 @@
 import { db } from '../db';
-import { schedules, forms, users, config } from '../db/schema';
+import { schedules, forms, users, config, submissions } from '../db/schema';
+import type { QuestionBlock } from '../../src/types';
 import { eq, and, inArray, isNotNull } from 'drizzle-orm';
 import { logger } from '../logger';
 import { getTransporter, escapeHtml } from '../services/email';
@@ -171,62 +172,184 @@ export const runSLAJob = async () => {
     if (supToAlert.length > 0 && supervisorEmail) {
       logger.info(`[SLA Job] 📋 Shift-End Overdue tasks: ${supToAlert.length} found`);
       
-      // Group by shift to send one summary per shift
+      // Also fetch completed schedules for this shift to check for failures
+      const completedInShift = await db.select().from(schedules).where(
+        and(
+          eq(schedules.status, 'Completed'),
+          eq(schedules.supervisorAlertSent, false),
+          isNotNull(schedules.formId)
+        )
+      );
+
       const shiftGroups: Record<string, typeof supervisorPending> = {};
+      const completedGroups: Record<string, typeof completedInShift> = {};
+      
       for (const s of supToAlert) {
         if (!shiftGroups[s.shift]) shiftGroups[s.shift] = [];
         shiftGroups[s.shift].push(s);
       }
+      
+      for (const s of completedInShift) {
+        const shiftMapItem = shiftsMap.get(s.shift);
+        if (!shiftMapItem) continue;
+        const schedDate = new Date(`${s.date}T00:00:00.000Z`);
+        if (nightStartHour >= 18 && shiftMapItem.start < 12 && (s.shift === 'Night' || s.shift === 'NightBeforeMorning')) {
+          schedDate.setDate(schedDate.getDate() + 1);
+        }
+        const endTime = schedDate.getTime() + (shiftMapItem.end * 60 * 60 * 1000);
+        if (now.getTime() >= endTime) {
+           if (!completedGroups[s.shift]) completedGroups[s.shift] = [];
+           completedGroups[s.shift].push(s);
+        }
+      }
 
-      for (const [shiftName, scheds] of Object.entries(shiftGroups)) {
-        const allStaffIds = [...new Set(scheds.map(s => s.staffId))];
-        const allFormIds = [...new Set(scheds.map(s => s.formId).filter(Boolean) as string[])];
+      // We need to send an email for any shift that has EITHER missed tasks OR failures.
+      const allShiftsToProcess = [...new Set([...Object.keys(shiftGroups), ...Object.keys(completedGroups)])];
+
+      for (const shiftName of allShiftsToProcess) {
+        const scheds = shiftGroups[shiftName] || [];
+        const completedScheds = completedGroups[shiftName] || [];
+        
+        // Fetch submissions for completed schedules
+        const completedSchedIds = completedScheds.map(s => s.id);
+        const shiftSubmissions = completedSchedIds.length > 0 ? await db.select().from(submissions).where(inArray(submissions.scheduleId, completedSchedIds)) : [];
+
+        const allStaffIds = [...new Set([...scheds.map(s => s.staffId), ...completedScheds.map(s => s.staffId)])];
+        const allFormIds = [...new Set([...scheds.map(s => s.formId).filter(Boolean) as string[], ...completedScheds.map(s => s.formId).filter(Boolean) as string[]])];
+        
         const allStaff = allStaffIds.length > 0 ? await db.select().from(users).where(inArray(users.id, allStaffIds)) : [];
         const allFormsData = allFormIds.length > 0 ? await db.select().from(forms).where(inArray(forms.id, allFormIds)) : [];
+        
         const staffMap = new Map(allStaff.map(s => [s.id, s]));
         const formMap = new Map(allFormsData.map(f => [f.id, f]));
 
         const shiftTh = getShiftThaiName(shiftName);
         
-        let reportHtml = '';
+        // 1. Compile Missed Tasks
+        let missedHtml = '';
         for (const sched of scheds) {
           const staff = staffMap.get(sched.staffId);
           const form = sched.formId ? formMap.get(sched.formId) : null;
           const staffName = staff ? escapeHtml(staff.name) : 'Unknown Staff';
           const formTitle = form ? escapeHtml(form.title) : 'Unknown Form';
-          reportHtml += `<li style="padding: 5px 0;"><strong>${staffName}</strong> - ลืมทำ: ${formTitle}</li>`;
+          missedHtml += `<li style="padding: 5px 0;"><strong>${staffName}</strong> - ลืมทำ: ${formTitle}</li>`;
+        }
+
+        // 2. Compile Clinical Failures
+        let failuresHtml = '';
+        for (const sub of shiftSubmissions) {
+           const form = sub.formId ? formMap.get(sub.formId) : null;
+           const staff = staffMap.get(sub.staffId);
+           if (!form || !form.questions) continue;
+           
+           const questions = form.questions as QuestionBlock[];
+           const data = sub.data as Record<string, unknown>;
+           const failedFields: string[] = [];
+
+           for (const q of questions) {
+             const answer = String(data[q.id] || '');
+             const otherAnswer = String(data[`${q.id}_other`] || '');
+             const hasOtherNote = otherAnswer.trim().length > 0 && answer === '';
+
+             let isFailing = false;
+             if (q.type === 'select' && q.failOptions && q.failOptions.includes(answer)) {
+               isFailing = true;
+             } else if (q.alertOnCustomInput && (hasOtherNote || (q.allowCustomInput && !q.options?.includes(answer) && answer !== ''))) {
+               if (q.type === 'yesno' && !['Pass', 'Fail'].includes(answer) && answer !== '') isFailing = true;
+               else if (q.type === 'composite' && !['Normal', 'Alert'].includes(answer) && answer !== '') isFailing = true;
+               else if (q.type === 'select' && !q.options?.includes(answer) && answer !== '') isFailing = true;
+               else if (hasOtherNote) isFailing = true;
+             } else if (q.alertOnFail) {
+               if (q.type === 'yesno' && answer === 'Fail') isFailing = true;
+               if (q.type === 'composite' && answer === 'Alert') isFailing = true;
+               if (q.type === 'text' && answer.trim().length > 0) isFailing = true;
+             } else if (!q.alertOnFail && !q.failOptions && !q.alertOnCustomInput) {
+               if (answer === 'Fail' || answer === 'Alert') isFailing = true;
+             }
+
+             if (isFailing) {
+                const finalAnswer = otherAnswer ? `${answer} (${otherAnswer})`.trim() : answer;
+                failedFields.push(`${q.label}: ${finalAnswer || '(ไม่ได้ระบุข้อความ)'}`);
+             }
+           }
+
+           if (failedFields.length > 0) {
+              const staffName = staff ? escapeHtml(staff.name) : 'Unknown Staff';
+              const formTitle = escapeHtml(form.title);
+              const itemsHtml = failedFields.map(f => `<li>${escapeHtml(f)}</li>`).join('');
+              failuresHtml += `
+                <li style="padding: 5px 0;">
+                  <strong>${formTitle}</strong> (ตรวจโดย: ${staffName})
+                  <ul style="color:#d9534f; margin-top:4px;">${itemsHtml}</ul>
+                </li>
+              `;
+           }
+        }
+
+        if (missedHtml.length === 0 && failuresHtml.length === 0) {
+           // Both arrays were empty, meaning the completed ones had no failures, and no missed tasks.
+           // Mark them as alerted and continue.
+           const schedIds = completedScheds.map(s => s.id);
+           if (schedIds.length > 0) {
+              await db.update(schedules).set({ supervisorAlertSent: true }).where(inArray(schedules.id, schedIds));
+           }
+           continue;
         }
 
         const recipients = [supervisorEmail];
-        if (escalationEmail) recipients.push(escalationEmail); // If they missed the entire shift, escalate it.
+        if (escalationEmail && scheds.length > 0) recipients.push(escalationEmail); // If they missed the entire shift, escalate it.
         const toList = recipients.join(',');
+
+        let finalEmailHtml = `
+            <div style="font-family: sans-serif; color: #333;">
+              <h2 style="color: #00468B;">📊 รายงานสรุปการทำงาน (สิ้นสุดเวร${shiftTh})</h2>
+              <p>เรียน หัวหน้างาน</p>
+              <p>ระบบขอรายงานสรุปรายการตรวจเช็คของ <strong>เวร${shiftTh}</strong> ที่เพิ่งสิ้นสุดลง ดังนี้:</p>
+        `;
+
+        if (failuresHtml.length > 0) {
+           finalEmailHtml += `
+              <div style="background-color: #fdf2f2; padding: 15px; border-left: 4px solid #d9534f; margin: 15px 0;">
+                <h3 style="color: #d9534f; margin-top: 0;">⚠️ พบรายการที่ผิดปกติ / ไม่สมบูรณ์ (Clinical Failures)</h3>
+                <ul style="margin: 0; padding-left: 20px;">
+                  ${failuresHtml}
+                </ul>
+              </div>
+           `;
+        }
+
+        if (missedHtml.length > 0) {
+           finalEmailHtml += `
+              <div style="background-color: #fcf8e3; padding: 15px; border-left: 4px solid #f0ad4e; margin: 15px 0;">
+                <h3 style="color: #f0ad4e; margin-top: 0;">⏳ รายการที่ไม่ได้ดำเนินการ (Missed Tasks)</h3>
+                <ul style="margin: 0; padding-left: 20px;">
+                  ${missedHtml}
+                </ul>
+              </div>
+           `;
+        }
+
+        finalEmailHtml += `
+              <p>โปรดพิจารณาติดตามหรือตรวจสอบเพิ่มเติมในระบบ</p>
+              <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+              <small style="color: #999;">อีเมลฉบับนี้ถูกส่งอัตโนมัติจาก Imaging Compliance System (Shift-End Summary)</small>
+            </div>
+        `;
 
         await transporter.sendMail({
           from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
           to: toList,
-          subject: `🚨 สรุปงานคงค้าง: สิ้นสุดเวร${shiftTh}`,
-          html: `
-            <div style="font-family: sans-serif; color: #333;">
-              <h2 style="color: #d9534f;">🚨 รายงานสรุปงานคงค้าง (สิ้นสุดเวร)</h2>
-              <p>เรียน หัวหน้างาน</p>
-              <p>ระบบขอรายงานสรุปรายการตรวจเช็คของ <strong>เวร${shiftTh}</strong> ที่สิ้นสุดลงแล้ว แต่ยังมีพนักงานที่ <strong>ไม่ได้ดำเนินการ</strong> จนหมดเวลาเวร จำนวน ${scheds.length} รายการ ดังนี้:</p>
-              <div style="background-color: #fcf8e3; padding: 15px; border-left: 4px solid #f0ad4e; margin: 15px 0;">
-                <ul style="margin: 0; padding-left: 20px;">
-                  ${reportHtml}
-                </ul>
-              </div>
-              <p>โปรดพิจารณาติดตามหรือตรวจสอบเพิ่มเติม</p>
-              <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-              <small style="color: #999;">อีเมลฉบับนี้ถูกส่งอัตโนมัติจาก Imaging Compliance System (Shift-End Summary)</small>
-            </div>
-          `,
+          subject: `📊 สรุปเวร${shiftTh}: พบความผิดปกติหรือลืมทำ`,
+          html: finalEmailHtml,
         });
 
-        const schedIds = scheds.map(s => s.id);
-        await db.update(schedules)
-          .set({ supervisorAlertSent: true })
-          .where(inArray(schedules.id, schedIds));
-        logger.info(`[SLA Job] ✅ Shift-End Summary sent to ${toList} for ${scheds.length} schedules.`);
+        const allUpdatedSchedIds = [...scheds.map(s => s.id), ...completedScheds.map(s => s.id)];
+        if (allUpdatedSchedIds.length > 0) {
+          await db.update(schedules)
+            .set({ supervisorAlertSent: true })
+            .where(inArray(schedules.id, allUpdatedSchedIds));
+        }
+        logger.info(`[SLA Job] ✅ Shift-End Summary sent to ${toList} for shift ${shiftTh}.`);
       }
     }
 

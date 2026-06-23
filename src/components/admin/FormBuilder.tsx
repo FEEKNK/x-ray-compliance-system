@@ -267,10 +267,32 @@ const FormBuilder: React.FC = () => {
                               className="flex-1 border-2 border-gray-100 rounded-lg p-4 text-lg font-bold text-gray-700 outline-none focus:border-[#00468B] transition-all"
                               placeholder={`Option ${optIndex + 1}`}
                             />
+                            <label className="flex items-center space-x-2 shrink-0 cursor-pointer group/failopt bg-white border-2 border-gray-100 rounded-lg px-3 hover:border-red-200 transition-all">
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${q.failOptions?.includes(opt) ? 'bg-red-500 border-red-500' : 'border-gray-300 group-hover/failopt:border-red-400'}`}>
+                                {q.failOptions?.includes(opt) && <Plus size={10} className="text-white rotate-45" />}
+                              </div>
+                              <input 
+                                type="checkbox"
+                                className="hidden"
+                                checked={q.failOptions?.includes(opt) || false}
+                                onChange={(e) => {
+                                  const currentFails = q.failOptions || [];
+                                  if (e.target.checked) {
+                                    updateQuestionState(q.id, { failOptions: [...currentFails, opt] });
+                                  } else {
+                                    updateQuestionState(q.id, { failOptions: currentFails.filter(f => f !== opt) });
+                                  }
+                                }}
+                              />
+                              <span className="text-xs font-bold text-gray-500 group-hover/failopt:text-red-500">Fail</span>
+                            </label>
                             <button
                               onClick={() => {
                                 const newOpts = (q.options || []).filter((_, i) => i !== optIndex);
                                 updateQuestionState(q.id, { options: newOpts });
+                                if (q.failOptions?.includes(opt)) {
+                                  updateQuestionState(q.id, { failOptions: q.failOptions.filter(f => f !== opt) });
+                                }
                               }}
                               className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg text-red-400 bg-white border-2 border-gray-100 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition-all"
                             >
@@ -318,6 +340,36 @@ const FormBuilder: React.FC = () => {
                         <span className="text-lg font-bold text-gray-600">Allow Custom Input (เปิดให้ระบุเอง)</span>
                       </label>
                     )}
+
+                    {(q.type === 'select' || q.type === 'yesno' || q.type === 'composite') && q.allowCustomInput && (
+                      <label className="flex items-center space-x-3 cursor-pointer group/alertcustom mt-2 sm:mt-0">
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${q.alertOnCustomInput ? 'bg-red-500 border-red-500' : 'border-gray-200 group-hover/alertcustom:border-red-400'}`}>
+                          {q.alertOnCustomInput && <Plus size={14} className="text-white rotate-45" />}
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={!!q.alertOnCustomInput}
+                          onChange={(e) => updateQuestionState(q.id, { alertOnCustomInput: e.target.checked })}
+                          className="hidden"
+                        />
+                        <span className="text-lg font-bold text-gray-600 text-red-600">⚠️ Alert on Custom Input (แจ้งเตือนถ้าระบุเอง)</span>
+                      </label>
+                    )}
+
+                    <label className="flex items-center space-x-3 cursor-pointer group/alert mt-2 sm:mt-0">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${q.alertOnFail ? 'bg-red-500 border-red-500' : 'border-gray-200 group-hover/alert:border-red-400'}`}>
+                        {q.alertOnFail && <Plus size={14} className="text-white rotate-45" />}
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={!!q.alertOnFail}
+                        onChange={(e) => updateQuestionState(q.id, { alertOnFail: e.target.checked })}
+                        className="hidden"
+                      />
+                      <span className="text-lg font-bold text-gray-600 text-red-600">
+                        {q.type === 'select' ? '⚠️ Alert on Any Fails (เปิดแจ้งเตือนสำหรับข้อนี้)' : '⚠️ Alert on Fail (แจ้งเตือนเมื่อตอบ Fail)'}
+                      </span>
+                    </label>
 
                     {q.type === 'date' && (
                       <label className="flex items-center space-x-3 cursor-pointer group/autodate">

@@ -41,38 +41,63 @@ const AdminDashboard: React.FC = () => {
   const completed = dailySchedules.filter(s => s.status === 'Completed').length;
 
   // Dynamic Critical Alerts from Submissions (Filtered for today and selected department)
-  const criticalSubmissionItems = submissions.filter(sub => {
-      const isDaily = dailySchedules.some(s => s.id === sub.scheduleId);
-      return isDaily && Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert');
-    }).map(sub => {
+  const criticalSubmissionItems = submissions.reduce((acc, sub) => {
       const schedule = dailySchedules.find(s => s.id === sub.scheduleId);
-      const staff = users.find(u => u.id === sub.staffId);
-      const form = forms.find(f => f.id === schedule?.formId);
+      if (!schedule) return acc;
       
-      const failedFields = Object.entries(sub.data)
-        .filter((entry) => entry[1] === 'Fail' || entry[1] === 'Alert')
-        .map(([k]) => {
-          let label = k;
-          if (form) {
-            const q = form.questions?.find(q => q.id === k);
-            if (q) label = q.label;
-          }
-          const detail = sub.data[`${k}_other`];
-          if (detail && typeof detail === 'string' && detail.trim() !== '') {
-            return `${label}: ${detail}`;
-          }
-          return label;
+      const form = forms.find(f => f.id === schedule.formId);
+      if (!form) return acc;
+
+      const failedFields: string[] = [];
+
+      form.questions.forEach(q => {
+        const answer = String(sub.data[q.id] || '');
+        const otherAnswer = String(sub.data[`${q.id}_other`] || '');
+        const hasOtherNote = otherAnswer.trim().length > 0 && answer === '';
+
+        let isFailing = false;
+
+        // Check explicit failOptions for Dropdown
+        if (q.type === 'select' && q.failOptions && q.failOptions.includes(answer)) {
+          isFailing = true;
+        }
+        // Check custom input alert
+        else if (q.alertOnCustomInput && (hasOtherNote || (q.allowCustomInput && !q.options?.includes(answer) && answer !== ''))) {
+          if (q.type === 'yesno' && !['Pass', 'Fail'].includes(answer) && answer !== '') isFailing = true;
+          else if (q.type === 'composite' && !['Normal', 'Alert'].includes(answer) && answer !== '') isFailing = true;
+          else if (q.type === 'select' && !q.options?.includes(answer) && answer !== '') isFailing = true;
+          else if (hasOtherNote) isFailing = true;
+        }
+        // Generic alertOnFail for yesno/composite/text
+        else if (q.alertOnFail) {
+          if (q.type === 'yesno' && answer === 'Fail') isFailing = true;
+          if (q.type === 'composite' && answer === 'Alert') isFailing = true;
+          if (q.type === 'text' && answer.trim().length > 0) isFailing = true;
+        }
+        // Fallback for legacy forms without explicit config
+        else if (!q.alertOnFail && !q.failOptions && !q.alertOnCustomInput) {
+          if (answer === 'Fail' || answer === 'Alert') isFailing = true;
+        }
+
+        if (isFailing) {
+          const detail = otherAnswer ? `${answer} (${otherAnswer})`.trim() : answer;
+          failedFields.push(`${q.label}: ${detail || '(ไม่ได้ระบุข้อความ)'}`);
+        }
+      });
+
+      if (failedFields.length > 0) {
+        const staff = users.find(u => u.id === sub.staffId);
+        acc.push({
+          submissionId: sub.id,
+          formTitle: form.title || '—',
+          staffName: staff?.name || '—',
+          shift: schedule.shift || '—',
+          location: schedule.location || '—',
+          failedFields
         });
-        
-      return {
-        submissionId: sub.id,
-        formTitle: form?.title || '—',
-        staffName: staff?.name || '—',
-        shift: schedule?.shift || '—',
-        location: schedule?.location || '—',
-        failedFields
-      };
-    });
+      }
+      return acc;
+    }, [] as { submissionId: string; formTitle: string; staffName: string; shift: string; location: string; failedFields: string[] }[]);
 
   const criticalSubmissions = criticalSubmissionItems.length;
 
