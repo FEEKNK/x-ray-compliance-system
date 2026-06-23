@@ -158,7 +158,7 @@ router.post('/', async (req, res) => {
         });
 
         if (hasFailures) {
-          const { sendEmail } = await import('../utils/email');
+          const { getTransporter } = await import('../services/email');
           const emailHtml = `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fee2e2; border-radius: 12px; overflow: hidden;">
               <div style="background-color: #fef2f2; padding: 20px; border-bottom: 2px solid #fca5a5;">
@@ -183,7 +183,8 @@ router.post('/', async (req, res) => {
           
           const supervisorEmails = (await db.select().from(users).where(eq(users.role, 'ADMIN'))).map(u => u.email).filter(Boolean) as string[];
           if (supervisorEmails.length > 0) {
-            await sendEmail({
+            await getTransporter().sendMail({
+              from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
               to: supervisorEmails.join(','),
               subject: `⚠️ [ด่วน] พบปัญหาจากการตรวจสอบ: ${form.title} โดย ${staff.name}`,
               html: emailHtml
