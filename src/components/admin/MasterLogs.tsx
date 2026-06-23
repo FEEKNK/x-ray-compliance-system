@@ -18,8 +18,6 @@ const MasterLogs: React.FC = () => {
   
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');

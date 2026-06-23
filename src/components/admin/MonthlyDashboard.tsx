@@ -257,7 +257,7 @@ const MonthlyView: React.FC<MonthlyViewProps> = ({ year, month, selectedDept }) 
     const formRows: (string | number)[][] = [formHeader];
 
     filteredForms.forEach(f => {
-      const row: (string | number)[] = [f.title || '', f.department || ''];
+      const row: (string | number)[] = [f.title || '', f.department ?? ''];
       let total = 0, completed = 0, missed = 0;
       for (let d = 1; d <= daysInMonth; d++) {
         const { status, missedCount } = getFormCellStatus(f.id, d);
