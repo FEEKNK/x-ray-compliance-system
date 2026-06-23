@@ -272,9 +272,19 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
           </div>
         </div>
         {isCompleted ? (
-          <span className="px-5 py-2 rounded-xl text-xs font-bold bg-green-100 text-green-700 border border-green-200">
-            ✓ {t.completed || 'เสร็จแล้ว'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="px-5 py-2 rounded-xl text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+              ✓ {t.completed || 'เสร็จแล้ว'}
+            </span>
+            {!cd.isLocked && (
+              <button 
+                onClick={onAudit}
+                className="px-4 py-2 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all bg-white border-2 border-gray-100 text-gray-600 hover:bg-gray-50"
+              >
+                แก้ไข
+              </button>
+            )}
+          </div>
         ) : cd.isLocked ? (
           <span className={`px-5 py-2 rounded-xl text-xs font-bold ${cd.isEarly ? 'bg-orange-50 text-orange-400 border border-orange-100' : 'bg-red-50 text-red-400 border border-red-100'}`}>
             {cd.isEarly ? 'ยังไม่ถึงเวลา' : (t.notDone || 'ไม่ได้ทำ')}
