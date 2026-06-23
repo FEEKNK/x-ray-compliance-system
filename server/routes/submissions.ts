@@ -131,6 +131,72 @@ router.post('/', async (req, res) => {
         .catch(() => { /* schedule might not exist */ });
     }
 
+    // --- Real-time Email Notification for Failures ---
+    try {
+      const { users, forms } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+      
+      const [form] = await db.select().from(forms).where(eq(forms.id, formId)).limit(1);
+      const [staff] = await db.select().from(users).where(eq(users.id, staffId)).limit(1);
+      
+      if (form && staff) {
+        let hasFailures = false;
+        const failedItems: string[] = [];
+        
+        Object.entries(data).forEach(([key, value]) => {
+          if (value === 'Fail' || value === 'Alert') {
+            hasFailures = true;
+            const question = (form.questions as any[]).find((q: any) => q.id === key);
+            failedItems.push(question ? question.label : key);
+          } else {
+            const question = (form.questions as any[]).find((q: any) => q.id === key);
+            if (question?.alertOnFail && typeof value === 'string' && question.failOptions?.includes(value)) {
+              hasFailures = true;
+              failedItems.push(`${question.label}: ${value}`);
+            }
+          }
+        });
+
+        if (hasFailures) {
+          const { sendEmail } = await import('../utils/email');
+          const emailHtml = `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fee2e2; border-radius: 12px; overflow: hidden;">
+              <div style="background-color: #fef2f2; padding: 20px; border-bottom: 2px solid #fca5a5;">
+                <h2 style="color: #dc2626; margin: 0;">⚠️ พบปัญหาจากการตรวจสอบเครื่องมือ</h2>
+              </div>
+              <div style="padding: 20px;">
+                <p><strong>ผู้ตรวจสอบ:</strong> ${staff.name}</p>
+                <p><strong>แบบฟอร์ม:</strong> ${form.title}</p>
+                <p><strong>เวลาที่บันทึก:</strong> ${new Date().toLocaleString('th-TH')}</p>
+                
+                <h3 style="color: #991b1b; margin-top: 20px;">รายการที่ขัดข้อง:</h3>
+                <ul style="background-color: #fff5f5; padding: 15px 15px 15px 35px; border-radius: 8px; border: 1px solid #fecaca; color: #b91c1c;">
+                  ${failedItems.map(item => `<li>${item}</li>`).join('')}
+                </ul>
+                
+                <div style="margin-top: 30px; text-align: center;">
+                  <a href="https://x-ray-compliance-system.onrender.com/admin" style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">ดูรายละเอียดในระบบ</a>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          const supervisorEmails = (await db.select().from(users).where(eq(users.role, 'ADMIN'))).map(u => u.email).filter(Boolean) as string[];
+          if (supervisorEmails.length > 0) {
+            await sendEmail({
+              to: supervisorEmails.join(','),
+              subject: `⚠️ [ด่วน] พบปัญหาจากการตรวจสอบ: ${form.title} โดย ${staff.name}`,
+              html: emailHtml
+            });
+            console.log(`Sent real-time failure alert for form ${formId}`);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error sending real-time failure alert:', err);
+    }
+    // ------------------------------------------------
+
     if (!newSubmission) {
       throw new Error('Failed to create or update submission');
     }

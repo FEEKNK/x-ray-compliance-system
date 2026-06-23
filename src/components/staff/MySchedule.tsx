@@ -3,10 +3,11 @@ import { useSchedules, useForms } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
 import { translations } from '../../i18n';
 import { Calendar, ChevronLeft, ChevronRight, CheckCircle, Info, MapPin } from 'lucide-react';
+import { getSubmitDeadline } from '../../utils/shiftTime';
 
 
 const MySchedule: React.FC = () => {
-  const { currentUser, language } = useApp();
+  const { currentUser, language, settings } = useApp();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
   
@@ -149,13 +150,17 @@ const MySchedule: React.FC = () => {
               {selectedDaySchedules.map(schedule => {
                 const form = forms.find(f => f.id === schedule.formId);
                 const isCompleted = schedule.status === 'Completed';
+                const lockoutHours = settings?.lockoutHours as Record<string, number> | undefined;
+                const shiftsConfig = settings?.shifts as Record<string, string> | undefined;
+                const deadline = getSubmitDeadline(schedule.date, schedule.shift, lockoutHours, shiftsConfig);
+                const isMissed = !isCompleted && new Date() >= deadline;
 
                 return (
                   <div key={schedule.id} className={`p-4 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${
-                    isCompleted ? 'bg-green-50/30 border-green-100' : 'bg-gray-50/50 border-gray-100'
+                    isCompleted ? 'bg-green-50/30 border-green-100' : isMissed ? 'bg-red-50/30 border-red-100' : 'bg-gray-50/50 border-gray-100'
                   }`}>
                     <div className="flex items-start gap-4">
-                      <div className={`p-2 shrink-0 rounded-xl ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-white text-gray-500 shadow-sm border border-gray-100'}`}>
+                      <div className={`p-2 shrink-0 rounded-xl ${isCompleted ? 'bg-green-100 text-green-600' : isMissed ? 'bg-red-100 text-red-600' : 'bg-white text-gray-500 shadow-sm border border-gray-100'}`}>
                         {isCompleted ? <CheckCircle size={20} /> : <Info size={20} />}
                       </div>
                       <div>
@@ -169,8 +174,8 @@ const MySchedule: React.FC = () => {
                             {schedule.shift}
                           </span>
                           {schedule.formId && (
-                            <span className={isCompleted ? 'text-xs font-bold text-green-600' : 'text-xs font-bold text-amber-600'}>
-                              {isCompleted ? 'Completed' : 'Pending'}
+                            <span className={isCompleted ? 'text-xs font-bold text-green-600' : isMissed ? 'text-xs font-bold text-red-600' : 'text-xs font-bold text-amber-600'}>
+                              {isCompleted ? 'Completed' : isMissed ? 'ลืมทำ / หมดเวลา' : 'Pending'}
                             </span>
                           )}
                         </div>
