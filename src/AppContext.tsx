@@ -7,6 +7,16 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 // Magic number extracted
 export const ALERT_CHECK_INTERVAL_MS = 60000;
 
+const DEFAULT_SETTINGS: SystemSettings = {
+  hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
+  supervisorEmail: "supervisor@hospital.com",
+  escalationEmail: "director@hospital.com",
+  departments: ["IMAGING", "MRI"],
+  slaHours: { Morning: 1.5, Afternoon: 1.5, Night: 1.5, NightBeforeMorning: 1.5 },
+  lockoutHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
+  shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00", NightBeforeMorning: "04:00 - 08:00" },
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<'TH' | 'EN'>('TH');
   const [isLoading, setIsLoading] = useState(true);
@@ -18,15 +28,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [announcements, setAnnouncements] = useState<string[]>([]);
-  const [settings, setSettings] = useState<SystemSettings>({
-    hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
-    supervisorEmail: "supervisor@hospital.com",
-    escalationEmail: "director@hospital.com",
-    departments: ["IMAGING", "MRI"],
-    slaHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
-    shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00", NightBeforeMorning: "04:00 - 08:00" },
-    lockoutHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 }
-  });
+  const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
 
   // Fetch config — uses public endpoint initially (no auth needed for landing page).
   // Full config (with sensitive emails) is fetched after login via setCurrentUser.
@@ -41,15 +43,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ? await api.config.get().catch(() => api.config.getPublic())
         : await api.config.getPublic();
 
-      const defaultSettings: SystemSettings = {
-        hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
-        supervisorEmail: "supervisor@hospital.com",
-        escalationEmail: "director@hospital.com",
-        departments: ["IMAGING", "MRI"],
-        slaHours: { Morning: 1.5, Afternoon: 1.5, Night: 1.5, NightBeforeMorning: 1.5 },
-        lockoutHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
-        shifts: { Morning: "08:00 - 16:00", Afternoon: "16:00 - 00:00", Night: "00:00 - 08:00", NightBeforeMorning: "04:00 - 08:00" },
-      };
+      const defaultSettings = DEFAULT_SETTINGS;
       const mergedSettings = { ...defaultSettings, ...(configData.settings as Partial<SystemSettings>) };
       
       if (!(configData.settings as SystemSettings)?.slaHours) mergedSettings.slaHours = defaultSettings.slaHours;
@@ -101,9 +95,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await api.resetData();
   }, []);
 
-  const clearLogs = useCallback(async () => {
-    await api.resetData();
-  }, []);
+  // clearLogs is an alias for resetData (same backend endpoint)
+  const clearLogs = resetData;
 
   const exportData = useCallback(async (prefix = 'xray-system-export') => {
     const data = await api.exportData();

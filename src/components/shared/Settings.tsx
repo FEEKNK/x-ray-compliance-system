@@ -3,8 +3,19 @@ import { useApp } from '../../AppContext';
 import { Building2, Mail, Save, RefreshCw, Trash2, ShieldAlert, Clock, Loader2, CheckCircle, DatabaseBackup, ClockAlert, Plus, X, Layers, Lock } from 'lucide-react';
 import { useUpdateSettings } from '../../hooks/queries';
 import { translations } from '../../i18n';
-import type { Shift, SystemSettings } from '../../types';
+import type { Shift, SystemSettings, User, DynamicForm, Schedule, Submission, ProtocolBundle, Alert } from '../../types';
 import { api } from '../../api';
+
+interface BackupPayload {
+  exportedAt?: string;
+  users?: User[];
+  forms?: DynamicForm[];
+  schedules?: Schedule[];
+  submissions?: Submission[];
+  bundles?: ProtocolBundle[];
+  alerts?: Alert[];
+  config?: { id: string; settings: Record<string, unknown>; announcements: string[] }[];
+}
 
 const Settings: React.FC = () => {
   const { settings, setSettings, resetDatabase, language, resetData, exportData } = useApp();
@@ -25,8 +36,7 @@ const Settings: React.FC = () => {
 
   // Backup Preview Modal States
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [previewPayload, setPreviewPayload] = useState<any>(null);
+  const [previewPayload, setPreviewPayload] = useState<BackupPayload | null>(null);
   const [importMode, setImportMode] = useState<'replace_all' | 'merge'>('merge');
   const [importCollections, setImportCollections] = useState<string[]>(['settings', 'users', 'forms', 'schedules', 'submissions']);
 

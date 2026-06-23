@@ -27,3 +27,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Debug/test scripts (may contain credentials)
+check_*.mjs
+test-tx.*
+payload.json
+src/data/db.json

@@ -86,7 +86,7 @@ const AdminDashboard: React.FC = () => {
         const now = new Date();
         const deadline = getSubmitDeadline(
           assignment.date,
-          assignment.shift as import('../../types').Shift,
+          assignment.shift as Shift,
           settings?.lockoutHours,
           settings?.shifts
         );
@@ -111,7 +111,7 @@ const AdminDashboard: React.FC = () => {
       .filter(s => {
         const deadline = getSubmitDeadline(
           s.date,
-          s.shift as import('../../types').Shift,
+          s.shift as Shift,
           settings?.lockoutHours,
           settings?.shifts
         );

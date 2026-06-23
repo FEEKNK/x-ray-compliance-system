@@ -119,11 +119,3 @@ export interface AppContextType {
   clearLogs: () => void;
 }
 
-export interface DatabaseSchema {
-  users: User[];
-  forms: DynamicForm[];
-  schedules: Schedule[];
-  submissions: Submission[];
-  bundles: ProtocolBundle[];
-  // Add other top-level properties from db.json if any
-}

@@ -110,8 +110,6 @@ const StaffDashboard: React.FC = () => {
     });
   };
 
-
-
   if (activeSchedule) {
     const form = forms.find(f => f.id === activeSchedule.formId);
     if (!form) return <div>Form not found</div>;
