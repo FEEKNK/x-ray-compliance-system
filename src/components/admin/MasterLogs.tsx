@@ -67,7 +67,7 @@ const MasterLogs: React.FC = () => {
 
   React.useEffect(() => {
     if (page > computedTotalPages) setPage(1);
-  }, [computedTotalPages, page]);
+  }, [computedTotalPages]);
 
   const paginatedSubmissions = filteredSubmissions.slice((page - 1) * 20, page * 20);
 

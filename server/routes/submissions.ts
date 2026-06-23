@@ -3,6 +3,7 @@ import { db } from '../db';
 import { submissions, schedules, users, forms } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { getTransporter } from '../services/email';
+import { QuestionBlock } from '../../src/types';
 
 const router = Router();
 
@@ -57,10 +58,11 @@ router.get('/', async (req, res) => {
       photos: s.photos as string[],
     }));
     
+    const displayedPage = page;
     res.json({
       data: mapped,
       total: totalCount,
-      page,
+      page: displayedPage,
       totalPages: Math.ceil(totalCount / limit)
     });
   } catch (error) {
@@ -147,10 +149,10 @@ router.post('/', async (req, res) => {
         Object.entries(safeData).forEach(([key, value]) => {
           if (value === 'Fail' || value === 'Alert') {
             hasFailures = true;
-            const question = safeQuestions.find((q: any) => q.id === key);
+            const question = safeQuestions.find((q: QuestionBlock) => q.id === key);
             failedItems.push(question ? question.label : key);
           } else {
-            const question = safeQuestions.find((q: any) => q.id === key);
+            const question = safeQuestions.find((q: QuestionBlock) => q.id === key);
             if (question?.alertOnFail && typeof value === 'string' && question.failOptions?.includes(value)) {
               hasFailures = true;
               failedItems.push(`${question.label}: ${value}`);

@@ -274,7 +274,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule: s, form, onAudit,
             <span className="px-5 py-2 rounded-xl text-xs font-bold bg-green-100 text-green-700 border border-green-200">
               ✓ {t.completed || 'เสร็จแล้ว'}
             </span>
-            {!cd.isLocked && (
+            {(!cd.isLocked || cd.isEarly) && (
               <button 
                 onClick={onAudit}
                 className="px-4 py-2 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all bg-white border-2 border-gray-100 text-gray-600 hover:bg-gray-50"

@@ -1,6 +1,5 @@
 import { db } from '../db';
-import { schedules, forms, users, config, submissions } from '../db/schema';
-import type { QuestionBlock } from '../../src/types';
+import { schedules, forms, users, config } from '../db/schema';
 import { eq, and, inArray, isNotNull } from 'drizzle-orm';
 import { logger } from '../logger';
 import { getTransporter, escapeHtml } from '../services/email';
