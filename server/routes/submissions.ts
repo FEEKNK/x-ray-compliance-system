@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { submissions, schedules } from '../db/schema';
+import { submissions, schedules, users, forms } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { getTransporter } from '../services/email';
 
 const router = Router();
 
@@ -133,9 +134,6 @@ router.post('/', async (req, res) => {
 
     // --- Real-time Email Notification for Failures ---
     try {
-      const { users, forms } = await import('../db/schema');
-      const { eq } = await import('drizzle-orm');
-      
       const [form] = await db.select().from(forms).where(eq(forms.id, formId)).limit(1);
       const [staff] = await db.select().from(users).where(eq(users.id, staffId)).limit(1);
       
@@ -143,13 +141,16 @@ router.post('/', async (req, res) => {
         let hasFailures = false;
         const failedItems: string[] = [];
         
-        Object.entries(data).forEach(([key, value]) => {
+        const safeData = typeof data === 'object' && data !== null ? data : {};
+        const safeQuestions = Array.isArray(form.questions) ? form.questions : [];
+
+        Object.entries(safeData).forEach(([key, value]) => {
           if (value === 'Fail' || value === 'Alert') {
             hasFailures = true;
-            const question = (form.questions as any[]).find((q: any) => q.id === key);
+            const question = safeQuestions.find((q: any) => q.id === key);
             failedItems.push(question ? question.label : key);
           } else {
-            const question = (form.questions as any[]).find((q: any) => q.id === key);
+            const question = safeQuestions.find((q: any) => q.id === key);
             if (question?.alertOnFail && typeof value === 'string' && question.failOptions?.includes(value)) {
               hasFailures = true;
               failedItems.push(`${question.label}: ${value}`);
@@ -158,7 +159,6 @@ router.post('/', async (req, res) => {
         });
 
         if (hasFailures) {
-          const { getTransporter } = await import('../services/email');
           const emailHtml = `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fee2e2; border-radius: 12px; overflow: hidden;">
               <div style="background-color: #fef2f2; padding: 20px; border-bottom: 2px solid #fca5a5;">
