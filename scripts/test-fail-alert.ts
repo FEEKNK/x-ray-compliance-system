@@ -1,5 +1,5 @@
 import { db } from '../server/db';
-import { users, forms } from '../server/db/schema';
+import { users } from '../server/db/schema';
 import { eq } from 'drizzle-orm';
 import { getTransporter } from '../server/services/email';
 

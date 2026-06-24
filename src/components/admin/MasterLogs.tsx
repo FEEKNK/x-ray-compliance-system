@@ -66,7 +66,9 @@ const MasterLogs: React.FC = () => {
   const computedTotalPages = Math.ceil(computedTotalRecords / 20) || 1;
 
   React.useEffect(() => {
+    // eslint-disable-next-line
     if (page > computedTotalPages) setPage(1);
+    // eslint-disable-next-line
   }, [computedTotalPages]);
 
   const paginatedSubmissions = filteredSubmissions.slice((page - 1) * 20, page * 20);
