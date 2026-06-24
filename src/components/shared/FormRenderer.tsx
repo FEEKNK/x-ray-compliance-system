@@ -195,13 +195,18 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, init
 
                 {q.type === 'number' && (
                   <input 
-                    type="number" 
-                    step="any"
+                    type="text" 
+                    inputMode="text"
                     required={q.required}
-                    placeholder="0.00"
+                    placeholder="0.00 (ใส่ค่าลบได้ เช่น -5)"
                     className="w-full border-2 border-gray-100 rounded-2xl p-4 focus:border-[#00468B] focus:bg-white bg-white shadow-sm outline-none transition-all font-bold text-gray-700"
                     value={String(formData[q.id] ?? '')}
-                    onChange={(e) => setFormData({...formData, [q.id]: e.target.value})}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^-?\d*\.?\d*$/.test(val)) {
+                        setFormData({...formData, [q.id]: val});
+                      }
+                    }}
                   />
                 )}
 

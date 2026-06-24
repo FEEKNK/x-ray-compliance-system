@@ -98,8 +98,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // clearLogs is an alias for resetData (same backend endpoint)
   const clearLogs = resetData;
 
-  const exportData = useCallback(async (prefix = 'xray-system-export') => {
-    const data = await api.exportData();
+  const exportData = useCallback(async (prefix = 'xray-system-export', filters?: { startDate?: string; endDate?: string }) => {
+    const data = await api.exportData(filters);
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

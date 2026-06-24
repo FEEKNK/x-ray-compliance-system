@@ -118,7 +118,7 @@ export interface AppContextType {
   // Keep these global actions here for now or move to separate hooks
   resetDatabase: () => void;
   resetData: () => Promise<void>;
-  exportData: (prefix?: string) => Promise<void>;
+  exportData: (prefix?: string, filters?: { startDate?: string; endDate?: string }) => Promise<void>;
   clearLogs: () => void;
 }
 

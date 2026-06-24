@@ -238,8 +238,13 @@ export const api = {
     apiFetch(`/seed`, { method: 'POST' }).then(r => handleResponse(r)),
 
   // ─── Export Data ──────────────────────────────────
-  exportData: (): Promise<unknown> =>
-    apiFetch(`/export-data`, { method: 'GET' }).then(r => handleResponse(r)),
+  exportData: (filters?: { startDate?: string; endDate?: string }): Promise<unknown> => {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return apiFetch(`/export-data${query}`, { method: 'GET' }).then(r => handleResponse(r));
+  },
 
   // ─── Reset Data ───────────────────────────────────
   resetData: (): Promise<{ success: boolean; message: string }> =>

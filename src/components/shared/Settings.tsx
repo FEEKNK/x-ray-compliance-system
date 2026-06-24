@@ -40,6 +40,11 @@ const Settings: React.FC = () => {
   const [importMode, setImportMode] = useState<'replace_all' | 'merge'>('merge');
   const [importCollections, setImportCollections] = useState<string[]>(['settings', 'users', 'forms', 'schedules', 'submissions']);
 
+  // Export Modal States
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
+
   // Sync localSettings whenever global settings finish loading from the server
   useEffect(() => {
     let ignore = false;
@@ -103,7 +108,8 @@ const Settings: React.FC = () => {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      await exportData();
+      await exportData('xray-system-export', { startDate: exportStartDate || undefined, endDate: exportEndDate || undefined });
+      setShowExportModal(false);
     } finally {
       setIsExporting(false);
     }
@@ -399,7 +405,7 @@ const Settings: React.FC = () => {
               <div className="space-y-3 pt-2">
                  <button 
                   type="button"
-                  onClick={handleExport}
+                  onClick={() => setShowExportModal(true)}
                   disabled={isExporting || isImporting}
                   className="w-full bg-white text-[#00468B] py-3 rounded-xl font-bold text-xs uppercase tracking-widest border border-blue-200 hover:bg-blue-50 transition-all flex items-center justify-center space-x-2 shadow-sm"
                  >
@@ -725,6 +731,65 @@ const Settings: React.FC = () => {
                 ) : (
                   <><DatabaseBackup size={16} className="rotate-180" /> Confirm Import</>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Date Filter Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full mx-4 space-y-6">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div className="flex items-center space-x-3 text-[#00468B]">
+                <DatabaseBackup size={24} />
+                <h3 className="text-xl font-bold tracking-tight">Export Backup</h3>
+              </div>
+              <button onClick={() => setShowExportModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500">เลือกช่วงวันที่ที่ต้องการ Export ข้อมูลประวัติการตรวจเช็ค (เว้นว่างไว้หากต้องการ Export ข้อมูลทั้งหมด)</p>
+              
+              <div>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Start Date</label>
+                <input 
+                  type="date"
+                  value={exportStartDate}
+                  onChange={(e) => setExportStartDate(e.target.value)}
+                  className="w-full border-2 border-gray-100 rounded-xl p-3 text-gray-700 outline-none focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">End Date</label>
+                <input 
+                  type="date"
+                  value={exportEndDate}
+                  onChange={(e) => setExportEndDate(e.target.value)}
+                  className="w-full border-2 border-gray-100 rounded-xl p-3 text-gray-700 outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => setShowExportModal(false)}
+                disabled={isExporting}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-100 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleExport}
+                disabled={isExporting}
+                className="flex-1 py-3 rounded-xl bg-[#00468B] text-white font-bold text-sm hover:bg-[#003569] transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
+              >
+                {isExporting ? <Loader2 size={16} className="animate-spin" /> : <DatabaseBackup size={16} />}
+                Export
               </button>
             </div>
           </div>

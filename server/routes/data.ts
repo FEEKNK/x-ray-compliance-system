@@ -23,9 +23,10 @@ router.post('/reset-data', authenticateToken, requireAdmin, async (_req, res) =>
 });
 
 // Export Data API
-router.get('/export-data', authenticateToken, requireAdmin, async (_req, res) => {
+router.get('/export-data', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const data = await getFullExportData();
+    const { startDate, endDate } = req.query as { startDate?: string, endDate?: string };
+    const data = await getFullExportData(startDate, endDate);
     res.json(data);
   } catch (error) {
     logger.error('Error exporting data:', error);

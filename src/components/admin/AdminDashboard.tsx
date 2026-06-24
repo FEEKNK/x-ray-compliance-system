@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useSchedules, useUsers, useForms, useAddAlert, useSubmissions } from '../../hooks/queries';
+import { useSchedules, useUsers, useForms, useSubmissions } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
-import { CheckCircle, AlertTriangle, Clock, TrendingUp, ShieldAlert, Info, XCircle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Clock, TrendingUp, Info, XCircle } from 'lucide-react';
 import { translations } from '../../i18n';
 import { getLocalTodayStr, getSubmitDeadline } from '../../utils/shiftTime';
 
@@ -9,7 +9,6 @@ import type { Shift } from '../../types';
 
 const AdminDashboard: React.FC = () => {
   const { language, settings } = useApp();
-  const { mutate: addAlert } = useAddAlert();
   const { data: users = [] } = useUsers();
   const { data: forms = [] } = useForms();
   const { data: schedules = [] } = useSchedules();
@@ -149,30 +148,6 @@ const AdminDashboard: React.FC = () => {
       });
   })();
 
-  const runComplianceAudit = () => {
-    const overdue = dailySchedules.filter(s => s.status === 'Pending');
-    const uncovered = forms.filter(f => !dailySchedules.some(s => s.formId === f.id));
-    
-    if (overdue.length > 0) {
-      overdue.forEach(s => {
-        const staff = users.find(u => u.id === s.staffId);
-        const form = forms.find(f => f.id === s.formId);
-        addAlert({
-          type: 'Missed Task',
-          message: `OVERDUE: ${staff?.name} has not completed ${form?.title} at ${s.location || 'Assigned Area'}.`,
-          staffId: s.staffId,
-          formId: s.formId
-        });
-      });
-      alert(`SYSTEM ALERT: ${overdue.length} overdue tasks detected. Alerts logged.`);
-    } else if (uncovered.length > 0) {
-      alert(`COMPLIANCE GAP: ${uncovered.length} protocols not yet assigned for today.`);
-    } else {
-      alert('COMPLIANCE SECURE: All systems operational.');
-    }
-  };
-
-
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
@@ -182,13 +157,6 @@ const AdminDashboard: React.FC = () => {
           <p className="text-sm text-gray-500 font-medium">{settings.hospitalName} | Daily Operations</p>
         </div>
         <div className="flex space-x-3">
-           <button 
-            onClick={runComplianceAudit}
-            className="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold bg-white border-2 border-gray-50 text-red-600 hover:bg-red-50 transition-all shadow-sm"
-           >
-             <ShieldAlert size={16} className="mr-2" />
-             Run Audit
-           </button>
            <span className="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold bg-green-50 text-green-700 border border-green-100 shadow-sm">
              <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2"></span>
              Safe Status
