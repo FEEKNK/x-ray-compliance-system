@@ -220,6 +220,42 @@ const QualityDashboard: React.FC = () => {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Quality Dashboard');
+
+    // Add All Failure Logs
+    const allFailRows: string[][] = [];
+    allFailRows.push(['แบบฟอร์ม', 'แผนก', 'วันที่/เวลา', 'เวร', 'ผู้ตรวจสอบ', 'รายการที่พบปัญหา', 'สาเหตุ/หมายเหตุ']);
+    let hasAnyFails = false;
+
+    submissions.filter(s => getLocalTodayStr(parseDbDate(s.submittedAt)).startsWith(selectedMonthStr)).forEach(sub => {
+      const form = forms.find(f => f.id === sub.formId);
+      if (!form) return;
+      if (deptFilter !== 'ALL' && form.department !== deptFilter) return;
+      if (searchTerm && !form.title.toLowerCase().includes(searchTerm.toLowerCase())) return;
+
+      const dt = parseDbDate(sub.submittedAt);
+      const dateStr = dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+      const timeStr = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+      const dateTime = `${dateStr} ${timeStr}`;
+      const staff = users.find(u => u.id === sub.staffId);
+      const schedule = schedules.find(sc => sc.id === sub.scheduleId);
+
+      form.questions.forEach(q => {
+        const rawVal = sub.data[q.id];
+        if (rawVal === 'Fail' || rawVal === 'Alert' || rawVal === 'no' || rawVal === false) {
+           hasAnyFails = true;
+           const otherVal = sub.data[`${q.id}_other`];
+           const reason = otherVal ? String(otherVal) : '-';
+           allFailRows.push([form.title, form.department || '—', dateTime, schedule?.shift || '—', staff?.name || '—', q.label, reason]);
+        }
+      });
+    });
+
+    if (hasAnyFails) {
+      const failWs = XLSX.utils.aoa_to_sheet(allFailRows);
+      failWs['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 18 }, { wch: 10 }, { wch: 20 }, { wch: 40 }, { wch: 40 }];
+      XLSX.utils.book_append_sheet(wb, failWs, 'All Failure Logs');
+    }
+
     XLSX.writeFile(wb, `Quality_Dashboard_${selectedMonthStr}.xlsx`);
   };
 
@@ -340,6 +376,28 @@ const QualityDashboard: React.FC = () => {
         failWs['!cols'] = [{ wch: 18 }, { wch: 10 }, { wch: 20 }, { wch: 40 }, { wch: 40 }];
         XLSX.utils.book_append_sheet(wb, failWs, 'Failure Log');
       }
+
+      // Build List View
+      const listRows: string[][] = [];
+      listRows.push(['วันที่/เวลา', 'เวร', 'ผู้ตรวจสอบ', ...questions.map(q => q.label)]);
+      detailSubs.forEach(sub => {
+        const dt = parseDbDate(sub.submittedAt);
+        const dateStr = dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+        const timeStr = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+        const row = [`${dateStr} ${timeStr}`, sub.shift, sub.staffName];
+        questions.forEach(q => {
+          const rawVal = sub.data[q.id];
+          const otherVal = sub.data[`${q.id}_other`];
+          const val = (rawVal === 'อื่นๆ' && otherVal) ? otherVal : rawVal;
+          if (val === 'Pass' || val === 'yes' || val === true) row.push('Pass');
+          else if (val === 'Fail' || val === 'Alert' || val === 'no' || val === false) row.push('Fail');
+          else if (val === undefined || val === null || val === '') row.push('-');
+          else row.push(String(val));
+        });
+        listRows.push(row);
+      });
+      const listWs = XLSX.utils.aoa_to_sheet(listRows);
+      XLSX.utils.book_append_sheet(wb, listWs, 'List View');
 
       XLSX.writeFile(wb, `${safeTitle}_${selectedMonthStr}.xlsx`);
     } catch (err) {

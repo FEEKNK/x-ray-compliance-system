@@ -1,0 +1,1 @@
+ซ่อนปุ่ม Alert on Fail สำหรับ Pass/Fail, เพิ่มการดาวน์โหลด Sheet Failure Logs และ List View ในหน้า Quality Dashboard

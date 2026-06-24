@@ -356,20 +356,22 @@ const FormBuilder: React.FC = () => {
                       </label>
                     )}
 
-                    <label className="flex items-center space-x-3 cursor-pointer group/alert mt-2 sm:mt-0">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${q.alertOnFail ? 'bg-red-500 border-red-500' : 'border-gray-200 group-hover/alert:border-red-400'}`}>
-                        {q.alertOnFail && <Plus size={14} className="text-white rotate-45" />}
-                      </div>
-                      <input 
-                        type="checkbox" 
-                        checked={!!q.alertOnFail}
-                        onChange={(e) => updateQuestionState(q.id, { alertOnFail: e.target.checked })}
-                        className="hidden"
-                      />
-                      <span className="text-lg font-bold text-gray-600 text-red-600">
-                        {q.type === 'select' ? '⚠️ Alert on Any Fails (เปิดแจ้งเตือนสำหรับข้อนี้)' : '⚠️ Alert on Fail (แจ้งเตือนเมื่อตอบ Fail)'}
-                      </span>
-                    </label>
+                    {q.type !== 'yesno' && (
+                      <label className="flex items-center space-x-3 cursor-pointer group/alert mt-2 sm:mt-0">
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${q.alertOnFail ? 'bg-red-500 border-red-500' : 'border-gray-200 group-hover/alert:border-red-400'}`}>
+                          {q.alertOnFail && <Plus size={14} className="text-white rotate-45" />}
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={!!q.alertOnFail}
+                          onChange={(e) => updateQuestionState(q.id, { alertOnFail: e.target.checked })}
+                          className="hidden"
+                        />
+                        <span className="text-lg font-bold text-gray-600 text-red-600">
+                          {q.type === 'select' ? '⚠️ Alert on Any Fails (เปิดแจ้งเตือนสำหรับข้อนี้)' : '⚠️ Alert on Fail (แจ้งเตือนเมื่อตอบ Fail)'}
+                        </span>
+                      </label>
+                    )}
 
                     {q.type === 'date' && (
                       <label className="flex items-center space-x-3 cursor-pointer group/autodate">
