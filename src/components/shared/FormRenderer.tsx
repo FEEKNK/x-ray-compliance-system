@@ -55,19 +55,24 @@ export const FormRenderer: React.FC<FormRendererProps> = ({ form, schedule, init
     
     const finalFormData = { ...formData };
 
-    setTimeout(() => {
-      const submission: Submission = {
-        id: existingSubmission?.id || crypto.randomUUID(),
-        scheduleId: schedule.id,
-        staffId: schedule.staffId,
-        formId: form.id,
-        submittedAt: new Date().toISOString(),
-        data: finalFormData,
-        photos: []
-      };
-      onSubmit(submission);
-      setIsSubmitting(false);
-    }, 800);
+    const submission: Submission = {
+      id: existingSubmission?.id || crypto.randomUUID(),
+      scheduleId: schedule.id,
+      staffId: schedule.staffId,
+      formId: form.id,
+      submittedAt: new Date().toISOString(),
+      data: finalFormData,
+      photos: []
+    };
+    
+    // Call onSubmit which handles the API request
+    onSubmit(submission);
+    
+    // The parent component should ideally handle resetting isSubmitting 
+    // after the API call completes, but for now we reset it here.
+    // If the parent unmounts this component on success, this setState might warn,
+    // but the 800ms timeout had the same issue.
+    setIsSubmitting(false);
   };
 
   if (isLoading) {

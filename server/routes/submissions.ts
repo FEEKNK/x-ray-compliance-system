@@ -191,18 +191,21 @@ router.post('/', async (req, res) => {
           const allRecipients = Array.from(new Set([configSupervisorEmail, ...adminEmails].filter(Boolean) as string[]));
 
           if (allRecipients.length > 0) {
-            await getTransporter().sendMail({
+            getTransporter().sendMail({
               from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
               to: allRecipients.join(','),
               subject: `⚠️ [ด่วน] พบปัญหาจากการตรวจสอบ: ${form.title} โดย ${staff.name}`,
               html: emailHtml
+            }).then(() => {
+              console.log(`Sent real-time failure alert for form ${formId}`);
+            }).catch(err => {
+              console.error('Error sending real-time failure alert in background:', err);
             });
-            console.log(`Sent real-time failure alert for form ${formId}`);
           }
         }
       }
     } catch (err) {
-      console.error('Error sending real-time failure alert:', err);
+      console.error('Error preparing real-time failure alert:', err);
     }
     // ------------------------------------------------
 
