@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { submissions, schedules, users, forms } from '../db/schema';
+import { submissions, schedules, users, forms, config } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { getTransporter } from '../services/email';
 import { QuestionBlock } from '../../src/types';
@@ -183,11 +183,17 @@ router.post('/', async (req, res) => {
             </div>
           `;
           
-          const supervisorEmails = (await db.select().from(users).where(eq(users.role, 'ADMIN'))).map(u => u.email).filter(Boolean) as string[];
-          if (supervisorEmails.length > 0) {
+          const sysConfig = await db.select().from(config).limit(1);
+          const settings = sysConfig[0]?.settings as Record<string, unknown> | undefined;
+          const configSupervisorEmail = (settings?.supervisorEmail as string | undefined) || process.env.SUPERVISOR_EMAIL;
+          
+          const adminEmails = (await db.select().from(users).where(eq(users.role, 'ADMIN'))).map(u => u.email).filter(Boolean) as string[];
+          const allRecipients = Array.from(new Set([configSupervisorEmail, ...adminEmails].filter(Boolean) as string[]));
+
+          if (allRecipients.length > 0) {
             await getTransporter().sendMail({
               from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
-              to: supervisorEmails.join(','),
+              to: allRecipients.join(','),
               subject: `⚠️ [ด่วน] พบปัญหาจากการตรวจสอบ: ${form.title} โดย ${staff.name}`,
               html: emailHtml
             });
