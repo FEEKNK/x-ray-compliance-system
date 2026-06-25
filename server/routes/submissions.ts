@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db';
 import { submissions, schedules, users, forms, config } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
-import { getTransporter } from '../services/email';
+import { getTransporter, escapeHtml } from '../services/email';
 import { QuestionBlock } from '../../src/types';
 
 const router = Router();
@@ -147,15 +147,36 @@ router.post('/', async (req, res) => {
         const safeQuestions = Array.isArray(form.questions) ? form.questions : [];
 
         Object.entries(safeData).forEach(([key, value]) => {
+          const question = safeQuestions.find((q: QuestionBlock) => q.id === key);
+          const label = question ? question.label : key;
+
           if (value === 'Fail' || value === 'Alert') {
             hasFailures = true;
-            const question = safeQuestions.find((q: QuestionBlock) => q.id === key);
-            failedItems.push(question ? question.label : key);
-          } else {
-            const question = safeQuestions.find((q: QuestionBlock) => q.id === key);
-            if (question?.alertOnFail && typeof value === 'string' && question.failOptions?.includes(value)) {
+            failedItems.push(`${label}: ${value}`);
+          } else if (question?.alertOnFail) {
+            if (typeof value === 'string' && question.failOptions?.includes(value)) {
               hasFailures = true;
-              failedItems.push(`${question.label}: ${value}`);
+              failedItems.push(`${label}: ${value}`);
+            } else if (Array.isArray(value)) {
+              const failedVals = value.filter(v => typeof v === 'string' && question.failOptions?.includes(v));
+              if (failedVals.length > 0) {
+                hasFailures = true;
+                failedItems.push(`${label}: ${failedVals.join(', ')}`);
+              }
+            }
+          }
+          
+          if (question?.alertOnCustomInput && question.allowCustomInput) {
+            const options = question.options || [];
+            if (typeof value === 'string' && !options.includes(value) && value.trim() !== '') {
+              hasFailures = true;
+              failedItems.push(`${label}: ${value} (Other)`);
+            } else if (Array.isArray(value)) {
+              const customVals = value.filter(v => typeof v === 'string' && !options.includes(v) && v.trim() !== '');
+              if (customVals.length > 0) {
+                hasFailures = true;
+                failedItems.push(`${label}: ${customVals.join(', ')} (Other)`);
+              }
             }
           }
         });
@@ -167,17 +188,17 @@ router.post('/', async (req, res) => {
                 <h2 style="color: #dc2626; margin: 0;">⚠️ พบปัญหาจากการตรวจสอบเครื่องมือ</h2>
               </div>
               <div style="padding: 20px;">
-                <p><strong>ผู้ตรวจสอบ:</strong> ${staff.name}</p>
-                <p><strong>แบบฟอร์ม:</strong> ${form.title}</p>
-                <p><strong>เวลาที่บันทึก:</strong> ${new Date().toLocaleString('th-TH')}</p>
+                <p><strong>ผู้ตรวจสอบ:</strong> ${escapeHtml(staff.name)}</p>
+                <p><strong>แบบฟอร์ม:</strong> ${escapeHtml(form.title)}</p>
+                <p><strong>เวลาที่บันทึก:</strong> ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}</p>
                 
                 <h3 style="color: #991b1b; margin-top: 20px;">รายการที่ขัดข้อง:</h3>
                 <ul style="background-color: #fff5f5; padding: 15px 15px 15px 35px; border-radius: 8px; border: 1px solid #fecaca; color: #b91c1c;">
-                  ${failedItems.map(item => `<li>${item}</li>`).join('')}
+                  ${failedItems.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
                 </ul>
                 
                 <div style="margin-top: 30px; text-align: center;">
-                  <a href="${process.env.APP_URL || 'http://localhost:5173'}/admin" style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">ดูรายละเอียดในระบบ</a>
+                  <a href="${(process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, '')}/admin" style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">ดูรายละเอียดในระบบ</a>
                 </div>
               </div>
             </div>
