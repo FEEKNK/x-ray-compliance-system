@@ -177,7 +177,7 @@ router.post('/', async (req, res) => {
                 </ul>
                 
                 <div style="margin-top: 30px; text-align: center;">
-                  <a href="https://x-ray-compliance-system.onrender.com/admin" style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">ดูรายละเอียดในระบบ</a>
+                  <a href="${process.env.APP_URL || 'http://localhost:5173'}/admin" style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">ดูรายละเอียดในระบบ</a>
                 </div>
               </div>
             </div>
