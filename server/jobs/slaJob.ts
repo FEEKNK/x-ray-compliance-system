@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { schedules, forms, users, config } from '../db/schema';
+import { schedules, forms, users, config, alerts } from '../db/schema';
 import { eq, and, inArray, isNotNull } from 'drizzle-orm';
 import { logger } from '../logger';
 import { getTransporter, escapeHtml } from '../services/email';
@@ -251,6 +251,18 @@ export const runSLAJob = async () => {
           await db.update(schedules)
             .set({ supervisorAlertSent: true })
             .where(inArray(schedules.id, allSchedIdsToUpdate));
+
+          // Insert into alerts table for in-app notification
+          const newAlerts = scheds.map(sched => ({
+            type: 'Missed Task' as const,
+            message: `ลืมทำรายการ: ${sched.formId ? formMap.get(sched.formId)?.title || 'Unknown Form' : 'Unknown Form'} โดย ${staffMap.get(sched.staffId)?.name || 'Unknown Staff'} (เวร${shiftTh})`,
+            staffId: sched.staffId,
+            formId: sched.formId,
+          }));
+          
+          if (newAlerts.length > 0) {
+            await db.insert(alerts).values(newAlerts).catch(err => logger.error('[SLA Job] Error inserting missed task alerts:', err));
+          }
         }
         logger.info(`[SLA Job] ✅ Shift-End Summary sent to ${toList} for shift ${shiftTh}.`);
       }

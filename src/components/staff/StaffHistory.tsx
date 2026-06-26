@@ -8,6 +8,7 @@ import type { Submission, DynamicForm, Schedule } from '../../types';
 import { getLockStatus, isSubmitAllowed } from '../../utils/shiftTime';
 import { FormRenderer } from '../shared/FormRenderer';
 import { useForms, useSchedules, useSubmissions, useAddSubmission } from '../../hooks/queries';
+import { hasSubmissionFailures } from '../../utils/formUtils';
 
 const StaffHistory: React.FC = () => {
   const { currentUser, language, settings } = useApp();
@@ -96,7 +97,7 @@ const StaffHistory: React.FC = () => {
       <div className="grid grid-cols-1 gap-4">
         {mySubmissions.length > 0 ? mySubmissions.map(sub => {
           const form = forms.find(f => f.id === sub.formId);
-          const hasAlert = Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert');
+          const hasAlert = form ? hasSubmissionFailures(sub, form) : false;
           const schedule = schedules.find(s => s.id === sub.scheduleId);
           const lockoutHours = settings?.lockoutHours as Record<string, number> | undefined;
           const shiftsConfig = settings?.shifts as Record<string, string> | undefined;

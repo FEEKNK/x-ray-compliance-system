@@ -8,6 +8,7 @@ import type { Submission } from '../../types';
 
 import { api } from '../../api';
 import { useUsers, useForms, useSchedules } from '../../hooks/queries';
+import { hasSubmissionFailures } from '../../utils/formUtils';
 
 const MasterLogs: React.FC = () => {
   const { language, settings } = useApp();
@@ -76,7 +77,10 @@ const MasterLogs: React.FC = () => {
   const stats = {
     total: filteredSubmissions.length,
     withPhotos: filteredSubmissions.filter(s => s.photos.length > 0).length,
-    alerts: filteredSubmissions.filter(s => Object.values(s.data).some(v => v === 'Fail' || v === 'Alert')).length
+    alerts: filteredSubmissions.filter(s => {
+      const form = forms.find(f => f.id === s.formId);
+      return form ? hasSubmissionFailures(s, form) : false;
+    }).length
   };
 
   const exportToCSV = () => {
@@ -197,7 +201,7 @@ const MasterLogs: React.FC = () => {
                 const staff = users.find(u => u.id === sub.staffId);
                 const form = forms.find(f => f.id === sub.formId);
                 const schedule = schedules.find(s => s.id === sub.scheduleId);
-                const hasAlert = Object.values(sub.data).some(v => v === 'Fail' || v === 'Alert');
+                const hasAlert = form ? hasSubmissionFailures(sub, form) : false;
                 return (
                   <tr key={sub.id} className="hover:bg-blue-50/30 transition-colors group">
                     <td className="px-8 py-6">

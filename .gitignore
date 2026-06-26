@@ -33,3 +33,9 @@ check_*.mjs
 test-tx.*
 payload.json
 src/data/db.json
+
+# E2E Tests and testing scripts
+tests/
+scripts/
+*.test.js
+*.spec.js

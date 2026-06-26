@@ -2,6 +2,7 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useForms, useSubmissions, useSchedules, useUsers } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
 import { parseDbDate, getLocalTodayStr } from '../../utils/shiftTime';
+import { hasSubmissionFailures, getSubmissionFailures } from '../../utils/formUtils';
 import {
   ShieldCheck, ChevronLeft, ChevronRight, Calendar,
   FileText, CheckCircle2, AlertTriangle, BarChart3,
@@ -131,9 +132,7 @@ const QualityDashboard: React.FC = () => {
       const monthSubs = submissions.filter(s =>
         s.formId === form.id && getLocalTodayStr(parseDbDate(s.submittedAt)).startsWith(selectedMonthStr)
       );
-      const failCount = monthSubs.filter(s =>
-        Object.values(s.data).some(v => v === 'Fail' || v === 'Alert')
-      ).length;
+      const failCount = monthSubs.filter(s => hasSubmissionFailures(s, form)).length;
       const lastSub = monthSubs.length > 0
         ? monthSubs.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))[0].submittedAt
         : null;
@@ -241,15 +240,17 @@ const QualityDashboard: React.FC = () => {
       const staff = users.find(u => u.id === sub.staffId);
       const schedule = schedules.find(sc => sc.id === sub.scheduleId);
 
-      form.questions.forEach(q => {
-        const rawVal = sub.data[q.id];
-        if (rawVal === 'Fail' || rawVal === 'Alert' || rawVal === 'no' || rawVal === false) {
-           hasAnyFails = true;
-           const otherVal = sub.data[`${q.id}_other`];
-           const reason = otherVal ? String(otherVal) : '-';
-           allFailRows.push([form.title, form.department || '—', dateTime, schedule?.shift || '—', staff?.name || '—', q.label, reason]);
-        }
-      });
+      const failedFields = getSubmissionFailures(sub, form);
+      if (failedFields.length > 0) {
+        hasAnyFails = true;
+        failedFields.forEach(ff => {
+          // ff is in format "Label: Value (Note)" or just "Label: Value"
+          const splitIdx = ff.indexOf(':');
+          const qLabel = splitIdx > -1 ? ff.substring(0, splitIdx).trim() : ff;
+          const reason = splitIdx > -1 ? ff.substring(splitIdx + 1).trim() : '-';
+          allFailRows.push([form.title, form.department || '—', dateTime, schedule?.shift || '—', staff?.name || '—', qLabel, reason]);
+        });
+      }
     });
 
     if (hasAnyFails) {
@@ -613,7 +614,8 @@ const QualityDashboard: React.FC = () => {
       .map(s => {
         const staff = users.find(u => u.id === s.staffId);
         const schedule = schedules.find(sch => sch.id === s.scheduleId);
-        const hasFail = Object.values(s.data).some(v => v === 'Fail' || v === 'Alert');
+        const form = forms.find(f => f.id === formId);
+        const hasFail = form ? hasSubmissionFailures(s, form) : false;
         return {
           id: s.id,
           staffName: staff?.name || 'Unknown',

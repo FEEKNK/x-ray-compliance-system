@@ -11,6 +11,7 @@ import { Calendar, Users, AlertCircle, ChevronLeft, ChevronRight, User, Check, C
 import { translations } from '../../i18n';
 import type { Schedule } from '../../types';
 import { getLocalTodayStr, parseDbDate } from '../../utils/shiftTime';
+import { hasSubmissionFailures, getSubmissionFailures } from '../../utils/formUtils';
 import { ExpandableCard } from '../shared/ExpandableCard';
 import * as XLSX from 'xlsx';
 
@@ -668,7 +669,10 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept })
         const form = forms.find(f => f.id === s.formId);
         return form && form.department === selectedDept;
       });
-      const errors = monthSubs.filter(s => Object.values(s.data).some(v => v === 'Fail' || v === 'Alert')).length;
+      const errors = monthSubs.filter(s => {
+        const form = forms.find(f => f.id === s.formId);
+        return form ? hasSubmissionFailures(s, form) : false;
+      }).length;
       return { month: MONTHS[m], errors };
     });
   }, [submissions, forms, year, MONTHS, selectedDept]);
@@ -697,20 +701,17 @@ const YearlyView: React.FC<YearlyViewProps> = ({ year, language, selectedDept })
       if (!form) return;
       if (selectedDept !== 'ALL' && form.department !== selectedDept) return;
       
-      let formHasError = false;
-      Object.entries(sub.data).forEach(([key, value]) => {
-        if (value === 'Fail' || value === 'Alert') {
-          formHasError = true;
-          if (!errorsMap[sub.formId]) {
-            errorsMap[sub.formId] = { count: 0, details: {} };
-          }
-          const question = form.questions.find(q => q.id === key);
-          const eqName = question ? question.label : key;
-          errorsMap[sub.formId].details[eqName] = (errorsMap[sub.formId].details[eqName] || 0) + 1;
+      const failedFields = getSubmissionFailures(sub, form);
+      if (failedFields.length > 0) {
+        if (!errorsMap[sub.formId]) {
+          errorsMap[sub.formId] = { count: 0, details: {} };
         }
-      });
-      if (formHasError) {
-         errorsMap[sub.formId].count += 1;
+        errorsMap[sub.formId].count += 1;
+        failedFields.forEach(ff => {
+           const splitIdx = ff.indexOf(':');
+           const eqName = splitIdx > -1 ? ff.substring(0, splitIdx).trim() : ff;
+           errorsMap[sub.formId].details[eqName] = (errorsMap[sub.formId].details[eqName] || 0) + 1;
+        });
       }
     });
 

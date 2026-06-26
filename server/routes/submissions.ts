@@ -143,40 +143,72 @@ router.post('/', async (req, res) => {
         let hasFailures = false;
         const failedItems: string[] = [];
         
-        const safeData = typeof data === 'object' && data !== null ? data : {};
+        const safeData = typeof data === 'object' && data !== null ? data as Record<string, unknown> : {};
         const safeQuestions = Array.isArray(form.questions) ? form.questions : [];
+        const processedKeys = new Set<string>();
 
-        Object.entries(safeData).forEach(([key, value]) => {
-          const question = safeQuestions.find((q: QuestionBlock) => q.id === key);
-          const label = question ? question.label : key;
+        Object.entries(safeData).forEach(([key]) => {
+          if (processedKeys.has(key)) return;
+          
+          let baseKey = key;
+          if (key.endsWith('_other')) {
+            baseKey = key.replace('_other', '');
+          }
 
-          if (value === 'Fail' || value === 'Alert') {
+          const question = safeQuestions.find((q: QuestionBlock) => q.id === baseKey);
+          if (!question) return;
+
+          const label = question.label;
+          const mainValue = safeData[baseKey];
+          const otherValue = safeData[`${baseKey}_other`];
+          
+          processedKeys.add(baseKey);
+          processedKeys.add(`${baseKey}_other`);
+
+          let triggeredAlert = false;
+
+          // 1. Hardcoded Critical Failures
+          if (mainValue === 'Fail' || mainValue === 'Alert') {
             hasFailures = true;
-            failedItems.push(`${label}: ${value}`);
-          } else if (question?.alertOnFail) {
-            if (typeof value === 'string' && question.failOptions?.includes(value)) {
+            triggeredAlert = true;
+            failedItems.push(`${label}: ${mainValue}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
+          } 
+          // 2. Configurable Fail Options
+          else if (question.alertOnFail) {
+            if (typeof mainValue === 'string' && question.failOptions?.includes(mainValue)) {
               hasFailures = true;
-              failedItems.push(`${label}: ${value}`);
-            } else if (Array.isArray(value)) {
-              const failedVals = value.filter(v => typeof v === 'string' && question.failOptions?.includes(v));
+              triggeredAlert = true;
+              failedItems.push(`${label}: ${mainValue}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
+            } else if (Array.isArray(mainValue)) {
+              const failedVals = mainValue.filter(v => typeof v === 'string' && question.failOptions?.includes(v));
               if (failedVals.length > 0) {
                 hasFailures = true;
-                failedItems.push(`${label}: ${failedVals.join(', ')}`);
+                triggeredAlert = true;
+                failedItems.push(`${label}: ${failedVals.join(', ')}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
               }
             }
           }
           
-          if (question?.alertOnCustomInput && question.allowCustomInput) {
+          // 3. Custom Input Options (Not in preset options)
+          if (!triggeredAlert && question.alertOnCustomInput && question.allowCustomInput) {
             const options = question.options || [];
-            if (typeof value === 'string' && !options.includes(value) && value.trim() !== '') {
+            
+            // If the main value itself is completely custom (from new customMode implementation)
+            if (typeof mainValue === 'string' && !options.includes(mainValue) && mainValue.trim() !== '') {
               hasFailures = true;
-              failedItems.push(`${label}: ${value} (Other)`);
-            } else if (Array.isArray(value)) {
-              const customVals = value.filter(v => typeof v === 'string' && !options.includes(v) && v.trim() !== '');
+              failedItems.push(`${label}: ${mainValue} (ระบุเอง)`);
+            } else if (Array.isArray(mainValue)) {
+              const customVals = mainValue.filter(v => typeof v === 'string' && !options.includes(v) && v.trim() !== '');
               if (customVals.length > 0) {
                 hasFailures = true;
-                failedItems.push(`${label}: ${customVals.join(', ')} (Other)`);
+                failedItems.push(`${label}: ${customVals.join(', ')} (ระบุเอง)`);
               }
+            }
+            
+            // If the user selected an option (like "อื่นๆ") AND provided details in _other (Legacy implementation)
+            if (typeof mainValue === 'string' && (mainValue === 'อื่นๆ' || mainValue === 'Other') && otherValue && String(otherValue).trim() !== '') {
+              hasFailures = true;
+              failedItems.push(`${label}: ${mainValue} (ระบุ: ${otherValue})`);
             }
           }
         });

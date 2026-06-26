@@ -7,6 +7,7 @@ import { getLocalTodayStr, getSubmitDeadline } from '../../utils/shiftTime';
 import { ExpandableCard } from '../shared/ExpandableCard';
 
 import type { Shift } from '../../types';
+import { getSubmissionFailures } from '../../utils/formUtils';
 
 const AdminDashboard: React.FC = () => {
   const { language, settings } = useApp();
@@ -48,42 +49,7 @@ const AdminDashboard: React.FC = () => {
       const form = forms.find(f => f.id === schedule.formId);
       if (!form) return acc;
 
-      const failedFields: string[] = [];
-
-      form.questions.forEach(q => {
-        const answer = String(sub.data[q.id] || '');
-        const otherAnswer = String(sub.data[`${q.id}_other`] || '');
-        const hasOtherNote = otherAnswer.trim().length > 0 && answer === '';
-
-        let isFailing = false;
-
-        // Check explicit failOptions for Dropdown
-        if (q.type === 'select' && q.failOptions && q.failOptions.includes(answer)) {
-          isFailing = true;
-        }
-        // Check custom input alert
-        else if (q.alertOnCustomInput && (hasOtherNote || (q.allowCustomInput && !q.options?.includes(answer) && answer !== ''))) {
-          if (q.type === 'yesno' && !['Pass', 'Fail'].includes(answer) && answer !== '') isFailing = true;
-          else if (q.type === 'composite' && !['Normal', 'Alert'].includes(answer) && answer !== '') isFailing = true;
-          else if (q.type === 'select' && !q.options?.includes(answer) && answer !== '') isFailing = true;
-          else if (hasOtherNote) isFailing = true;
-        }
-        // Generic alertOnFail for yesno/composite/text
-        else if (q.alertOnFail) {
-          if (q.type === 'yesno' && answer === 'Fail') isFailing = true;
-          if (q.type === 'composite' && answer === 'Alert') isFailing = true;
-          if (q.type === 'text' && answer.trim().length > 0) isFailing = true;
-        }
-        // Fallback for legacy forms without explicit config
-        else if (!q.alertOnFail && !q.failOptions && !q.alertOnCustomInput) {
-          if (answer === 'Fail' || answer === 'Alert') isFailing = true;
-        }
-
-        if (isFailing) {
-          const detail = otherAnswer ? `${answer} (${otherAnswer})`.trim() : answer;
-          failedFields.push(`${q.label}: ${detail || '(ไม่ได้ระบุข้อความ)'}`);
-        }
-      });
+      const failedFields = getSubmissionFailures(sub, form);
 
       if (failedFields.length > 0) {
         const staff = users.find(u => u.id === sub.staffId);
