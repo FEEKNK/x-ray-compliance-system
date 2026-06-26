@@ -15,7 +15,7 @@ export function getShiftThaiName(shift: string): string {
 /** Parse the start hour from a shift time range string like "08:00 - 16:00" */
 export function parseShiftStartHour(timeRangeStr: string | undefined, defaultHour: number): number {
   if (!timeRangeStr) return defaultHour;
-  const match = timeRangeStr.match(/^(\d{1,2})[:.](\\d{2})/);
+  const match = timeRangeStr.match(/^(\d{1,2})[:.](\d{2})/);
   if (!match) return defaultHour;
   const hr = parseInt(match[1], 10);
   const min = parseInt(match[2], 10);
@@ -25,7 +25,7 @@ export function parseShiftStartHour(timeRangeStr: string | undefined, defaultHou
 /** Parse the end hour from a shift time range string like "08:00 - 16:00" */
 export function parseShiftEndHour(timeRangeStr: string | undefined, defaultEnd: number): number {
   if (!timeRangeStr) return defaultEnd;
-  const match = timeRangeStr.match(/-\s*(\d{1,2})[:.](\\d{2})/);
+  const match = timeRangeStr.match(/-\s*(\d{1,2})[:.](\d{2})/);
   if (!match) return defaultEnd;
   const hr = parseInt(match[1], 10);
   const min = parseInt(match[2], 10);
