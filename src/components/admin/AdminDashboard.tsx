@@ -4,6 +4,7 @@ import { useApp } from '../../AppContext';
 import { CheckCircle, AlertTriangle, Clock, TrendingUp, Info, XCircle } from 'lucide-react';
 import { translations } from '../../i18n';
 import { getLocalTodayStr, getSubmitDeadline } from '../../utils/shiftTime';
+import { ExpandableCard } from '../shared/ExpandableCard';
 
 import type { Shift } from '../../types';
 
@@ -28,7 +29,7 @@ const AdminDashboard: React.FC = () => {
     }, [schedules, forms]);
   const t = translations[language];
   const [selectedDept, setSelectedDept] = useState<string>(settings?.departments?.[0] || 'IMAGING');
-  
+  const [maximizedModule, setMaximizedModule] = useState<string | null>(null);
   const today = getLocalTodayStr();
   const rate = getCompletionRate(today, selectedDept);
   
@@ -182,86 +183,104 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Shift Breakdown Matrix */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {(['Morning', 'Afternoon', 'Night', 'NightBeforeMorning'] as Shift[]).map((shift) => {
-          const shiftSchedules = dailySchedules.filter(s => s.shift === shift);
-          const shiftCompleted = shiftSchedules.filter(s => s.status === 'Completed').length;
-          const shiftPending = shiftSchedules.filter(s => s.status === 'Pending').length;
-          const shiftTotal = shiftSchedules.length;
-          const shiftRate = shiftTotal > 0 ? Math.round((shiftCompleted / shiftTotal) * 100) : 0;
+      <ExpandableCard 
+        id="shiftMatrix" 
+        maximizedId={maximizedModule} 
+        setMaximizedId={setMaximizedModule}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {(['Morning', 'Afternoon', 'Night', 'NightBeforeMorning'] as Shift[]).map((shift) => {
+            const shiftSchedules = dailySchedules.filter(s => s.shift === shift);
+            const shiftCompleted = shiftSchedules.filter(s => s.status === 'Completed').length;
+            const shiftPending = shiftSchedules.filter(s => s.status === 'Pending').length;
+            const shiftTotal = shiftSchedules.length;
+            const shiftRate = shiftTotal > 0 ? Math.round((shiftCompleted / shiftTotal) * 100) : 0;
 
-          return (
-            <div key={shift} className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full ${
-                    shift === 'Morning' ? 'bg-orange-400' : shift === 'Afternoon' ? 'bg-blue-400' : shift === 'NightBeforeMorning' ? 'bg-green-500' : 'bg-indigo-500'
-                  }`}></div>
-                  <h3 className="text-sm font-black uppercase tracking-wider text-gray-500">
-                    {shift === 'Morning' ? t.morning : shift === 'Afternoon' ? t.afternoon : shift === 'NightBeforeMorning' ? t.nightBeforeMorning : t.night}
-                  </h3>
+            return (
+              <div key={shift} className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-3 h-3 rounded-full ${
+                      shift === 'Morning' ? 'bg-orange-400' : shift === 'Afternoon' ? 'bg-blue-400' : shift === 'NightBeforeMorning' ? 'bg-green-500' : 'bg-indigo-500'
+                    }`}></div>
+                    <h3 className="text-sm font-black uppercase tracking-wider text-gray-500">
+                      {shift === 'Morning' ? t.morning : shift === 'Afternoon' ? t.afternoon : shift === 'NightBeforeMorning' ? t.nightBeforeMorning : t.night}
+                    </h3>
+                  </div>
+                  <span className="text-lg font-black text-[#00468B]">{shiftRate}%</span>
                 </div>
-                <span className="text-lg font-black text-[#00468B]">{shiftRate}%</span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-green-50/50 p-4 rounded-xl border border-green-50">
-                  <p className="text-xs font-black text-green-600 uppercase tracking-wider mb-1">Done</p>
-                  <p className="text-2xl font-black text-green-700">{shiftCompleted}</p>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-green-50/50 p-4 rounded-xl border border-green-50">
+                    <p className="text-xs font-black text-green-600 uppercase tracking-wider mb-1">Done</p>
+                    <p className="text-2xl font-black text-green-700">{shiftCompleted}</p>
+                  </div>
+                  <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-50">
+                    <p className="text-xs font-black text-amber-600 uppercase tracking-wider mb-1">Wait</p>
+                    <p className="text-2xl font-black text-amber-700">{shiftPending}</p>
+                  </div>
                 </div>
-                <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-50">
-                  <p className="text-xs font-black text-amber-600 uppercase tracking-wider mb-1">Wait</p>
-                  <p className="text-2xl font-black text-amber-700">{shiftPending}</p>
+
+                {/* Progress bar at bottom */}
+                <div className="absolute bottom-0 left-0 h-1 bg-gray-50 w-full">
+                  <div 
+                    className={`h-full transition-all duration-1000 ${
+                      shift === 'Morning' ? 'bg-orange-400' : shift === 'Afternoon' ? 'bg-blue-400' : shift === 'NightBeforeMorning' ? 'bg-green-500' : 'bg-indigo-500'
+                    }`}
+                    style={{ width: `${shiftRate}%` }}
+                  ></div>
                 </div>
               </div>
+            );
+          })}
+        </div>
+      </ExpandableCard>
 
-              {/* Progress bar at bottom */}
-              <div className="absolute bottom-0 left-0 h-1 bg-gray-50 w-full">
-                <div 
-                  className={`h-full transition-all duration-1000 ${
-                    shift === 'Morning' ? 'bg-orange-400' : shift === 'Afternoon' ? 'bg-blue-400' : shift === 'NightBeforeMorning' ? 'bg-green-500' : 'bg-indigo-500'
-                  }`}
-                  style={{ width: `${shiftRate}%` }}
-                ></div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <ExpandableCard 
+        id="stats" 
+        maximizedId={maximizedModule} 
+        setMaximizedId={setMaximizedModule}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard 
+            title={t.globalCompliance} 
+            value={`${Math.round(rate)}%`} 
+            icon={<TrendingUp size={20} />}
+            color="text-[#00468B]"
+            bg="bg-blue-50"
+          />
+          <StatCard 
+            title={t.verifiedReports} 
+            value={completed} 
+            icon={<CheckCircle size={20} />}
+            color="text-green-600"
+            bg="bg-green-50"
+          />
+          <StatCard 
+            title={t.pendingInspections} 
+            value={pending} 
+            icon={<Clock size={20} />}
+            color="text-amber-600"
+            bg="bg-amber-50"
+          />
+          <StatCard 
+            title="Clinical Failures" 
+            value={criticalSubmissions} 
+            icon={<AlertTriangle size={20} />}
+            color="text-red-600"
+            bg="bg-red-50"
+          />
+        </div>
+      </ExpandableCard>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title={t.globalCompliance} 
-          value={`${Math.round(rate)}%`} 
-          icon={<TrendingUp size={20} />}
-          color="text-[#00468B]"
-          bg="bg-blue-50"
-        />
-        <StatCard 
-          title={t.verifiedReports} 
-          value={completed} 
-          icon={<CheckCircle size={20} />}
-          color="text-green-600"
-          bg="bg-green-50"
-        />
-        <StatCard 
-          title={t.pendingInspections} 
-          value={pending} 
-          icon={<Clock size={20} />}
-          color="text-amber-600"
-          bg="bg-amber-50"
-        />
-        <StatCard 
-          title="Clinical Failures" 
-          value={criticalSubmissions} 
-          icon={<AlertTriangle size={20} />}
-          color="text-red-600"
-          bg="bg-red-50"
-        />
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-         <div className="flex items-center justify-between mb-8">
+      <ExpandableCard 
+        id="formCoverage" 
+        maximizedId={maximizedModule} 
+        setMaximizedId={setMaximizedModule}
+        className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+        contentClassName="p-8 pt-6"
+        header={
+          <div className="flex items-center justify-between p-8 pb-5 pr-16 bg-white border-b border-gray-100">
             <div>
                <h3 className="text-lg font-bold text-[#00468B]">{t.dailyFormCoverage}</h3>
                <p className="text-xs text-gray-400 font-medium">Verification status for every machine protocol today</p>
@@ -280,8 +299,9 @@ const AdminDashboard: React.FC = () => {
                   <span className="text-xs font-bold text-red-600 uppercase tracking-wide">Missed</span>
                </div>
             </div>
-         </div>
-         
+          </div>
+        }
+      >
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {formCoverage.map(item => (
               <div key={item.id} className={`p-4 rounded-xl border transition-all flex flex-col justify-between shadow-sm hover:shadow-md ${
@@ -305,25 +325,32 @@ const AdminDashboard: React.FC = () => {
               </div>
             ))}
          </div>
-      </div>
+      </ExpandableCard>
 
       {/* ── Overdue Tasks Section ─────────────────── */}
       {overdueItems.length > 0 && (
-        <div className="bg-white rounded-2xl border-2 border-orange-200 overflow-hidden shadow-sm animate-in slide-in-from-top-2">
-          <div className="p-5 bg-orange-50 flex items-center justify-between border-b border-orange-100">
-            <div className="flex items-center space-x-3 text-orange-700">
-              <XCircle size={20} />
-              <div>
-                <h3 className="font-black text-base">งานหมดเวลาแล้ว แต่ยังไม่ได้ทำ</h3>
-                <p className="text-xs font-medium text-orange-500 mt-1">เวรที่ผ่านกำหนดส่งแล้วและยังค้างสถานะ Pending</p>
+        <ExpandableCard
+          id="overdue"
+          maximizedId={maximizedModule}
+          setMaximizedId={setMaximizedModule}
+          className="bg-white rounded-2xl border-2 border-orange-200 overflow-hidden shadow-sm animate-in slide-in-from-top-2"
+          contentClassName="p-0 flex flex-col h-full"
+          header={
+            <div className="p-5 bg-orange-50 flex items-center justify-between border-b border-orange-100 shrink-0 pr-16">
+              <div className="flex items-center space-x-3 text-orange-700">
+                <XCircle size={20} />
+                <div>
+                  <h3 className="font-black text-base">งานหมดเวลาแล้ว แต่ยังไม่ได้ทำ</h3>
+                  <p className="text-xs font-medium text-orange-500 mt-1">เวรที่ผ่านกำหนดส่งแล้วและยังค้างสถานะ Pending</p>
+                </div>
               </div>
+              <span className="text-xs font-black text-white bg-orange-500 px-3 py-1.5 rounded-xl shadow-sm">
+                {overdueItems.length} รายการ
+              </span>
             </div>
-            <span className="text-xs font-black text-white bg-orange-500 px-3 py-1.5 rounded-xl shadow-sm">
-              {overdueItems.length} รายการ
-            </span>
-          </div>
-
-          <div className="divide-y divide-orange-50 max-h-[400px] overflow-y-auto">
+          }
+        >
+          <div className={`divide-y divide-orange-50 ${maximizedModule === 'overdue' ? '' : 'max-h-[400px] overflow-y-auto'}`}>
             {overdueItems.map((item, i) => (
               <div key={item.scheduleId} className="flex items-center justify-between px-6 py-4 hover:bg-orange-50/40 transition-colors group animate-in fade-in" style={{ animationDelay: `${i * 60}ms` }}>
                 <div className="flex items-center space-x-4">
@@ -350,26 +377,33 @@ const AdminDashboard: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </ExpandableCard>
       )}
 
       {/* ── Critical Failures Section ─────────────────── */}
       {criticalSubmissionItems.length > 0 && (
-        <div className="bg-white rounded-2xl border-2 border-red-200 overflow-hidden shadow-sm animate-in slide-in-from-top-2 mt-8">
-          <div className="p-5 bg-red-50 flex items-center justify-between border-b border-red-100">
-            <div className="flex items-center space-x-3 text-red-700">
-              <AlertTriangle size={20} />
-              <div>
-                <h3 className="font-black text-base">รายการที่ตรวจพบปัญหา (Clinical Failures)</h3>
-                <p className="text-xs font-medium text-red-500 mt-1">รายการที่มีการรายงานว่า Fail หรือมีความผิดปกติในวันนี้</p>
+        <ExpandableCard
+          id="criticalFailures"
+          maximizedId={maximizedModule}
+          setMaximizedId={setMaximizedModule}
+          className="bg-white rounded-2xl border-2 border-red-200 overflow-hidden shadow-sm animate-in slide-in-from-top-2 mt-8"
+          contentClassName="p-0 flex flex-col h-full"
+          header={
+            <div className="p-5 bg-red-50 flex items-center justify-between border-b border-red-100 shrink-0 pr-16">
+              <div className="flex items-center space-x-3 text-red-700">
+                <AlertTriangle size={20} />
+                <div>
+                  <h3 className="font-black text-base">รายการที่ตรวจพบปัญหา (Clinical Failures)</h3>
+                  <p className="text-xs font-medium text-red-500 mt-1">รายการที่มีการรายงานว่า Fail หรือมีความผิดปกติในวันนี้</p>
+                </div>
               </div>
+              <span className="text-xs font-black text-white bg-red-500 px-3 py-1.5 rounded-xl shadow-sm">
+                {criticalSubmissionItems.length} รายการ
+              </span>
             </div>
-            <span className="text-xs font-black text-white bg-red-500 px-3 py-1.5 rounded-xl shadow-sm">
-              {criticalSubmissionItems.length} รายการ
-            </span>
-          </div>
-
-          <div className="divide-y divide-red-50 max-h-[400px] overflow-y-auto">
+          }
+        >
+          <div className={`divide-y divide-red-50 ${maximizedModule === 'criticalFailures' ? '' : 'max-h-[400px] overflow-y-auto'}`}>
             {criticalSubmissionItems.map((item, i) => (
               <div key={item.submissionId} className="flex items-center justify-between px-6 py-4 hover:bg-red-50/40 transition-colors group animate-in fade-in" style={{ animationDelay: `${i * 60}ms` }}>
                 <div className="flex items-center space-x-4">
@@ -405,7 +439,7 @@ const AdminDashboard: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </ExpandableCard>
       )}
     </div>
   );
@@ -413,7 +447,7 @@ const AdminDashboard: React.FC = () => {
 
 
 const StatCard: React.FC<{ title: string, value: string | number, icon: React.ReactNode, color: string, bg: string }> = ({ title, value, icon, color, bg }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
+  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow h-full min-h-[140px]">
     <div className={`w-12 h-12 rounded-xl ${bg} ${color} flex items-center justify-center mb-4`}>
       {icon}
     </div>

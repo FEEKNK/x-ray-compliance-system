@@ -12,6 +12,7 @@ import {
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { ExpandableCard } from '../shared/ExpandableCard';
 import logo from '../../assets/logo.svg';
 import { SarabunRegular, SarabunBold } from '../../assets/fonts';
 
@@ -81,6 +82,7 @@ const QualityDashboard: React.FC = () => {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'matrix' | 'list' | 'fails'>('matrix');
   const [searchTerm, setSearchTerm] = useState('');
+  const [maximizedModule, setMaximizedModule] = useState<string | null>(null);
   const colMenuRef = useRef<HTMLDivElement>(null);
 
   const selectedMonthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -781,18 +783,23 @@ const QualityDashboard: React.FC = () => {
       </div>
 
       {/* ─── Quality Matrix Table ────────────────── */}
-      <div className="bg-white rounded-[32px] border border-gray-100 shadow-xl overflow-hidden">
-        {/* Table Header Bar */}
-        <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-white to-blue-50/30">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-[#00468B]/10 text-[#00468B] flex items-center justify-center">
-              <ShieldCheck size={20} />
+      <ExpandableCard
+        id="qualityMatrix"
+        maximizedId={maximizedModule}
+        setMaximizedId={setMaximizedModule}
+        className="bg-white rounded-[32px] border border-gray-100 shadow-xl overflow-hidden"
+        contentClassName="p-0 flex flex-col h-full"
+        header={
+          <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-white to-blue-50/30 shrink-0 pr-16">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-[#00468B]/10 text-[#00468B] flex items-center justify-center shrink-0">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <span className="font-bold text-gray-700 block">Quality Matrix — ตารางสรุปแบบฟอร์มคุณภาพ</span>
+                <span className="text-xs text-gray-400">แสดงสถานะแบบฟอร์มทั้งหมด {totalForms} รายการ ในเดือนที่เลือก</span>
+              </div>
             </div>
-            <div>
-              <span className="font-bold text-gray-700 block">Quality Matrix — ตารางสรุปแบบฟอร์มคุณภาพ</span>
-              <span className="text-xs text-gray-400">แสดงสถานะแบบฟอร์มทั้งหมด {totalForms} รายการ ในเดือนที่เลือก</span>
-            </div>
-          </div>
 
           <div className="flex items-center space-x-2">
             {/* Column Customizer */}
@@ -868,28 +875,31 @@ const QualityDashboard: React.FC = () => {
             </button>
           </div>
         </div>
-
+        }
+      >
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className={`overflow-auto relative ${maximizedModule === 'qualityMatrix' ? 'flex-1' : ''}`}>
           <table className="w-full border-collapse min-w-[800px]">
             <thead>
-              <tr className="bg-gray-50/80">
+              <tr>
                 {visibleColumns.map(col => (
                   <th
                     key={col.id}
-                    className="p-4 text-left border-b border-gray-100"
+                    className="p-4 text-left border-b border-gray-100 sticky top-0 z-10 bg-gray-50 shadow-[0_1px_0_0_#f3f4f6]"
                     style={{ minWidth: col.width }}
                   >
                     <span className="text-sm font-black text-gray-500 uppercase tracking-widest">{col.label}</span>
                   </th>
                 ))}
-                <th className="p-4 border-b border-gray-100 w-10"></th>
+                <th className="p-4 border-b border-gray-100 w-10 sticky top-0 z-10 bg-gray-50 shadow-[0_1px_0_0_#f3f4f6]"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {formStats.map((stat, i) => {
                 const isExpanded = expandedRow === stat.id;
                 const detailSubs = isExpanded ? getFormSubmissions(stat.id) : [];
+                const detailId = `qualityDetail_${stat.id}`;
+                const isDetailMaximized = maximizedModule === detailId;
 
                 return (
                   <React.Fragment key={stat.id}>
@@ -916,16 +926,22 @@ const QualityDashboard: React.FC = () => {
                     {/* Expanded Detail */}
                     {isExpanded && (
                       <tr>
-                        <td colSpan={visibleColumns.length + 1} className="p-0">
-                          <div className="bg-gradient-to-b from-blue-50/50 to-white p-6 animate-in fade-in slide-in-from-top-2 duration-200">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="flex items-center space-x-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-[#00468B]" />
-                                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                                  รายละเอียดการ Submit ในเดือนนี้ ({detailSubs.length} ครั้ง)
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
+                        <td colSpan={visibleColumns.length + 1} className="p-0 relative">
+                          <ExpandableCard
+                            id={detailId}
+                            maximizedId={maximizedModule}
+                            setMaximizedId={setMaximizedModule}
+                            className="bg-gradient-to-b from-blue-50/50 to-white animate-in fade-in slide-in-from-top-2 duration-200"
+                            contentClassName="p-6 pt-0 flex flex-col h-full"
+                            header={
+                              <div className="p-6 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 pr-16">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[#00468B]" />
+                                  <span className="text-xs font-black text-[#00468B] uppercase tracking-widest">
+                                    รายละเอียดการ Submit ({stat.title}) - {detailSubs.length} ครั้ง
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
                                 {/* View Mode Toggle */}
                                 <div className="flex items-center bg-gray-100 p-1 rounded-lg">
                                   <button
@@ -970,19 +986,21 @@ const QualityDashboard: React.FC = () => {
                                     <span>PDF</span>
                                   </button>
                                 </div>
+                                </div>
                               </div>
-                            </div>
+                            }
+                          >
 
                             {detailSubs.length > 0 ? (
                               viewMode === 'list' ? (
-                                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                                <div className={`bg-white rounded-2xl border border-gray-100 overflow-auto ${isDetailMaximized ? 'flex-1 h-full' : 'max-h-[60vh]'}`}>
                                   <table className="w-full text-sm">
-                                    <thead className="bg-gray-50">
+                                    <thead className="bg-gray-50 sticky top-0 z-10 shadow-[0_1px_0_0_#e5e7eb]">
                                       <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest">วันที่ส่ง</th>
-                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest">ผู้ส่ง</th>
-                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest">เวร</th>
-                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest">ผลลัพธ์</th>
+                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest bg-gray-50">วันที่ส่ง</th>
+                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest bg-gray-50">ผู้ส่ง</th>
+                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest bg-gray-50">เวร</th>
+                                        <th className="px-4 py-3 text-left text-xs font-black text-gray-400 uppercase tracking-widest bg-gray-50">ผลลัพธ์</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
@@ -1017,9 +1035,9 @@ const QualityDashboard: React.FC = () => {
                                   </table>
                                 </div>
                               ) : viewMode === 'fails' ? (
-                                <div className="bg-white rounded-2xl border border-red-100 overflow-hidden">
+                                <div className={`bg-white rounded-2xl border border-red-100 overflow-auto ${isDetailMaximized ? 'flex-1 h-full' : 'max-h-[60vh]'}`}>
                                   <table className="w-full text-sm">
-                                    <thead className="bg-red-50/50">
+                                    <thead className="bg-red-50/90 sticky top-0 z-10 shadow-[0_1px_0_0_#fee2e2] backdrop-blur-sm">
                                       <tr>
                                         <th className="px-4 py-3 text-left text-xs font-black text-red-400 uppercase tracking-widest">วันที่</th>
                                         <th className="px-4 py-3 text-left text-xs font-black text-red-400 uppercase tracking-widest">รายการที่ Fail</th>
@@ -1050,15 +1068,15 @@ const QualityDashboard: React.FC = () => {
                                   </table>
                                 </div>
                               ) : (
-                                <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto shadow-inner">
+                                <div className={`bg-white rounded-2xl border border-gray-100 overflow-auto shadow-inner relative ${isDetailMaximized ? 'flex-1 h-full' : 'max-h-[60vh]'}`}>
                                   <table className="w-full text-sm border-collapse min-w-max">
-                                    <thead>
+                                    <thead className="sticky top-0 z-20">
                                       <tr className="bg-gray-100 border-b border-gray-200">
-                                        <th className="px-3 py-2 text-left text-xs font-black text-gray-500 border-r border-gray-200 sticky left-0 z-20 bg-gray-100 shadow-[1px_0_0_0_#e5e7eb]">
+                                        <th className="px-3 py-2 text-left text-xs font-black text-gray-500 border-r border-gray-200 sticky left-0 top-0 z-30 bg-gray-100 shadow-[1px_1px_0_0_#e5e7eb]">
                                           รายการตรวจเช็ค
                                         </th>
                                         {daysArray.map(day => (
-                                          <th key={day} className="px-1 py-2 text-center text-xs font-black text-gray-500 border-r border-gray-200 w-8 min-w-[32px]">
+                                          <th key={day} className="px-1 py-2 text-center text-xs font-black text-gray-500 border-r border-gray-200 w-8 min-w-[32px] sticky top-0 z-20 bg-gray-100 shadow-[0_1px_0_0_#e5e7eb]">
                                             {day}
                                           </th>
                                         ))}
@@ -1176,7 +1194,7 @@ const QualityDashboard: React.FC = () => {
                                 <p className="text-xs text-gray-400 font-bold">ไม่มีข้อมูลการ Submit ในเดือนนี้</p>
                               </div>
                             )}
-                          </div>
+                          </ExpandableCard>
                         </td>
                       </tr>
                     )}
@@ -1199,7 +1217,7 @@ const QualityDashboard: React.FC = () => {
         </div>
 
         {/* Table Footer */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between">
+        <div className="p-4 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between shrink-0">
           <span className="text-xs font-black text-gray-400 uppercase tracking-widest">
             แสดง {formStats.length} จาก {forms.filter(f => f.isActive).length} ฟอร์ม
           </span>
@@ -1210,7 +1228,7 @@ const QualityDashboard: React.FC = () => {
             <div className="flex items-center space-x-1.5"><div className="w-2 h-2 rounded-full bg-gray-300" /><span>ไม่ได้กำหนด</span></div>
           </div>
         </div>
-      </div>
+      </ExpandableCard>
     </div>
   );
 };
