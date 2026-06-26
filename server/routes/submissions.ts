@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { submissions, schedules, users, forms, config } from '../db/schema';
+import { submissions, schedules, users, forms, config, alerts } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { getTransporter, escapeHtml } from '../services/email';
 import { QuestionBlock } from '../../src/types';
@@ -182,6 +182,14 @@ router.post('/', async (req, res) => {
         });
 
         if (hasFailures) {
+          // --- In-App Alert ---
+          await db.insert(alerts).values({
+            type: 'Critical Failure',
+            message: `พบปัญหาจากการตรวจสอบ: ${form.title} โดย ${staff.name}`,
+            staffId: staff.id,
+            formId: form.id,
+          }).catch(err => console.error('Error inserting in-app alert:', err));
+
           const emailHtml = `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fee2e2; border-radius: 12px; overflow: hidden;">
               <div style="background-color: #fef2f2; padding: 20px; border-bottom: 2px solid #fca5a5;">
