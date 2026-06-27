@@ -18,7 +18,6 @@ import BundleManager from './components/admin/BundleManager';
 import QualityDashboard from './components/admin/QualityDashboard';
 import GlobalLoader from './components/shared/GlobalLoader';
 import ForceChangePassword from './components/shared/ForceChangePassword';
-
 const AppContent: React.FC = () => {
   const { currentUser, setCurrentUser, isLoading, loadError } = useApp();
   const [activeTab, setActiveTab] = React.useState('dashboard');

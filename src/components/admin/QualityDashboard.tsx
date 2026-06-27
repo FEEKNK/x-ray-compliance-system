@@ -17,6 +17,7 @@ import { ExpandableCard } from '../shared/ExpandableCard';
 import logo from '../../assets/logo.svg';
 import { SarabunRegular, SarabunBold } from '../../assets/fonts';
 
+
 // ─── Types ──────────────────────────────────────────
 interface ColumnDef {
   id: string;
@@ -618,11 +619,15 @@ const QualityDashboard: React.FC = () => {
         const hasFail = form ? hasSubmissionFailures(s, form) : false;
         return {
           id: s.id,
-          staffName: staff?.name || 'Unknown',
+          scheduleId: s.scheduleId,
+          staffId: s.staffId,
+          formId: s.formId,
           submittedAt: s.submittedAt,
+          staffName: staff?.name || 'Unknown',
           shift: schedule?.shift || '—',
           hasFail,
           data: s.data,
+          photos: s.photos,
         };
       })
       .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));

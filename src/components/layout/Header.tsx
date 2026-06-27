@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../AppContext';
-import type { User } from '../../types';
-import { usePublicUsers } from '../../hooks/queries';
-import { Clock, User as UserIcon, KeyRound, LogOut } from 'lucide-react';
+import { Clock, KeyRound, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   onChangePassword?: () => void;
@@ -10,8 +8,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onChangePassword, onLogout }) => {
-  const { currentUser, setCurrentUser, language, setLanguage } = useApp();
-  const { data: users = [] } = usePublicUsers();
+  const { currentUser, language, setLanguage } = useApp();
   const [time, setTime] = useState(new Date());
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -79,23 +76,6 @@ const Header: React.FC<HeaderProps> = ({ onChangePassword, onLogout }) => {
           >
             {language}
           </button>
-
-          {/* User Switcher */}
-          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full px-2 py-1 md:px-3">
-            <UserIcon size={13} className="text-gray-400 mr-1 md:mr-2 shrink-0" />
-            <select 
-              className="text-xs md:text-xs bg-transparent border-none focus:ring-0 cursor-pointer font-bold text-[#00468B] max-w-[70px] md:max-w-none"
-              value={currentUser?.id}
-              onChange={(e) => {
-                const user = users.find(u => u.id === e.target.value);
-                if (user) setCurrentUser(user as unknown as User);
-              }}
-            >
-              {users.map(u => (
-                <option key={u.id} value={u.id}>{u.name?.split(' ')[0]}</option>
-              ))}
-            </select>
-          </div>
           
           {/* Profile Menu */}
           <div className="relative">
@@ -156,4 +136,4 @@ const Header: React.FC<HeaderProps> = ({ onChangePassword, onLogout }) => {
   );
 };
 
-export default Header;
+export default Header;

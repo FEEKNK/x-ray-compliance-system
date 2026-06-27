@@ -4,6 +4,7 @@ import { submissions, schedules, users, forms, config, alerts } from '../db/sche
 import { eq, desc } from 'drizzle-orm';
 import { getTransporter, escapeHtml } from '../services/email';
 import { QuestionBlock } from '../../src/types';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -258,15 +259,15 @@ router.post('/', async (req, res) => {
               subject: `⚠️ [ด่วน] พบปัญหาจากการตรวจสอบ: ${form.title} โดย ${staff.name}`,
               html: emailHtml
             }).then(() => {
-              console.log(`Sent real-time failure alert for form ${formId}`);
+              logger.info(`Sent real-time failure alert for form ${formId}`);
             }).catch(err => {
-              console.error('Error sending real-time failure alert in background:', err);
+              logger.error('Error sending real-time failure alert in background:', err);
             });
           }
         }
       }
     } catch (err) {
-      console.error('Error preparing real-time failure alert:', err);
+      logger.error('Error preparing real-time failure alert:', err);
     }
     // ------------------------------------------------
 
