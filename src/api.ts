@@ -8,7 +8,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
     if (res.status === 401 || res.status === 403) {
       // Dispatch event instead of hard reload
       window.dispatchEvent(new Event('auth-error'));
-      return {} as T;
+      throw new Error(`Authentication error: ${res.status}`);
     }
     const errorBody = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(errorBody.error || `API error: ${res.status}`);

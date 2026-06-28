@@ -4,6 +4,7 @@ import { users } from '../db/schema';
 import { eq, or } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_development_only';
@@ -77,12 +78,17 @@ router.post('/logout', (req, res) => {
 });
 
 // POST /api/auth/change-password
-router.post('/change-password', async (req, res) => {
+router.post('/change-password', authenticateToken, async (req, res) => {
   try {
     const { userId, oldPassword, newPassword } = req.body;
     
     if (!userId || !newPassword) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const reqUser = (req as any).user;
+    if (reqUser && reqUser.id !== userId && reqUser.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Unauthorized to change this password' });
     }
 
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);

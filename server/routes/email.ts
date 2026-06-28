@@ -4,7 +4,7 @@ import { schedules, forms, users, config } from '../db/schema';
 import { eq, and, isNotNull } from 'drizzle-orm';
 import { logger } from '../logger';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
-import { getTransporter, escapeHtml } from '../services/email';
+import { getTransporter, escapeHtml, isValidEmail } from '../services/email';
 import { getShiftThaiName } from '../utils/shiftHelpers';
 
 /**
@@ -59,10 +59,10 @@ router.post('/test-sla-now', authenticateToken, requireAdmin, async (_req, res) 
     const transporter = getTransporter();
     const results: string[] = [];
 
-    for (const group of Object.values(staffGroup)) {
+    await Promise.all(Object.values(staffGroup).map(async (group) => {
       const staffRes = await db.select().from(users).where(eq(users.id, group.staffId)).limit(1);
       const staff = staffRes[0];
-      if (!staff) continue;
+      if (!staff) return;
 
       const formTitles = await Promise.all(group.formIds.map(async fId => {
         const fRes = await db.select().from(forms).where(eq(forms.id, fId)).limit(1);
@@ -70,7 +70,10 @@ router.post('/test-sla-now', authenticateToken, requireAdmin, async (_req, res) 
       }));
 
       const shiftTh = getShiftThaiName(group.shift);
-      const toList = [staff.email, supervisorEmail].filter(Boolean).join(',');
+      const toList = [staff.email, supervisorEmail].filter(Boolean).filter(isValidEmail).join(',');
+      
+      if (!toList) return;
+
       const listHtml = formTitles.length > 0
         ? formTitles.map(t => `<li style="padding:5px 0;">${escapeHtml(t)}</li>`).join('')
         : '<li style="padding:5px 0;">(ไม่มีแบบฟอร์มระบุ)</li>';
@@ -79,29 +82,33 @@ router.post('/test-sla-now', authenticateToken, requireAdmin, async (_req, res) 
       logger.info(`[Test SLA] 👤 Staff: ${staff.name} | email in DB: "${staff.email}" | Supervisor: "${supervisorEmail}"`);
       logger.info(`[Test SLA] 📤 Final toList: "${toList}"`);
 
-      await transporter.sendMail({
-        from: `"Imaging Alert System (TEST)" <${process.env.GMAIL_USER}>`,
-        to: toList,
-        subject: `🧪 [ทดสอบ] แจ้งเตือนคิวงานคงค้าง เวร${shiftTh} — ${staff.name}`,
-        html: `
-          <div style="font-family:sans-serif;color:#333;border:2px dashed #f0ad4e;padding:16px;border-radius:8px;">
-            <p style="color:#f0ad4e;font-weight:bold;margin:0 0 8px;">🧪 นี่คืออีเมลทดสอบระบบ (Test Mode)</p>
-            <h2 style="color:#d9534f;">⚠️ แจ้งเตือนรายการตรวจเช็คคงค้าง</h2>
-            <p>เรียน คุณ ${safeStaffName}</p>
-            <p>ระบบตรวจพบว่าคุณมีรายการตรวจเช็คที่ <strong>ยังไม่ได้ดำเนินการ</strong> ของเวร${shiftTh} จำนวน ${formTitles.length || '?'} รายการ ดังนี้:</p>
-            <div style="background:#f9f9f9;padding:15px;border-left:4px solid #d9534f;margin:15px 0;">
-              <ul style="margin:0;padding-left:20px;">${listHtml}</ul>
+      try {
+        await transporter.sendMail({
+          from: `"Imaging Alert System (TEST)" <${process.env.GMAIL_USER || 'no-reply@hospital.com'}>`,
+          to: toList,
+          subject: `🧪 [ทดสอบ] แจ้งเตือนคิวงานคงค้าง เวร${shiftTh} — ${staff.name}`,
+          html: `
+            <div style="font-family:sans-serif;color:#333;border:2px dashed #f0ad4e;padding:16px;border-radius:8px;">
+              <p style="color:#f0ad4e;font-weight:bold;margin:0 0 8px;">🧪 นี่คืออีเมลทดสอบระบบ (Test Mode)</p>
+              <h2 style="color:#d9534f;">⚠️ แจ้งเตือนรายการตรวจเช็คคงค้าง</h2>
+              <p>เรียน คุณ ${safeStaffName}</p>
+              <p>ระบบตรวจพบว่าคุณมีรายการตรวจเช็คที่ <strong>ยังไม่ได้ดำเนินการ</strong> ของเวร${shiftTh} จำนวน ${formTitles.length || '?'} รายการ ดังนี้:</p>
+              <div style="background:#f9f9f9;padding:15px;border-left:4px solid #d9534f;margin:15px 0;">
+                <ul style="margin:0;padding-left:20px;">${listHtml}</ul>
+              </div>
+              <p>กรุณาเข้าสู่ระบบเพื่อดำเนินการตรวจสอบโดยด่วน</p>
+              <hr style="border:0;border-top:1px solid #eee;margin:20px 0;"/>
+              <small style="color:#999;">อีเมลฉบับนี้ถูกส่งจากปุ่ม "ทดสอบส่งแจ้งเตือน" ใน Imaging Compliance System</small>
             </div>
-            <p>กรุณาเข้าสู่ระบบเพื่อดำเนินการตรวจสอบโดยด่วน</p>
-            <hr style="border:0;border-top:1px solid #eee;margin:20px 0;"/>
-            <small style="color:#999;">อีเมลฉบับนี้ถูกส่งจากปุ่ม "ทดสอบส่งแจ้งเตือน" ใน Imaging Compliance System</small>
-          </div>
-        `,
-      });
+          `,
+        });
 
-      results.push(`✅ ส่งถึง ${staff.name} (${toList})`);
-      logger.info(`[Test SLA] ✅ Sent to ${staff.name} — ${toList}`);
-    }
+        results.push(`✅ ส่งถึง ${staff.name} (${toList})`);
+        logger.info(`[Test SLA] ✅ Sent to ${staff.name} — ${toList}`);
+      } catch (e) {
+        logger.error(`[Test SLA] ❌ Error sending to ${staff.name}:`, e);
+      }
+    }));
 
     res.json({ success: true, sent: results, total: results.length });
   } catch (err) {

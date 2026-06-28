@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { submissions, schedules, users, forms, config, alerts } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
-import { getTransporter, escapeHtml } from '../services/email';
+import { eq, desc, and, gte, lte } from 'drizzle-orm';
+import { getTransporter, escapeHtml, isValidEmail } from '../services/email';
 import { QuestionBlock } from '../../src/types';
 import { logger } from '../logger';
 
@@ -15,23 +15,20 @@ router.get('/', async (req, res) => {
     let whereClause = undefined;
 
     if (date) {
-      const { and, gte, lte } = await import('drizzle-orm');
-      const startOfDay = `${date}T00:00:00.000Z`;
-      const endOfDay = `${date}T23:59:59.999Z`;
+      const startOfDay = new Date(`${date}T00:00:00+07:00`).toISOString();
+      const endOfDay = new Date(`${date}T23:59:59.999+07:00`).toISOString();
       whereClause = and(gte(submissions.submittedAt, startOfDay), lte(submissions.submittedAt, endOfDay));
     } else if (month && year) {
       // Filter by specific month
-      const { and, gte, lte } = await import('drizzle-orm');
       const mStr = String(month).padStart(2, '0');
-      const startOfMonth = `${year}-${mStr}-01T00:00:00.000Z`;
+      const startOfMonth = new Date(`${year}-${mStr}-01T00:00:00+07:00`).toISOString();
       const lastDay = new Date(Number(year), Number(month), 0).getDate();
-      const endOfMonth = `${year}-${mStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999Z`;
+      const endOfMonth = new Date(`${year}-${mStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999+07:00`).toISOString();
       whereClause = and(gte(submissions.submittedAt, startOfMonth), lte(submissions.submittedAt, endOfMonth));
     } else if (year) {
       // Filter by entire year
-      const { and, gte, lte } = await import('drizzle-orm');
-      const startOfYear = `${year}-01-01T00:00:00.000Z`;
-      const endOfYear = `${year}-12-31T23:59:59.999Z`;
+      const startOfYear = new Date(`${year}-01-01T00:00:00+07:00`).toISOString();
+      const endOfYear = new Date(`${year}-12-31T23:59:59.999+07:00`).toISOString();
       whereClause = and(gte(submissions.submittedAt, startOfYear), lte(submissions.submittedAt, endOfYear));
     }
 
@@ -100,43 +97,55 @@ router.post('/', async (req, res) => {
   try {
     const { scheduleId, staffId, formId, data, photos } = req.body;
 
+    const reqUser = (req as any).user;
+    if (reqUser && reqUser.id !== staffId && reqUser.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Unauthorized to submit for this user' });
+    }
+
     const isAdhoc = scheduleId && String(scheduleId).startsWith('manual-');
     const dbScheduleId = isAdhoc ? null : (scheduleId || null);
 
     let newSubmission: Record<string, unknown> | undefined;
+    let isUpdate = false;
 
-    if (dbScheduleId) {
-      const existing = await db.select().from(submissions).where(eq(submissions.scheduleId, dbScheduleId)).limit(1);
-      if (existing.length > 0) {
-        const [updated] = await db.update(submissions)
-          .set({ data, photos: photos || [], submittedAt: new Date().toISOString() })
-          .where(eq(submissions.id, existing[0].id))
-          .returning();
-        newSubmission = updated;
+    await db.transaction(async (tx) => {
+      if (dbScheduleId) {
+        const existing = await tx.select().from(submissions).where(eq(submissions.scheduleId, dbScheduleId)).limit(1);
+        if (existing.length > 0) {
+          isUpdate = true;
+          const [updated] = await tx.update(submissions)
+            .set({ data, photos: photos || [], submittedAt: new Date().toISOString() })
+            .where(eq(submissions.id, existing[0].id))
+            .returning();
+          newSubmission = updated;
+        }
       }
-    }
 
-    if (!newSubmission) {
-      const [inserted] = await db.insert(submissions).values({
-        scheduleId: dbScheduleId,
-        staffId,
-        formId,
-        data,
-        photos: photos || [],
-      }).returning();
-      newSubmission = inserted;
-    }
+      if (!newSubmission) {
+        const [inserted] = await tx.insert(submissions).values({
+          scheduleId: dbScheduleId,
+          staffId,
+          formId,
+          data,
+          photos: photos || [],
+        }).returning();
+        newSubmission = inserted;
+      }
 
-    // Mark the related schedule as Completed if scheduleId exists and is not a manual/ad-hoc one
-    if (dbScheduleId) {
-      await db.update(schedules)
-        .set({ status: 'Completed' })
-        .where(eq(schedules.id, dbScheduleId))
-        .catch(() => { /* schedule might not exist */ });
-    }
+      // Mark the related schedule as Completed if scheduleId exists and is not a manual/ad-hoc one
+      if (dbScheduleId) {
+        await tx.update(schedules)
+          .set({ status: 'Completed' })
+          .where(eq(schedules.id, dbScheduleId))
+          .catch(() => { /* schedule might not exist */ });
+      }
+    });
 
     // --- Real-time Email Notification for Failures ---
     try {
+      if (isUpdate) {
+        // Skip sending email alerts on updates to prevent spam.
+      } else {
       const [form] = await db.select().from(forms).where(eq(forms.id, formId)).limit(1);
       const [staff] = await db.select().from(users).where(eq(users.id, staffId)).limit(1);
       
@@ -147,6 +156,14 @@ router.post('/', async (req, res) => {
         const safeData = typeof data === 'object' && data !== null ? data as Record<string, unknown> : {};
         const safeQuestions = Array.isArray(form.questions) ? form.questions : [];
         const processedKeys = new Set<string>();
+
+        const isNonFailureOther = (val: unknown) => {
+          if (val === undefined || val === null) return false;
+          const s = String(val).trim().toLowerCase();
+          if (!isNaN(Number(s)) && s !== '') return true;
+          if (['n/a', 'na', '-', 'ไม่มี', 'none', 'ok', 'ปกติ'].includes(s)) return true;
+          return false;
+        };
 
         Object.entries(safeData).forEach(([key]) => {
           if (processedKeys.has(key)) return;
@@ -177,9 +194,12 @@ router.post('/', async (req, res) => {
           // 2. Configurable Fail Options
           else if (question.alertOnFail) {
             if (typeof mainValue === 'string' && question.failOptions?.includes(mainValue)) {
-              hasFailures = true;
-              triggeredAlert = true;
-              failedItems.push(`${label}: ${mainValue}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
+              const isNumericOther = mainValue === 'อื่นๆ' && isNonFailureOther(otherValue);
+              if (!isNumericOther) {
+                hasFailures = true;
+                triggeredAlert = true;
+                failedItems.push(`${label}: ${mainValue}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
+              }
             } else if (Array.isArray(mainValue)) {
               const failedVals = mainValue.filter(v => typeof v === 'string' && question.failOptions?.includes(v));
               if (failedVals.length > 0) {
@@ -208,8 +228,10 @@ router.post('/', async (req, res) => {
             
             // If the user selected an option (like "อื่นๆ") AND provided details in _other (Legacy implementation)
             if (typeof mainValue === 'string' && (mainValue === 'อื่นๆ' || mainValue === 'Other') && otherValue && String(otherValue).trim() !== '') {
-              hasFailures = true;
-              failedItems.push(`${label}: ${mainValue} (ระบุ: ${otherValue})`);
+              if (!isNonFailureOther(otherValue)) {
+                hasFailures = true;
+                failedItems.push(`${label}: ${mainValue} (ระบุ: ${otherValue})`);
+              }
             }
           }
         });
@@ -250,21 +272,27 @@ router.post('/', async (req, res) => {
           const configSupervisorEmail = (settings?.supervisorEmail as string | undefined) || process.env.SUPERVISOR_EMAIL;
           
           const adminEmails = (await db.select().from(users).where(eq(users.role, 'ADMIN'))).map(u => u.email).filter(Boolean) as string[];
-          const allRecipients = Array.from(new Set([configSupervisorEmail, ...adminEmails].filter(Boolean) as string[]));
+          const allRecipients = Array.from(new Set([configSupervisorEmail, ...adminEmails].filter(Boolean) as string[]))
+            .filter(isValidEmail);
 
           if (allRecipients.length > 0) {
-            getTransporter().sendMail({
-              from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
-              to: allRecipients.join(','),
-              subject: `⚠️ [ด่วน] พบปัญหาจากการตรวจสอบ: ${form.title} โดย ${staff.name}`,
-              html: emailHtml
-            }).then(() => {
-              logger.info(`Sent real-time failure alert for form ${formId}`);
-            }).catch(err => {
-              logger.error('Error sending real-time failure alert in background:', err);
-            });
+            try {
+              getTransporter().sendMail({
+                from: `"Imaging Alert System" <${process.env.GMAIL_USER || 'no-reply@hospital.com'}>`,
+                to: allRecipients.join(','),
+                subject: `⚠️ [ด่วน] พบปัญหาจากการตรวจสอบ: ${form.title} โดย ${staff.name}`,
+                html: emailHtml
+              }).then(() => {
+                logger.info(`Sent real-time failure alert for form ${formId}`);
+              }).catch(err => {
+                logger.error('Error sending real-time failure alert in background:', err);
+              });
+            } catch (dispatchErr) {
+              logger.error('Error dispatching real-time failure alert email:', dispatchErr);
+            }
           }
         }
+      }
       }
     } catch (err) {
       logger.error('Error preparing real-time failure alert:', err);
@@ -291,22 +319,24 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find the submission first to get the scheduleId
-    const [existing] = await db.select().from(submissions).where(eq(submissions.id, id)).limit(1);
-    if (!existing) {
-      throw new Error('NOT_FOUND');
-    }
+    await db.transaction(async (tx) => {
+      // Find the submission first to get the scheduleId
+      const [existing] = await tx.select().from(submissions).where(eq(submissions.id, id)).limit(1);
+      if (!existing) {
+        throw new Error('NOT_FOUND');
+      }
 
-    // Delete the submission
-    await db.delete(submissions).where(eq(submissions.id, id));
+      // Delete the submission
+      await tx.delete(submissions).where(eq(submissions.id, id));
 
-    // Reset the related schedule back to Pending (if it has a real scheduleId)
-    if (existing.scheduleId) {
-      await db.update(schedules)
-        .set({ status: 'Pending' })
-        .where(eq(schedules.id, existing.scheduleId))
-        .catch(() => { /* schedule might not exist */ });
-    }
+      // Reset the related schedule back to Pending (if it has a real scheduleId)
+      if (existing.scheduleId) {
+        await tx.update(schedules)
+          .set({ status: 'Pending' })
+          .where(eq(schedules.id, existing.scheduleId))
+          .catch(() => { /* schedule might not exist */ });
+      }
+    });
 
     res.json({ success: true });
   } catch (error) {

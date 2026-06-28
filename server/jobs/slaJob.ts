@@ -13,7 +13,15 @@ function getBangkokNow(): Date {
   return new Date(utcMs + 7 * 60 * 60 * 1000);
 }
 
+let isSlaJobRunning = false;
+
 export const runSLAJob = async () => {
+  if (isSlaJobRunning) {
+    logger.warn('[SLA Job] ⚠️ Skipped run because previous job is still running.');
+    return;
+  }
+  isSlaJobRunning = true;
+  
   try {
     // Ensure we check SLA against Thailand Timezone (UTC+7)
     const now = getBangkokNow();
@@ -219,8 +227,6 @@ export const runSLAJob = async () => {
               <p>ระบบขอรายงานสรุปรายการตรวจเช็คของ <strong>เวร${shiftTh}</strong> ที่เพิ่งสิ้นสุดลง ดังนี้:</p>
         `;
 
-
-
         if (missedHtml.length > 0) {
            finalEmailHtml += `
               <div style="background-color: #fcf8e3; padding: 15px; border-left: 4px solid #f0ad4e; margin: 15px 0;">
@@ -269,6 +275,8 @@ export const runSLAJob = async () => {
     }
 
   } catch (err: unknown) {
-    logger.error('[SLA Job] ❌ Error in background job:', err instanceof Error ? err.message : String(err));
+    logger.error('[SLA Job] ❌ Error in background job:', err);
+  } finally {
+    isSlaJobRunning = false;
   }
 };
