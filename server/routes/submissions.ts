@@ -193,12 +193,9 @@ router.post('/', async (req, res) => {
           // 2. Configurable Fail Options
           else if (question.alertOnFail) {
             if (typeof mainValue === 'string' && question.failOptions?.includes(mainValue)) {
-              const isNumericOther = mainValue === 'อื่นๆ' && isNonFailureOther(otherValue);
-              if (!isNumericOther) {
-                hasFailures = true;
-                triggeredAlert = true;
-                failedItems.push(`${label}: ${mainValue}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
-              }
+              hasFailures = true;
+              triggeredAlert = true;
+              failedItems.push(`${label}: ${mainValue}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
             } else if (Array.isArray(mainValue)) {
               const failedVals = mainValue.filter(v => typeof v === 'string' && question.failOptions?.includes(v));
               if (failedVals.length > 0) {
