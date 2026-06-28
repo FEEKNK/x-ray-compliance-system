@@ -176,8 +176,14 @@ router.post('/', async (req, res) => {
 
           let triggeredAlert = false;
 
-          // 1. Configurable Fail Options
-          if (question.alertOnFail) {
+          // 1. Hardcoded Critical Failures
+          if (mainValue === 'Fail' || mainValue === 'Alert') {
+            hasFailures = true;
+            triggeredAlert = true;
+            failedItems.push(`${label}: ${mainValue}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
+          }
+          // 2. Configurable Fail Options
+          else if (question.alertOnFail) {
             if (typeof mainValue === 'string' && question.failOptions?.includes(mainValue)) {
               hasFailures = true;
               triggeredAlert = true;
