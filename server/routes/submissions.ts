@@ -156,14 +156,6 @@ router.post('/', async (req, res) => {
         const safeQuestions = Array.isArray(form.questions) ? form.questions : [];
         const processedKeys = new Set<string>();
 
-        const isNonFailureOther = (val: unknown) => {
-          if (val === undefined || val === null) return false;
-          const s = String(val).trim().toLowerCase();
-          if (!isNaN(Number(s)) && s !== '') return true;
-          if (['n/a', 'na', '-', 'ไม่มี', 'none', 'ok', 'ปกติ'].includes(s)) return true;
-          return false;
-        };
-
         Object.entries(safeData).forEach(([key]) => {
           if (processedKeys.has(key)) return;
           
@@ -184,14 +176,8 @@ router.post('/', async (req, res) => {
 
           let triggeredAlert = false;
 
-          // 1. Hardcoded Critical Failures
-          if (mainValue === 'Fail' || mainValue === 'Alert') {
-            hasFailures = true;
-            triggeredAlert = true;
-            failedItems.push(`${label}: ${mainValue}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
-          } 
-          // 2. Configurable Fail Options
-          else if (question.alertOnFail) {
+          // 1. Configurable Fail Options
+          if (question.alertOnFail) {
             if (typeof mainValue === 'string' && question.failOptions?.includes(mainValue)) {
               hasFailures = true;
               triggeredAlert = true;
@@ -206,11 +192,11 @@ router.post('/', async (req, res) => {
             }
           }
           
-          // 3. Custom Input Options (Not in preset options)
+          // 2. Custom Input Options (Not in preset options)
           if (!triggeredAlert && question.alertOnCustomInput && question.allowCustomInput) {
             const options = question.options || [];
             
-            // If the main value itself is completely custom (from new customMode implementation)
+            // If the main value itself is completely custom
             if (typeof mainValue === 'string' && !options.includes(mainValue) && mainValue.trim() !== '') {
               hasFailures = true;
               failedItems.push(`${label}: ${mainValue} (ระบุเอง)`);
@@ -222,12 +208,10 @@ router.post('/', async (req, res) => {
               }
             }
             
-            // If the user selected an option (like "อื่นๆ") AND provided details in _other (Legacy implementation)
+            // If the user selected an option (like "อื่นๆ" or "Other") and provided details in _other
             if (typeof mainValue === 'string' && (mainValue === 'อื่นๆ' || mainValue === 'Other') && otherValue && String(otherValue).trim() !== '') {
-              if (!isNonFailureOther(otherValue)) {
-                hasFailures = true;
-                failedItems.push(`${label}: ${mainValue} (ระบุ: ${otherValue})`);
-              }
+              hasFailures = true;
+              failedItems.push(`${label}: ${mainValue} (ระบุ: ${otherValue})`);
             }
           }
         });
