@@ -39,3 +39,8 @@ tests/
 scripts/
 *.test.js
 *.spec.js
+
+# Ignored files
+temp_sheet.csv
+*.xls
+*.xlsx
