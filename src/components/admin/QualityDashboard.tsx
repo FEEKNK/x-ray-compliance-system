@@ -8,8 +8,10 @@ import {
   FileText, CheckCircle2, AlertTriangle, BarChart3,
   Settings2, ChevronDown, ChevronUp, Download,
   Plus, X, Eye, EyeOff, Search, LayoutList, Grid,
-  FileSpreadsheet, FileDown
+  FileSpreadsheet, FileDown, GripVertical
 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
+import { useReorderForms } from '../../hooks/queries';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -72,6 +74,15 @@ const QualityDashboard: React.FC = () => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
+  const reorderForms = useReorderForms();
+  const [localFormOrder, setLocalFormOrder] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (forms) {
+      setLocalFormOrder(forms.map(f => f.id));
+    }
+  }, [forms]);
+
   const { data: schedules = [] } = useSchedules({ month: month + 1, year });
   const { data: submissionsData } = useSubmissions(1, 10000, { month: month + 1, year });
   const submissions = useMemo(() => submissionsData?.data || [], [submissionsData]);
@@ -119,14 +130,48 @@ const QualityDashboard: React.FC = () => {
     return ['ALL', ...Array.from(depts)];
   }, [forms]);
   const filteredForms = useMemo(() => {
-    let f = forms.filter(fm => fm.isActive);
+    let f = [...forms].filter(fm => fm.isActive);
+    if (localFormOrder.length > 0) {
+      f.sort((a, b) => {
+        const idxA = localFormOrder.indexOf(a.id);
+        const idxB = localFormOrder.indexOf(b.id);
+        return (idxA !== -1 ? idxA : 9999) - (idxB !== -1 ? idxB : 9999);
+      });
+    }
     if (deptFilter !== 'ALL') f = f.filter(fm => fm.department === deptFilter);
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       f = f.filter(fm => fm.title.toLowerCase().includes(q));
     }
     return f;
-  }, [forms, deptFilter, searchTerm]);
+  }, [forms, deptFilter, searchTerm, localFormOrder]);
+
+  const isDragEnabled = deptFilter === 'ALL' && !searchTerm && viewMode === 'matrix' && !expandedRow;
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination || !isDragEnabled) return;
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+    if (sourceIndex === destIndex) return;
+
+    // formStats is what is rendered. We can derive localFormOrder from dragging formStats
+    const draggedFormId = formStats[sourceIndex].id;
+    
+    const newOrder = Array.from(localFormOrder);
+    const oldIdx = newOrder.indexOf(draggedFormId);
+    if (oldIdx === -1) return;
+    
+    newOrder.splice(oldIdx, 1);
+    // find destination id
+    const destFormId = formStats[destIndex].id;
+    const newIdx = newOrder.indexOf(destFormId);
+    newOrder.splice(newIdx !== -1 ? newIdx : newOrder.length, 0, draggedFormId);
+
+    setLocalFormOrder(newOrder);
+
+    const updates = newOrder.map((id, index) => ({ id, sortOrder: index }));
+    reorderForms.mutate(updates);
+  };
 
   const formStats = useMemo(() => {
     return filteredForms.map(form => {
@@ -886,8 +931,9 @@ const QualityDashboard: React.FC = () => {
       >
         {/* Table */}
         <div className={`overflow-auto relative ${maximizedModule === 'qualityMatrix' ? 'flex-1' : ''}`}>
-          <table className="w-full border-collapse min-w-[800px]">
-            <thead>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <table className="w-full border-collapse min-w-[800px]">
+              <thead>
               <tr>
                 {visibleColumns.map(col => (
                   <th
@@ -901,26 +947,45 @@ const QualityDashboard: React.FC = () => {
                 <th className="p-4 border-b border-gray-100 w-10 sticky top-0 z-10 bg-gray-50 shadow-[0_1px_0_0_#f3f4f6]"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
-              {formStats.map((stat, i) => {
-                const isExpanded = expandedRow === stat.id;
-                const detailSubs = isExpanded ? getFormSubmissions(stat.id) : [];
-                const detailId = `qualityDetail_${stat.id}`;
-                const isDetailMaximized = maximizedModule === detailId;
+            <Droppable droppableId="forms">
+              {(provided) => (
+                <tbody ref={provided.innerRef} {...provided.droppableProps} className="divide-y divide-gray-50">
+                  {formStats.map((stat, i) => {
+                    const isExpanded = expandedRow === stat.id;
+                    const detailSubs = isExpanded ? getFormSubmissions(stat.id) : [];
+                    const detailId = `qualityDetail_${stat.id}`;
+                    const isDetailMaximized = maximizedModule === detailId;
 
-                return (
-                  <React.Fragment key={stat.id}>
-                    <tr
-                      className={`group transition-all cursor-pointer ${
-                        isExpanded ? 'bg-blue-50/30' : 'hover:bg-gray-50/50'
-                      }`}
-                      onClick={() => setExpandedRow(isExpanded ? null : stat.id)}
-                    >
-                      {visibleColumns.map(col => (
-                        <td key={col.id} className="p-4">
-                          {renderCell(col, stat, i)}
-                        </td>
-                      ))}
+                    return (
+                      <Draggable key={stat.id} draggableId={stat.id} index={i} isDragDisabled={!isDragEnabled || isExpanded}>
+                        {(provided, snapshot) => (
+                          <React.Fragment>
+                            <tr
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={`group transition-all cursor-pointer ${
+                                isExpanded ? 'bg-blue-50/30' : 'hover:bg-gray-50/50'
+                              } ${snapshot.isDragging ? 'shadow-xl bg-white relative z-50 ring-1 ring-blue-100' : ''}`}
+                              onClick={() => setExpandedRow(isExpanded ? null : stat.id)}
+                            >
+                            {visibleColumns.map(col => (
+                              <td key={col.id} className="p-4">
+                                {col.id === 'index' && isDragEnabled && !isExpanded ? (
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      {...provided.dragHandleProps}
+                                      onClick={e => e.stopPropagation()}
+                                      className="text-gray-300 hover:text-[#00468B] cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-md hover:bg-blue-50 transition-colors"
+                                    >
+                                      <GripVertical size={16} />
+                                    </div>
+                                    {renderCell(col, stat, i)}
+                                  </div>
+                                ) : (
+                                  renderCell(col, stat, i)
+                                )}
+                              </td>
+                            ))}
                       <td className="p-4">
                         <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${
                           isExpanded ? 'bg-[#00468B] text-white' : 'bg-gray-100 text-gray-400 group-hover:bg-blue-50 group-hover:text-[#00468B]'
@@ -1205,11 +1270,14 @@ const QualityDashboard: React.FC = () => {
                         </td>
                       </tr>
                     )}
-                  </React.Fragment>
-                );
-              })}
+                          </React.Fragment>
+                        )}
+                      </Draggable>
+                    );
+                  })}
+                  {provided.placeholder}
 
-              {formStats.length === 0 && (
+                  {formStats.length === 0 && (
                 <tr>
                   <td colSpan={visibleColumns.length + 1} className="text-center py-16">
                     <div className="flex flex-col items-center space-y-3">
@@ -1219,8 +1287,11 @@ const QualityDashboard: React.FC = () => {
                   </td>
                 </tr>
               )}
-            </tbody>
+                </tbody>
+              )}
+            </Droppable>
           </table>
+          </DragDropContext>
         </div>
 
         {/* Table Footer */}

@@ -34,6 +34,7 @@ export interface DynamicForm {
   questions: QuestionBlock[];
   isActive: boolean;
   createdAt: string;
+  sortOrder?: number;
   shifts?: Shift[];
   department?: string;
 }

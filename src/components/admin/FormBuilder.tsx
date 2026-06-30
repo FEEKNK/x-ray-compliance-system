@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useForms, useAddForm, useUpdateForm, useDeleteForm } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
-import { Plus, Trash2, Save, ChevronRight, Edit3, X } from 'lucide-react';
+import { Plus, Trash2, Save, ChevronRight, Edit3, X, GripVertical } from 'lucide-react';
 import { translations } from '../../i18n';
 import type { QuestionBlock, DynamicForm } from '../../types';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 
 const FormBuilder: React.FC = () => {
   const { language, settings } = useApp();
@@ -37,6 +38,18 @@ const FormBuilder: React.FC = () => {
 
   const updateQuestionState = (id: string, updates: Partial<QuestionBlock>) => {
     setQuestions(questions.map(q => q.id === id ? { ...q, ...updates } : q));
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+    if (sourceIndex === destIndex) return;
+
+    const newQuestions = Array.from(questions);
+    const [removed] = newQuestions.splice(sourceIndex, 1);
+    newQuestions.splice(destIndex, 0, removed);
+    setQuestions(newQuestions);
   };
 
   const handleSave = () => {
@@ -207,16 +220,37 @@ const FormBuilder: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-black text-gray-400 uppercase tracking-widest px-2">Question Blocks</h3>
-            {questions.map((q, index) => (
-              <div key={q.id} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative group animate-in slide-in-from-top-2">
-                <button 
-                  onClick={() => removeQuestion(q.id)}
-                  className="absolute top-6 right-6 text-gray-300 hover:text-red-500 transition-colors"
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="questions">
+              {(provided) => (
+                <div 
+                  className="space-y-4"
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
                 >
-                  <Trash2 size={20} />
-                </button>
+                  <h3 className="text-lg font-black text-gray-400 uppercase tracking-widest px-2">Question Blocks</h3>
+                  {questions.map((q, index) => (
+                    <Draggable key={q.id} draggableId={q.id} index={index}>
+                      {(provided, snapshot) => (
+                        <div 
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className={`bg-white p-8 rounded-2xl shadow-sm border relative ${snapshot.isDragging ? 'border-blue-300 ring-2 ring-blue-100 shadow-xl z-50' : 'border-gray-100'} group animate-in slide-in-from-top-2`}
+                        >
+                          <div className="absolute top-6 right-16">
+                            <div 
+                              {...provided.dragHandleProps} 
+                              className="text-gray-300 hover:text-[#00468B] cursor-grab active:cursor-grabbing p-2 -m-2 rounded-md hover:bg-blue-50 transition-colors"
+                            >
+                              <GripVertical size={20} />
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => removeQuestion(q.id)}
+                            className="absolute top-6 right-6 text-gray-300 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 size={20} />
+                          </button>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="md:col-span-2">
@@ -387,19 +421,25 @@ const FormBuilder: React.FC = () => {
                         <span className="text-lg font-bold text-gray-600">Auto-fill Current Date (ใช้วันที่ปัจจุบันอัตโนมัติ)</span>
                       </label>
                     )}
-                  </div>
-                </div>
-              </div>
-            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
 
-            <button 
-              onClick={addQuestion}
-              className="w-full py-6 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 flex items-center justify-center space-x-3 hover:border-[#00468B] hover:text-[#00468B] hover:bg-blue-50 transition-all group"
-            >
-              <Plus size={24} className="group-hover:scale-110 transition-transform" />
-              <span className="font-bold text-lg uppercase tracking-widest">Add Inspection Field</span>
-            </button>
-          </div>
+                <button 
+                  onClick={addQuestion}
+                  className="w-full py-6 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 flex items-center justify-center space-x-3 hover:border-[#00468B] hover:text-[#00468B] hover:bg-blue-50 transition-all group mt-4"
+                >
+                  <Plus size={24} className="group-hover:scale-110 transition-transform" />
+                  <span className="font-bold text-lg uppercase tracking-widest">Add Inspection Field</span>
+                </button>
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
         </div>
 
       </div>

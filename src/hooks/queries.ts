@@ -73,6 +73,14 @@ export const useDeleteForm = () => {
   });
 };
 
+export const useReorderForms = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: api.forms.reorder,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['forms'] }),
+  });
+};
+
 // ============================================
 // Schedules
 // ============================================

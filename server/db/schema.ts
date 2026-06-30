@@ -11,6 +11,7 @@ export const forms = pgTable("forms", {
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	shifts: jsonb(),
 	department: text(),
+	sortOrder: integer("sort_order").default(0).notNull(),
 });
 
 export const bundles = pgTable("bundles", {

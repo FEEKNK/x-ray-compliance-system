@@ -103,6 +103,12 @@ export const api = {
 
     delete: (id: string): Promise<{ success: boolean }> =>
       apiFetch(`/forms/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
+
+    reorder: (updates: { id: string; sortOrder: number }[]): Promise<{ success: boolean }> =>
+      apiFetch(`/forms/reorder`, {
+        method: 'PUT',
+        body: JSON.stringify({ updates }),
+      }).then(r => handleResponse(r)),
   },
 
   schedules: {

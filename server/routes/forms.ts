@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { forms } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 
 const router = Router();
 
 // GET /api/forms — fetch all forms
 router.get('/', async (_req, res) => {
   try {
-    const allForms = await db.select().from(forms);
+    const allForms = await db.select().from(forms).orderBy(asc(forms.sortOrder));
     // Map DB columns to frontend expected shape
     const mapped = allForms.map(f => ({
       id: f.id,
@@ -19,6 +19,7 @@ router.get('/', async (_req, res) => {
       createdAt: f.createdAt,
       shifts: f.shifts as string[] | null,
       department: f.department,
+      sortOrder: f.sortOrder,
     }));
     res.json(mapped);
   } catch (error) {
@@ -47,6 +48,26 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Error creating form:', error);
     res.status(500).json({ error: 'Failed to create form' });
+  }
+});
+
+// PUT /api/forms/reorder — reorder forms
+router.put('/reorder', async (req, res) => {
+  try {
+    const { updates } = req.body;
+    if (!Array.isArray(updates)) {
+      return res.status(400).json({ error: 'Invalid updates payload' });
+    }
+    // Update sequentially
+    for (const update of updates) {
+      await db.update(forms)
+        .set({ sortOrder: update.sortOrder })
+        .where(eq(forms.id, update.id));
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error reordering forms:', error);
+    res.status(500).json({ error: 'Failed to reorder forms' });
   }
 });
 
