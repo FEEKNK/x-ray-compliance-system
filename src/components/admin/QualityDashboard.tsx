@@ -513,7 +513,7 @@ const QualityDashboard: React.FC = () => {
               if (val === undefined || val === null || val === '') return '-';
               return String(val).substring(0, 4);
             });
-            row.push(vals.join('/'));
+            row.push(vals.join('\n'));
           } else {
             row.push('');
           }
@@ -526,14 +526,22 @@ const QualityDashboard: React.FC = () => {
       const timeRow = ['เวลา'];
       daysArray.forEach(day => {
         const subsOnDay = detailSubs.filter(s => parseDbDate(s.submittedAt).getDate() === day);
-        sigRow.push(subsOnDay.map(s => s.staffName.split(' ')[0].substring(0, 3)).join('/'));
+        sigRow.push(subsOnDay.map(s => s.staffName.split(' ')[0].substring(0, 3)).join('\n'));
         timeRow.push(subsOnDay.map(s => {
           const dt = parseDbDate(s.submittedAt);
           return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
-        }).join('/'));
+        }).join('\n'));
       });
       body.push(sigRow);
       body.push(timeRow);
+
+      const colStyles: Record<number, any> = {
+        0: { halign: 'left', cellWidth: 45, fontSize: 6 },
+      };
+      const dateColWidth = 232 / daysArray.length;
+      daysArray.forEach((_, i) => {
+        colStyles[i + 1] = { cellWidth: dateColWidth };
+      });
 
       // AutoTable
       autoTable(doc, {
@@ -556,9 +564,7 @@ const QualityDashboard: React.FC = () => {
           fontStyle: 'bold',
           fontSize: 6,
         },
-        columnStyles: {
-          0: { halign: 'left', cellWidth: 45, fontSize: 6 },
-        },
+        columnStyles: colStyles,
         bodyStyles: {
           minCellHeight: 5,
         },
