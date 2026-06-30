@@ -48,18 +48,28 @@ export const runSLAJob = async () => {
     ];
 
     for (const current of shiftsList) {
+      // If a Night shift starts after midnight (e.g. 00:00),
+      // it actually physically occurs on the next day relative to the "schedule date".
+      if ((current.name === 'Night' || current.name === 'NightBeforeMorning') && current.start < 12) {
+        current.start += 24;
+      }
+
       let end = parseShiftEndHour(current.endStr, current.defaultEnd);
-      if (end <= current.start) {
+      let originalStart = current.start % 24;
+      
+      if (end <= originalStart) {
         end += 24; // wraps around midnight
       }
+      if (current.start >= 24 && end < 24) {
+        end += 24; // If start was pushed to next day, end must also be on or after next day
+      }
+
       current.end = end;
       current.limit = current.start + current.sla;
     }
 
     const shiftsMap = new Map(shiftsList.map(s => [s.name, s]));
     const transporter = getTransporter();
-
-    const nightStartHour = parseShiftStartHour(shiftsConfig?.Night, 0);
 
     // ==========================================
     // 1. STAFF SLA REMINDER (During Shift)
@@ -78,11 +88,6 @@ export const runSLAJob = async () => {
        if (!s) continue;
        
        const schedDate = new Date(`${sched.date}T00:00:00.000Z`);
-       
-       // Adjust date for Night shifts that roll over midnight
-       if (nightStartHour >= 18 && s.start < 12 && (sched.shift === 'Night' || sched.shift === 'NightBeforeMorning')) {
-         schedDate.setDate(schedDate.getDate() + 1);
-       }
        
        const deadlineTime = schedDate.getTime() + (s.limit * 60 * 60 * 1000);
        const endTime = schedDate.getTime() + (s.end * 60 * 60 * 1000);
@@ -163,11 +168,6 @@ export const runSLAJob = async () => {
        if (!s) continue;
        
        const schedDate = new Date(`${sched.date}T00:00:00.000Z`);
-       
-       // Adjust date for Night shifts that roll over midnight
-       if (nightStartHour >= 18 && s.start < 12 && (sched.shift === 'Night' || sched.shift === 'NightBeforeMorning')) {
-         schedDate.setDate(schedDate.getDate() + 1);
-       }
        
        const endTime = schedDate.getTime() + (s.end * 60 * 60 * 1000);
        

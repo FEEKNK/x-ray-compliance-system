@@ -11,7 +11,7 @@ const CONFIG_ID = 'main';
 const DEFAULT_SETTINGS = {
   hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
   supervisorEmail: "supervisor@hospital.com",
-  escalationEmail: "director@hospital.com",
+  escalationEmail: "",
   departments: ["IMAGING", "MRI"],
   slaHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
   lockoutHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },

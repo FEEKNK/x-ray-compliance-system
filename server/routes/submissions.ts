@@ -149,78 +149,12 @@ router.post('/', async (req, res) => {
       const [staff] = await db.select().from(users).where(eq(users.id, staffId)).limit(1);
       
       if (form && staff) {
-        let hasFailures = false;
-        const failedItems: string[] = [];
-        
         const safeData = typeof data === 'object' && data !== null ? data as Record<string, unknown> : {};
-        const safeQuestions = Array.isArray(form.questions) ? form.questions : [];
-        const processedKeys = new Set<string>();
-
-        Object.entries(safeData).forEach(([key]) => {
-          if (processedKeys.has(key)) return;
-          
-          let baseKey = key;
-          if (key.endsWith('_other')) {
-            baseKey = key.replace('_other', '');
-          }
-
-          const question = safeQuestions.find((q: QuestionBlock) => q.id === baseKey);
-          if (!question) return;
-
-          const label = question.label;
-          const mainValue = safeData[baseKey];
-          const otherValue = safeData[`${baseKey}_other`];
-          
-          processedKeys.add(baseKey);
-          processedKeys.add(`${baseKey}_other`);
-
-          let triggeredAlert = false;
-
-          // 1. Hardcoded Critical Failures
-          if (mainValue === 'Fail' || mainValue === 'Alert') {
-            hasFailures = true;
-            triggeredAlert = true;
-            failedItems.push(`${label}: ${mainValue}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
-          }
-          // 2. Configurable Fail Options
-          else if (question.alertOnFail) {
-            if (typeof mainValue === 'string' && question.failOptions?.includes(mainValue)) {
-              hasFailures = true;
-              triggeredAlert = true;
-              failedItems.push(`${label}: ${mainValue}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
-            } else if (Array.isArray(mainValue)) {
-              const failedVals = mainValue.filter(v => typeof v === 'string' && question.failOptions?.includes(v));
-              if (failedVals.length > 0) {
-                hasFailures = true;
-                triggeredAlert = true;
-                failedItems.push(`${label}: ${failedVals.join(', ')}${otherValue ? ` (ระบุ: ${otherValue})` : ''}`.trim());
-              }
-            }
-          }
-          
-          // 2. Custom Input Options (Not in preset options)
-          if (!triggeredAlert && question.alertOnCustomInput && question.allowCustomInput) {
-            const options = question.options || [];
-            
-            // If the main value itself is completely custom
-            if (typeof mainValue === 'string' && !options.includes(mainValue) && mainValue.trim() !== '') {
-              hasFailures = true;
-              failedItems.push(`${label}: ${mainValue} (ระบุเอง)`);
-            } else if (Array.isArray(mainValue)) {
-              const customVals = mainValue.filter(v => typeof v === 'string' && !options.includes(v) && v.trim() !== '');
-              if (customVals.length > 0) {
-                hasFailures = true;
-                failedItems.push(`${label}: ${customVals.join(', ')} (ระบุเอง)`);
-              }
-            }
-            
-            // If the user selected an option (like "อื่นๆ" or "Other") and provided details in _other
-            if (typeof mainValue === 'string' && (mainValue === 'อื่นๆ' || mainValue === 'Other') && otherValue && String(otherValue).trim() !== '') {
-              hasFailures = true;
-              failedItems.push(`${label}: ${mainValue} (ระบุ: ${otherValue})`);
-            }
-          }
-        });
+        
+        // Use the exact same logic as the UI to determine failures
+        const { getSubmissionFailures } = require('../../src/utils/formUtils');
+        const failedItems = getSubmissionFailures({ data: safeData } as any, form as any) as string[];
+        const hasFailures = failedItems.length > 0;
 
         if (hasFailures) {
           // --- In-App Alert ---

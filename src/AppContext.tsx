@@ -10,7 +10,7 @@ export const ALERT_CHECK_INTERVAL_MS = 60000;
 const DEFAULT_SETTINGS: SystemSettings = {
   hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
   supervisorEmail: "supervisor@hospital.com",
-  escalationEmail: "director@hospital.com",
+  escalationEmail: "",
   departments: ["IMAGING", "MRI"],
   slaHours: { Morning: 1.5, Afternoon: 1.5, Night: 1.5, NightBeforeMorning: 1.5 },
   lockoutHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
