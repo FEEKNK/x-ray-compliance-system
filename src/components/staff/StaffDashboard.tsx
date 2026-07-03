@@ -65,7 +65,7 @@ const StaffDashboard: React.FC = () => {
   const t = translations[language];
   const { data: schedules = [] } = useSchedules();
   const { data: forms = [] } = useForms();
-  const { mutate: submitForm } = useAddSubmission();
+  const { mutateAsync: submitFormAsync } = useAddSubmission();
   
   const lockoutHours = settings?.lockoutHours as Record<string, number> | undefined;
   const shiftsConfig = settings?.shifts as Record<string, string> | undefined;
@@ -98,7 +98,7 @@ const StaffDashboard: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleFinishSubmission = (data: Submission) => {
-    submitForm(data, {
+    return submitFormAsync(data, {
       onSuccess: () => {
         setActiveSchedule(null);
         setShowSuccess(true);

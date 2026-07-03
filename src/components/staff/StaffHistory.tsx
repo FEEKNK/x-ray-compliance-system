@@ -16,7 +16,7 @@ const StaffHistory: React.FC = () => {
   const { data: schedules = [] } = useSchedules();
   const { data: submissionsData } = useSubmissions();
   const submissions = submissionsData?.data || [];
-  const { mutate: submitForm } = useAddSubmission();
+  const { mutateAsync: submitFormAsync } = useAddSubmission();
   const t = translations[language];
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filterDate, setFilterDate] = React.useState('');
@@ -45,8 +45,9 @@ const StaffHistory: React.FC = () => {
   };
 
   const handleEditSubmit = (data: Submission) => {
-    submitForm(data);
-    setEditingSchedule(null);
+    return submitFormAsync(data).then(() => {
+      setEditingSchedule(null);
+    });
   };
 
 
