@@ -97,8 +97,8 @@ const StaffDashboard: React.FC = () => {
   const [activeSchedule, setActiveSchedule] = useState<Schedule | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleFinishSubmission = (data: Submission) => {
-    return submitFormAsync(data, {
+  const handleFinishSubmission = async (data: Submission) => {
+    await submitFormAsync(data, {
       onSuccess: () => {
         setActiveSchedule(null);
         setShowSuccess(true);
