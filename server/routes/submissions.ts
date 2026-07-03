@@ -3,6 +3,7 @@ import { db } from '../db';
 import { submissions, schedules, users, forms, config, alerts } from '../db/schema';
 import { eq, desc, and, gte, lte } from 'drizzle-orm';
 import { getTransporter, escapeHtml, isValidEmail } from '../services/email';
+import { getSubmissionFailures } from '../../src/utils/formUtils';
 import { QuestionBlock } from '../../src/types';
 import { logger } from '../logger';
 
@@ -152,7 +153,6 @@ router.post('/', async (req, res) => {
         const safeData = typeof data === 'object' && data !== null ? data as Record<string, unknown> : {};
         
         // Use the exact same logic as the UI to determine failures
-        const { getSubmissionFailures } = require('../../src/utils/formUtils');
         const failedItems = getSubmissionFailures({ data: safeData } as any, form as any) as string[];
         const hasFailures = failedItems.length > 0;
 
