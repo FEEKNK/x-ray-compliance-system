@@ -143,27 +143,52 @@ router.post('/', async (req, res) => {
 
     // --- Real-time Email Notification for Failures ---
     try {
-      if (isUpdate) {
-        // Skip sending email alerts on updates to prevent spam.
-      } else {
+      logger.info(`[FailAlert] Processing submission for form=${formId}, staff=${staffId}, isUpdate=${isUpdate}`);
+      
       const [form] = await db.select().from(forms).where(eq(forms.id, formId)).limit(1);
       const [staff] = await db.select().from(users).where(eq(users.id, staffId)).limit(1);
+      
+      if (!form) {
+        logger.warn(`[FailAlert] Form not found: ${formId}`);
+      }
+      if (!staff) {
+        logger.warn(`[FailAlert] Staff not found: ${staffId}`);
+      }
       
       if (form && staff) {
         const safeData = typeof data === 'object' && data !== null ? data as Record<string, unknown> : {};
         
+        // Log the submission data and form questions for debugging
+        const formQuestions = (form.questions as any[]) || [];
+        logger.info(`[FailAlert] Form "${form.title}" has ${formQuestions.length} questions`);
+        
+        // Log each answer for diagnosis
+        for (const q of formQuestions) {
+          const answer = String(safeData[q.id] || '');
+          if (answer) {
+            logger.info(`[FailAlert] Q: "${q.label}" (${q.type}) => "${answer}" | alertOnFail=${q.alertOnFail}, failOptions=${JSON.stringify(q.failOptions)}, alertOnCustomInput=${q.alertOnCustomInput}`);
+          }
+        }
+        
         // Use the exact same logic as the UI to determine failures
         const failedItems = getSubmissionFailures({ data: safeData } as any, form as any) as string[];
         const hasFailures = failedItems.length > 0;
+        
+        logger.info(`[FailAlert] Failure detection result: hasFailures=${hasFailures}, failedItems=${JSON.stringify(failedItems)}`);
 
         if (hasFailures) {
+          if (isUpdate) {
+            logger.info(`[FailAlert] This is an update — still sending alert for new failures`);
+          }
+          
           // --- In-App Alert ---
           await db.insert(alerts).values({
             type: 'Critical Failure',
             message: `พบปัญหาจากการตรวจสอบ: ${form.title} โดย ${staff.name}`,
             staffId: staff.id,
             formId: form.id,
-          }).catch(err => console.error('Error inserting in-app alert:', err));
+          }).catch(err => logger.error('[FailAlert] Error inserting in-app alert:', err));
+          logger.info(`[FailAlert] In-app alert inserted`);
 
           const emailHtml = `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fee2e2; border-radius: 12px; overflow: hidden;">
@@ -195,6 +220,8 @@ router.post('/', async (req, res) => {
           const allRecipients = Array.from(new Set([configSupervisorEmail, ...adminEmails].filter(Boolean) as string[]))
             .filter(isValidEmail);
 
+          logger.info(`[FailAlert] Email recipients: ${JSON.stringify(allRecipients)} (supervisorEmail=${configSupervisorEmail}, adminEmails=${JSON.stringify(adminEmails)})`);
+
           if (allRecipients.length > 0) {
             try {
               getTransporter().sendMail({
@@ -203,19 +230,22 @@ router.post('/', async (req, res) => {
                 subject: `⚠️ [ด่วน] พบปัญหาจากการตรวจสอบ: ${form.title} โดย ${staff.name}`,
                 html: emailHtml
               }).then(() => {
-                logger.info(`Sent real-time failure alert for form ${formId}`);
+                logger.info(`[FailAlert] ✅ Email sent successfully for form ${formId}`);
               }).catch(err => {
-                logger.error('Error sending real-time failure alert in background:', err);
+                logger.error('[FailAlert] ❌ Error sending email in background:', err);
               });
             } catch (dispatchErr) {
-              logger.error('Error dispatching real-time failure alert email:', dispatchErr);
+              logger.error('[FailAlert] ❌ Error dispatching email:', dispatchErr);
             }
+          } else {
+            logger.warn(`[FailAlert] ⚠️ No valid email recipients found — alert email NOT sent`);
           }
+        } else {
+          logger.info(`[FailAlert] No failures detected — no alert needed`);
         }
       }
-      }
     } catch (err) {
-      logger.error('Error preparing real-time failure alert:', err);
+      logger.error('[FailAlert] ❌ Error in failure alert processing:', err);
     }
     // ------------------------------------------------
 
