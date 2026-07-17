@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { db } from '../db';
 import { config } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, requireAdmin } from '../middleware/auth';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -87,7 +88,7 @@ router.get('/public', async (_req, res) => {
       announcements: row.announcements,
     });
   } catch (error) {
-    console.error('Error fetching public config:', error);
+    logger.error('Error fetching public config:', error);
     res.status(500).json({ error: 'Failed to fetch config' });
   }
 });
@@ -102,13 +103,13 @@ router.get('/', authenticateToken, async (_req, res) => {
       announcements: row.announcements,
     });
   } catch (error) {
-    console.error('Error fetching config:', error);
+    logger.error('Error fetching config:', error);
     res.status(500).json({ error: 'Failed to fetch config' });
   }
 });
 
 // PUT /api/config — update settings
-router.put('/', authenticateToken, async (req, res) => {
+router.put('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
     await ensureConfig();
     const { settings } = req.body;
@@ -118,13 +119,13 @@ router.put('/', authenticateToken, async (req, res) => {
       .returning();
     res.json({ settings: updated.settings, announcements: updated.announcements });
   } catch (error) {
-    console.error('Error updating config:', error);
+    logger.error('Error updating config:', error);
     res.status(500).json({ error: 'Failed to update config' });
   }
 });
 
 // POST /api/config/announcements — add an announcement
-router.post('/announcements', authenticateToken, async (req, res) => {
+router.post('/announcements', authenticateToken, requireAdmin, async (req, res) => {
   try {
     await ensureConfig();
     const { text } = req.body;
@@ -139,7 +140,7 @@ router.post('/announcements', authenticateToken, async (req, res) => {
     
     res.json({ announcements: result.announcements });
   } catch (error) {
-    console.error('Error adding announcement:', error);
+    logger.error('Error adding announcement:', error);
     res.status(500).json({ error: 'Failed to add announcement' });
   }
 });

@@ -19,7 +19,8 @@ vi.mock('../../db', () => ({
 
 // Mock the auth middleware
 vi.mock('../../middleware/auth', () => ({
-  authenticateToken: vi.fn((req, res, next) => next())
+  authenticateToken: vi.fn((req, res, next) => next()),
+  requireAdmin: vi.fn((req, res, next) => next())
 }));
 
 import { db } from '../../db';

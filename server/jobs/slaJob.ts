@@ -1,17 +1,9 @@
 import { db } from '../db';
 import { schedules, forms, users, config, alerts } from '../db/schema';
-import { eq, and, inArray, isNotNull } from 'drizzle-orm';
+import { eq, and, inArray, isNotNull, gte } from 'drizzle-orm';
 import { logger } from '../logger';
-import { getTransporter, escapeHtml } from '../services/email';
-import { getShiftThaiName, parseShiftStartHour, parseShiftEndHour } from '../utils/shiftHelpers';
-
-/**
- * Get current time in Bangkok timezone (UTC+7) — stable across environments.
- */
-function getBangkokNow(): Date {
-  const utcMs = Date.now();
-  return new Date(utcMs + 7 * 60 * 60 * 1000);
-}
+import { getTransporter, escapeHtml, isValidEmail } from '../services/email';
+import { getShiftThaiName, parseShiftStartHour, parseShiftEndHour, getBangkokNow, getBangkokDateStr } from '../utils/shiftHelpers';
 
 let isSlaJobRunning = false;
 
@@ -28,7 +20,10 @@ export const runSLAJob = async () => {
     
     const currentHour = now.getUTCHours();
     const currentDecimalHour = currentHour + (now.getUTCMinutes() / 60);
-    const todayStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+    const todayStr = getBangkokDateStr(now);
+    // Calculate a reasonable lower bound for date filtering (7 days ago)
+    const pastBound = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const pastBoundStr = getBangkokDateStr(pastBound);
     
     logger.info(`[SLA Job] ⏰ Running at ${currentHour}:${String(now.getUTCMinutes()).padStart(2,'0')} BKK (${currentDecimalHour.toFixed(2)} decimal) | Date: ${todayStr}`);
     
@@ -78,7 +73,8 @@ export const runSLAJob = async () => {
       and(
         eq(schedules.status, 'Pending'),
         eq(schedules.slaAlertSent, false),
-        isNotNull(schedules.formId)
+        isNotNull(schedules.formId),
+        gte(schedules.date, pastBoundStr) // Only check recent schedules to avoid loading old data
       )
     );
     
@@ -114,39 +110,49 @@ export const runSLAJob = async () => {
       const formMap = new Map(allFormsData.map(f => [f.id, f]));
 
       for (const group of Object.values(staffGroup)) {
-        const staff = staffMap.get(group.staffId);
-        if (!staff) continue;
+        try {
+          const staff = staffMap.get(group.staffId);
+          if (!staff) continue;
 
-        const formTitles = group.formIds.map(fId => formMap.get(fId)?.title || 'Unknown Form');
-        const shiftTh = getShiftThaiName(group.shift);
-        
-        const listHtml = formTitles.map(t => `<li style="padding: 5px 0;">${escapeHtml(t)}</li>`).join('');
-        
-        await transporter.sendMail({
-          from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
-          to: staff.email,
-          subject: `⚠️ แจ้งเตือน: คิวงานคงค้าง (เวร${shiftTh})`,
-          html: `
-            <div style="font-family: sans-serif; color: #333;">
-              <h2 style="color: #d9534f;">⚠️ แจ้งเตือนรายการตรวจเช็คคงค้าง</h2>
-              <p>เรียน คุณ ${escapeHtml(staff.name)}</p>
-              <p>ระบบตรวจพบว่าคุณมีรายการตรวจเช็คที่ <strong>เลยกำหนดเวลา (SLA)</strong> ของเวร${shiftTh} จำนวน ${formTitles.length} รายการ ดังนี้:</p>
-              <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #d9534f; margin: 15px 0;">
-                <ul style="margin: 0; padding-left: 20px;">
-                  ${listHtml}
-                </ul>
+          if (!staff.email || !isValidEmail(staff.email)) {
+            logger.warn(`[SLA Job] ⚠️ Skipping staff ${staff.name} — invalid email: "${staff.email}"`);
+            continue;
+          }
+
+          const formTitles = group.formIds.map(fId => formMap.get(fId)?.title || 'Unknown Form');
+          const shiftTh = getShiftThaiName(group.shift);
+          
+          const listHtml = formTitles.map(t => `<li style="padding: 5px 0;">${escapeHtml(t)}</li>`).join('');
+          
+          await transporter.sendMail({
+            from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
+            to: staff.email,
+            subject: `⚠️ แจ้งเตือน: คิวงานคงค้าง (เวร${shiftTh})`,
+            html: `
+              <div style="font-family: sans-serif; color: #333;">
+                <h2 style="color: #d9534f;">⚠️ แจ้งเตือนรายการตรวจเช็คคงค้าง</h2>
+                <p>เรียน คุณ ${escapeHtml(staff.name)}</p>
+                <p>ระบบตรวจพบว่าคุณมีรายการตรวจเช็คที่ <strong>เลยกำหนดเวลา (SLA)</strong> ของเวร${shiftTh} จำนวน ${formTitles.length} รายการ ดังนี้:</p>
+                <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #d9534f; margin: 15px 0;">
+                  <ul style="margin: 0; padding-left: 20px;">
+                    ${listHtml}
+                  </ul>
+                </div>
+                <p>กรุณาเข้าสู่ระบบเพื่อดำเนินการตรวจสอบโดยด่วน ก่อนหมดเวลาเวร</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                <small style="color: #999;">อีเมลฉบับนี้ถูกส่งอัตโนมัติจาก Imaging Compliance System (Staff Reminder)</small>
               </div>
-              <p>กรุณาเข้าสู่ระบบเพื่อดำเนินการตรวจสอบโดยด่วน ก่อนหมดเวลาเวร</p>
-              <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-              <small style="color: #999;">อีเมลฉบับนี้ถูกส่งอัตโนมัติจาก Imaging Compliance System (Staff Reminder)</small>
-            </div>
-          `,
-        });
+            `,
+          });
 
-        await db.update(schedules)
-          .set({ slaAlertSent: true })
-          .where(inArray(schedules.id, group.scheduleIds));
-        logger.info(`[SLA Job] ✅ Staff Reminder sent to ${staff.email} for schedules: ${group.scheduleIds.join(', ')}`);
+          await db.update(schedules)
+            .set({ slaAlertSent: true })
+            .where(inArray(schedules.id, group.scheduleIds));
+          logger.info(`[SLA Job] ✅ Staff Reminder sent to ${staff.email} for schedules: ${group.scheduleIds.join(', ')}`);
+        } catch (staffErr) {
+          logger.error(`[SLA Job] ❌ Error sending staff reminder for staffId=${group.staffId}:`, staffErr);
+          // Continue to next staff — don't let one failure stop all notifications
+        }
       }
     }
 
@@ -158,7 +164,8 @@ export const runSLAJob = async () => {
       and(
         eq(schedules.status, 'Pending'),
         eq(schedules.supervisorAlertSent, false),
-        isNotNull(schedules.formId)
+        isNotNull(schedules.formId),
+        gte(schedules.date, pastBoundStr) // Only check recent schedules
       )
     );
     
@@ -216,8 +223,13 @@ export const runSLAJob = async () => {
            continue;
         }
 
-        const recipients = [supervisorEmail];
-        if (escalationEmail && scheds.length > 0) recipients.push(escalationEmail); // If they missed the entire shift, escalate it.
+        const recipients = [supervisorEmail, escalationEmail]
+          .filter(Boolean)
+          .filter(e => isValidEmail(e as string)) as string[];
+        if (recipients.length === 0) {
+          logger.warn(`[SLA Job] ⚠️ No valid supervisor/escalation email for shift ${shiftTh} — skipping`);
+          continue;
+        }
         const toList = recipients.join(',');
 
         let finalEmailHtml = `

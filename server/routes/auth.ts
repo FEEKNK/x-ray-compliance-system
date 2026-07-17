@@ -5,6 +5,7 @@ import { eq, or } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from '../middleware/auth';
+import { logger } from '../logger';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_development_only';
@@ -66,7 +67,7 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -108,7 +109,7 @@ router.post('/change-password', authenticateToken, async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Change password error:', error);
+    logger.error('Change password error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

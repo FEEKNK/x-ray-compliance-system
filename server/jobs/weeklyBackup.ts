@@ -3,19 +3,8 @@ import { config } from '../db/schema';
 import { logger } from '../logger';
 import { getTransporter } from '../services/email';
 import { getFullExportData } from '../utils/exportData';
+import { getBangkokNow, getBangkokDateStr } from '../utils/shiftHelpers';
 
-/**
- * Get current time in Bangkok timezone (UTC+7) — stable across environments.
- */
-function getBangkokNow(): Date {
-  const utcMs = Date.now();
-  return new Date(utcMs + 7 * 60 * 60 * 1000);
-}
-
-function getBangkokDateStr(d?: Date): string {
-  const now = d ?? getBangkokNow();
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
-}
 
 export const runWeeklyBackupJob = async () => {
   try {

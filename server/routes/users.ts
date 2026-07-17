@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { db } from '../db';
 import { users } from '../db/schema';
 import { eq, asc } from 'drizzle-orm';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, requireAdmin } from '../middleware/auth';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ router.get('/public', async (_req, res) => {
     }).from(users).orderBy(asc(users.sortOrder), asc(users.name));
     res.json(publicUsers);
   } catch (error) {
-    console.error('Error fetching public users:', error);
+    logger.error('Error fetching public users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -28,13 +29,13 @@ router.get('/', authenticateToken, async (_req, res) => {
     const allUsers = await db.select().from(users).orderBy(asc(users.sortOrder), asc(users.name));
     res.json(allUsers);
   } catch (error) {
-    console.error('Error fetching users:', error);
+    logger.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
 // POST /api/users — create a new user
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { employeeId, name, department, email, role } = req.body;
     const [newUser] = await db.insert(users).values({
@@ -46,13 +47,13 @@ router.post('/', authenticateToken, async (req, res) => {
     }).returning();
     res.status(201).json(newUser);
   } catch (error) {
-    console.error('Error creating user:', error);
+    logger.error('Error creating user:', error);
     res.status(500).json({ error: 'Failed to create user' });
   }
 });
 
 // PUT /api/users/reorder — update sort order
-router.put('/reorder', authenticateToken, async (req, res) => {
+router.put('/reorder', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { updates } = req.body; // Expecting [{ id: string, sortOrder: number }]
     if (!Array.isArray(updates)) {
@@ -70,13 +71,13 @@ router.put('/reorder', authenticateToken, async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Error reordering users:', error);
+    logger.error('Error reordering users:', error);
     res.status(500).json({ error: 'Failed to reorder users' });
   }
 });
 
 // PUT /api/users/:id — update user
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { employeeId, name, department, email, role } = req.body;
@@ -87,26 +88,26 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'User not found' });
     res.json(updated);
   } catch (error) {
-    console.error('Error updating user:', error);
+    logger.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });
   }
 });
 
 // DELETE /api/users/:id — delete user
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const [deleted] = await db.delete(users).where(eq(users.id, id as string)).returning();
     if (!deleted) return res.status(404).json({ error: 'User not found' });
     res.json({ success: true });
   } catch (error) {
-    console.error('Error deleting user:', error);
+    logger.error('Error deleting user:', error);
     res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 
 // POST /api/users/:id/reset-password — reset user password
-router.post('/:id/reset-password', authenticateToken, async (req, res) => {
+router.post('/:id/reset-password', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const [updated] = await db.update(users)
@@ -116,7 +117,7 @@ router.post('/:id/reset-password', authenticateToken, async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'User not found' });
     res.json({ success: true });
   } catch (error) {
-    console.error('Error resetting password:', error);
+    logger.error('Error resetting password:', error);
     res.status(500).json({ error: 'Failed to reset password' });
   }
 });

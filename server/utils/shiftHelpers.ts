@@ -1,14 +1,30 @@
 /**
- * Shared server utilities for shift-related operations.
+ * Shared server utilities for shift-related and timezone operations.
  */
+
+/**
+ * Get current time in Bangkok timezone (UTC+7) — stable across environments.
+ * Returns a Date whose getUTC*() methods return Bangkok local values.
+ */
+export function getBangkokNow(): Date {
+  const utcMs = Date.now();
+  return new Date(utcMs + 7 * 60 * 60 * 1000);
+}
+
+/** Format a Date (Bangkok-shifted) as YYYY-MM-DD string */
+export function getBangkokDateStr(d?: Date): string {
+  const now = d ?? getBangkokNow();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+}
 
 /** Map a shift name to its Thai display name */
 export function getShiftThaiName(shift: string): string {
   switch (shift) {
     case 'Morning': return 'เช้า';
     case 'Afternoon': return 'บ่าย';
+    case 'Night': return 'ดึก';
     case 'NightBeforeMorning': return 'ดึกก่อนเช้า';
-    default: return 'ดึก';
+    default: return shift; // Return raw name for unknown shifts
   }
 }
 

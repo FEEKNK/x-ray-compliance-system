@@ -5,20 +5,9 @@ import { eq, and, isNotNull } from 'drizzle-orm';
 import { logger } from '../logger';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
 import { getTransporter, escapeHtml, isValidEmail } from '../services/email';
-import { getShiftThaiName } from '../utils/shiftHelpers';
+import { getShiftThaiName, getBangkokNow, getBangkokDateStr } from '../utils/shiftHelpers';
 
-/**
- * Get current time in Bangkok timezone (UTC+7) — stable across environments.
- */
-function getBangkokNow(): Date {
-  const utcMs = Date.now();
-  return new Date(utcMs + 7 * 60 * 60 * 1000);
-}
 
-function getBangkokDateStr(d?: Date): string {
-  const now = d ?? getBangkokNow();
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
-}
 
 const router = express.Router();
 
@@ -123,13 +112,14 @@ router.post('/test-email', authenticateToken, async (req, res) => {
   try {
     const targetEmail = req.body.email || process.env.SUPERVISOR_EMAIL;
     if (!targetEmail) throw new Error('No target email provided');
+    if (!isValidEmail(targetEmail)) throw new Error(`Invalid email format: ${targetEmail}`);
 
     const transporter = getTransporter();
     const info = await transporter.sendMail({
       from: `"Imaging Test" <${process.env.GMAIL_USER}>`,
       to: targetEmail,
       subject: '🔔 Test Email - Imaging Compliance System (From UI)',
-      html: `<h1>ทดสอบส่งอีเมล</h1><p>ระบบส่งอีเมลจากปุ่มในหน้าจอทำงานได้ปกติครับ ✅</p><p>ส่งถึง: ${targetEmail}</p>`,
+      html: `<h1>ทดสอบส่งอีเมล</h1><p>ระบบส่งอีเมลจากปุ่มในหน้าจอทำงานได้ปกติครับ ✅</p><p>ส่งถึง: ${escapeHtml(targetEmail)}</p>`,
     });
 
     res.json({ success: true, messageId: info.messageId });
@@ -159,8 +149,8 @@ router.post('/send-reminder-email', authenticateToken, async (req, res) => {
     const shiftTh = getShiftThaiName(shift);
     const subject = `⚠️ แจ้งเตือน: กรุณาตรวจเช็ค ${formTitle} (เวร${shiftTh})`;
     
-    const toList = [staffEmail, supervisorEmail].filter(Boolean).join(',');
-    if (!toList) throw new Error('No recipients provided');
+    const toList = [staffEmail, supervisorEmail].filter(Boolean).filter(isValidEmail).join(',');
+    if (!toList) throw new Error('No valid email recipients provided');
 
     const transporter = getTransporter();
     const info = await transporter.sendMail({

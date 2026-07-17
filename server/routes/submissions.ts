@@ -65,7 +65,7 @@ router.get('/', async (req, res) => {
       totalPages: Math.ceil(totalCount / limit)
     });
   } catch (error) {
-    console.error('Error fetching submissions:', error);
+    logger.error('Error fetching submissions:', error);
     res.status(500).json({ error: 'Failed to fetch submissions' });
   }
 });
@@ -88,7 +88,7 @@ router.get('/schedule/:scheduleId', async (req, res) => {
       photos: s.photos as string[],
     });
   } catch (error) {
-    console.error('Error fetching submission by schedule ID:', error);
+    logger.error('Error fetching submission by schedule ID:', error);
     res.status(500).json({ error: 'Failed to fetch submission' });
   }
 });
@@ -138,7 +138,7 @@ router.post('/', async (req, res) => {
       await db.update(schedules)
         .set({ status: 'Completed' })
         .where(eq(schedules.id, dbScheduleId))
-        .catch((err) => { console.error('Failed to update schedule status:', err); });
+        .catch((err) => { logger.error('Failed to update schedule status:', err); });
     }
 
     // --- Real-time Email Notification for Failures ---
@@ -227,7 +227,7 @@ router.post('/', async (req, res) => {
               getTransporter().sendMail({
                 from: `"Imaging Alert System" <${process.env.GMAIL_USER || 'no-reply@hospital.com'}>`,
                 to: allRecipients.join(','),
-                subject: `⚠️ [ด่วน] พบปัญหาจากการตรวจสอบ: ${form.title} โดย ${staff.name}`,
+                subject: `⚠️ [ด่วน] พบปัญหาจากการตรวจสอบ: ${form.title.replace(/[\r\n]/g, '')} โดย ${staff.name.replace(/[\r\n]/g, '')}`,
                 html: emailHtml
               }).then(() => {
                 logger.info(`[FailAlert] ✅ Email sent successfully for form ${formId}`);
@@ -259,7 +259,7 @@ router.post('/', async (req, res) => {
       photos: newSubmission.photos as string[],
     });
   } catch (error) {
-    console.error('Error creating submission:', error);
+    logger.error('Error creating submission:', error);
     res.status(500).json({ error: 'Failed to create submission' });
   }
 });
@@ -284,7 +284,7 @@ router.delete('/:id', async (req, res) => {
       await db.update(schedules)
         .set({ status: 'Pending' })
         .where(eq(schedules.id, existing.scheduleId))
-        .catch((err) => { console.error('Failed to update schedule status:', err); });
+        .catch((err) => { logger.error('Failed to update schedule status:', err); });
     }
 
     res.json({ success: true });
@@ -292,7 +292,7 @@ router.delete('/:id', async (req, res) => {
     if (error instanceof Error && error.message === 'NOT_FOUND') {
       return res.status(404).json({ error: 'Submission not found' });
     }
-    console.error('Error deleting submission:', error);
+    logger.error('Error deleting submission:', error);
     res.status(500).json({ error: 'Failed to delete submission' });
   }
 });

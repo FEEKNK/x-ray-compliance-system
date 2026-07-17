@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { db } from '../db';
 import { schedules } from '../db/schema';
 import { eq, inArray, and, gte, lte } from 'drizzle-orm';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -44,7 +45,7 @@ router.get('/', async (req, res) => {
     const allSchedules = await db.select().from(schedules).where(whereClause);
     res.json(allSchedules);
   } catch (error) {
-    console.error('Error fetching schedules:', error);
+    logger.error('Error fetching schedules:', error);
     res.status(500).json({ error: 'Failed to fetch schedules' });
   }
 });
@@ -68,7 +69,7 @@ router.post('/', async (req, res) => {
     const created = await db.insert(schedules).values(values).returning();
     res.status(201).json(Array.isArray(body) ? created : created[0]);
   } catch (error) {
-    console.error('Error creating schedule:', error);
+    logger.error('Error creating schedule:', error);
     res.status(500).json({ error: 'Failed to create schedule' });
   }
 });
@@ -94,7 +95,7 @@ router.put('/:id', async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Schedule not found' });
     res.json(updated);
   } catch (error) {
-    console.error('Error updating schedule:', error);
+    logger.error('Error updating schedule:', error);
     res.status(500).json({ error: 'Failed to update schedule' });
   }
 });
@@ -107,7 +108,7 @@ router.delete('/:id', async (req, res) => {
     if (!deleted) return res.status(404).json({ error: 'Schedule not found' });
     res.json({ success: true });
   } catch (error) {
-    console.error('Error deleting schedule:', error);
+    logger.error('Error deleting schedule:', error);
     res.status(500).json({ error: 'Failed to delete schedule' });
   }
 });
@@ -122,7 +123,7 @@ router.post('/bulk-delete', async (req, res) => {
     await db.delete(schedules).where(inArray(schedules.id, ids));
     res.json({ success: true, deletedCount: ids.length });
   } catch (error) {
-    console.error('Error bulk deleting schedules:', error);
+    logger.error('Error bulk deleting schedules:', error);
     res.status(500).json({ error: 'Failed to bulk delete schedules' });
   }
 });
