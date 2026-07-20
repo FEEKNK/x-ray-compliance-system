@@ -12,7 +12,6 @@ const CONFIG_ID = 'main';
 const DEFAULT_SETTINGS = {
   hospitalName: "โรงพยาบาลกรุงเทพสิริโรจน์",
   supervisorEmail: "supervisor@hospital.com",
-  escalationEmail: "",
   departments: ["IMAGING", "MRI"],
   slaHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
   lockoutHours: { Morning: 3, Afternoon: 2, Night: 2, NightBeforeMorning: 2 },
@@ -67,7 +66,6 @@ async function ensureConfig() {
     }
 
     if (!current.departments) { patched.departments = DEFAULT_SETTINGS.departments; needsPatch = true; }
-    if (!current.escalationEmail) { patched.escalationEmail = DEFAULT_SETTINGS.escalationEmail; needsPatch = true; }
     if (needsPatch) {
       await db.update(config).set({ settings: patched }).where(eq(config.id, CONFIG_ID));
     }

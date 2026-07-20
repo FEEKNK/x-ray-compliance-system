@@ -175,6 +175,14 @@ export const useDeleteBundle = () => {
   });
 };
 
+export const useReorderBundles = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: api.bundles.reorder,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['bundles'] }),
+  });
+};
+
 // ============================================
 // Alerts
 // ============================================

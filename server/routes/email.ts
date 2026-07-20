@@ -59,7 +59,7 @@ router.post('/test-sla-now', authenticateToken, requireAdmin, async (_req, res) 
       }));
 
       const shiftTh = getShiftThaiName(group.shift);
-      const toList = [staff.email, supervisorEmail].filter(Boolean).filter(isValidEmail).join(',');
+      const toList = [staff.email, supervisorEmail].filter((e): e is string => Boolean(e)).filter(isValidEmail).join(',');
       
       if (!toList) return;
 
@@ -112,12 +112,13 @@ router.post('/test-email', authenticateToken, async (req, res) => {
   try {
     const targetEmail = req.body.email || process.env.SUPERVISOR_EMAIL;
     if (!targetEmail) throw new Error('No target email provided');
-    if (!isValidEmail(targetEmail)) throw new Error(`Invalid email format: ${targetEmail}`);
+    const emails = targetEmail.split(',').map((e: string) => e.trim()).filter(Boolean);
+    if (emails.some((e: string) => !isValidEmail(e))) throw new Error(`Invalid email format in list: ${targetEmail}`);
 
     const transporter = getTransporter();
     const info = await transporter.sendMail({
       from: `"Imaging Test" <${process.env.GMAIL_USER}>`,
-      to: targetEmail,
+      to: emails.join(','),
       subject: '🔔 Test Email - Imaging Compliance System (From UI)',
       html: `<h1>ทดสอบส่งอีเมล</h1><p>ระบบส่งอีเมลจากปุ่มในหน้าจอทำงานได้ปกติครับ ✅</p><p>ส่งถึง: ${escapeHtml(targetEmail)}</p>`,
     });
@@ -149,7 +150,7 @@ router.post('/send-reminder-email', authenticateToken, async (req, res) => {
     const shiftTh = getShiftThaiName(shift);
     const subject = `⚠️ แจ้งเตือน: กรุณาตรวจเช็ค ${formTitle} (เวร${shiftTh})`;
     
-    const toList = [staffEmail, supervisorEmail].filter(Boolean).filter(isValidEmail).join(',');
+    const toList = [staffEmail, supervisorEmail].filter((e): e is string => Boolean(e)).filter(isValidEmail).join(',');
     if (!toList) throw new Error('No valid email recipients provided');
 
     const transporter = getTransporter();

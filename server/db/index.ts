@@ -31,6 +31,7 @@ const fetchWithRetry = async (url: string | URL | globalThis.Request, options?: 
   throw new Error('Neon DB fetch failed');
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 neonConfig.fetchFunction = fetchWithRetry as any;
 neonConfig.fetchConnectionCache = true;
 

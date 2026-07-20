@@ -65,7 +65,6 @@ export interface Submission {
 export interface SystemSettings {
   hospitalName: string;
   supervisorEmail: string;
-  escalationEmail: string;
   departments: string[];
   slaHours: {
     Morning: number;

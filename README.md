@@ -23,8 +23,9 @@
 2.  **Daily Coverage Tracker:** ตารางแสดงสถานะเครื่องมือทุกชิ้นแบบ Real-time (รอตรวจ/เสร็จสิ้น)
 3.  **Manual Scheduler:** ระบบมอบหมายงานแบบเจาะจงบุคคล วันเวลา และประเภทเวร (เช้า/บ่าย/ดึก)
 4.  **Form Builder:** เครื่องมือสร้างและแก้ไขแบบฟอร์มตรวจเช็คได้ด้วยตัวเอง (CRUD) - *ใช้สำหรับแก้ไขแบบฟอร์มที่ยังไม่เป็นทางการในปัจจุบัน*
-5.  **User Management:** ระบบจัดการรายชื่อบุคลากร เพิ่ม/แก้ไข/ลบ พนักงานในแผนก
-6.  **Master Logs & Export:** คลังเก็บประวัติการตรวจเช็คทั้งหมด สามารถ Export เพื่อทำรายงานได้
+5.  **Bundle Management:** ระบบจัดกลุ่มแบบฟอร์มให้เข้ากันเป็นชุดงาน (Presets) พร้อมระบบจัดเรียงลำดับแบบลากวาง (Drag & Drop)
+6.  **User Management:** ระบบจัดการรายชื่อบุคลากร เพิ่ม/แก้ไข/ลบ พนักงานในแผนก
+7.  **Master Logs & Export:** คลังเก็บประวัติการตรวจเช็คทั้งหมด สามารถ Export เพื่อทำรายงานได้
 
 ### สำหรับเจ้าหน้าที่ (Staff):
 1.  **Duty Dashboard:** หน้าจอรวมงานที่ได้รับมอบหมายประจำวัน พร้อมปุ่มเริ่มงาน
@@ -38,18 +39,42 @@
 - **Frontend:** React, Vite, Tailwind CSS, Lucide React, Recharts
 - **Backend/API:** Node.js, Express, TypeScript (Neon Serverless)
 - **Database:** PostgreSQL (Neon Database) พร้อม Drizzle ORM
+- **Testing:** Vitest สำหรับ Automated Unit & API Testing
 - **Security:** JWT Authentication, PIN Authentication สำหรับเข้าใช้งาน
 
 ---
 
-## 4. Database & Deployment (การติดตั้งและฐานข้อมูล)
+## 4. Setup & Environment Variables (การตั้งค่า .env)
+การรันระบบนี้จำเป็นต้องตั้งค่าตัวแปรสภาพแวดล้อม (Environment Variables) โดยให้คัดลอกไฟล์ `.env.example` แล้วเปลี่ยนชื่อเป็น `.env` จากนั้นกรอกข้อมูลดังนี้:
+
+1. **`DATABASE_URL`**:
+   - **แหล่งที่มา:** ไปที่เว็บไซต์ [Neon.tech](https://neon.tech/) สมัครสมาชิกและสร้าง Project ใหม่
+   - **วิธีเอาค่า:** ไปที่ Dashboard ของโปรเจกต์ ดูที่ส่วน *Connection Details* จะเห็น URL ที่ขึ้นต้นด้วย `postgres://...` ให้คัดลอกมาใส่
+
+2. **`GMAIL_USER`**:
+   - **แหล่งที่มา:** บัญชี Gmail ของคุณ (เช่น `hospital.xray@gmail.com`) ที่จะให้ระบบใช้เป็นตัวส่งอีเมลแจ้งเตือน
+
+3. **`GMAIL_APP_PASSWORD`**:
+   - **แหล่งที่มา:** รหัสผ่านสำหรับแอป (App Passwords) จำนวน 16 หลักจาก Google (ไม่ใช่รหัสผ่านเข้าอีเมลปกติ)
+   - **วิธีเอาค่า:** เข้าบัญชี Google > Security (ความปลอดภัย) > เปิดใช้งาน 2-Step Verification ให้เรียบร้อย > ค้นหาเมนู "App passwords" > ตั้งชื่อแอป (เช่น XRayCheck) จากนั้นก็อปปี้รหัส 16 หลักมาใส่โดยไม่ต้องเว้นวรรค
+
+4. **`SUPERVISOR_EMAIL`**:
+   - **แหล่งที่มา:** ใส่อีเมลของหัวหน้างาน หรือผู้ดูแลระบบ ที่ต้องการให้รับแจ้งเตือนเมื่อมีผลการตรวจเช็คที่ "ตกเกณฑ์ (Fail/Alert)"
+
+5. **`APP_URL`**:
+   - **แหล่งที่มา:** ลิงก์ URL ปลายทางของแอปพลิเคชัน (ระบบจะใช้ต่อท้ายในอีเมลแจ้งเตือนให้ผู้รับคลิกกลับมายังแอป)
+   - **วิธีเอาค่า:** หากทดสอบในเครื่องตัวเองให้ใส่ `http://localhost:5173` หรือหากนำขึ้น Server จริง (Production) ก็ให้ใส่โดเมนเนมของคุณ (เช่น `https://your-app.com`)
+
+---
+
+## 5. Database & Deployment (การติดตั้งและฐานข้อมูล)
 ระบบนี้ถูกออกแบบให้เป็น **Full-Stack Application** ที่รองรับการนำไปติดตั้งใช้งานจริงในโรงพยาบาล:
 - **Database:** ใช้ **Neon Database (PostgreSQL Serverless)** เพื่อความรวดเร็วและประหยัดทรัพยากร
 - **Contact/Support:** หากมีปัญหาการ Deploy หรือการใช้งานฟอร์มต่างๆ ติดต่อ: hanafeepara45@gmail.com
 
 ---
 
-## 5. Next Steps (แผนการพัฒนาในอนาคต)
+## 6. Next Steps (แผนการพัฒนาในอนาคต)
 1.  **Official Form Rollout:** ยืนยันความถูกต้องของแบบฟอร์มทั้งหมดและประกาศใช้เป็นทางการ
 2.  **Advanced Analytics:** ระบบออกรายงานสรุปรายเดือนแบบอัตโนมัติ (Monthly Compliance Report) แบบละเอียด
 3.  **Integration (HIS):** พัฒนา API สำหรับเชื่อมต่อและดึงข้อมูลพื้นฐานจากระบบสารสนเทศหลักของโรงพยาบาล (Hospital Information System)

@@ -19,6 +19,7 @@ export const bundles = pgTable("bundles", {
 	name: text().notNull(),
 	department: text().notNull(),
 	formIds: jsonb("form_ids").notNull(),
+	sortOrder: integer("sort_order").default(0).notNull(),
 });
 
 export const config = pgTable("config", {

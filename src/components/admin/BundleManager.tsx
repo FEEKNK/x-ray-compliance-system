@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useForms, useBundles, useAddBundle, useUpdateBundle, useDeleteBundle } from '../../hooks/queries';
+import { useForms, useBundles, useAddBundle, useUpdateBundle, useDeleteBundle, useReorderBundles } from '../../hooks/queries';
 import { useApp } from '../../AppContext';
-import { Plus, Trash2, Check, ChevronRight, Save } from 'lucide-react';
+import { Plus, Trash2, Check, ChevronRight, Save, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import type { ProtocolBundle } from '../../types';
 import { translations } from '../../i18n';
 
@@ -10,6 +11,7 @@ const BundleManager: React.FC = () => {
   const { mutate: addBundle } = useAddBundle();
   const { mutate: updateBundle } = useUpdateBundle();
   const { mutate: deleteBundle } = useDeleteBundle();
+  const { mutate: reorderBundles } = useReorderBundles();
   const { data: forms = [] } = useForms();
   const { data: bundles = [] } = useBundles();
   const t = translations[language];
@@ -19,10 +21,35 @@ const BundleManager: React.FC = () => {
   const [department, setDepartment] = useState<string>(settings?.departments?.[0] || 'IMAGING');
   const [selectedFormIds, setSelectedFormIds] = useState<string[]>([]);
   const [filterDepartment, setFilterDepartment] = useState<string>('ALL');
+  
+  const filteredBundles = React.useMemo(() => {
+    return filterDepartment === 'ALL' 
+      ? bundles 
+      : bundles.filter(b => b.department === filterDepartment);
+  }, [bundles, filterDepartment]);
 
-  const filteredBundles = filterDepartment === 'ALL' 
-    ? bundles 
-    : bundles.filter(b => b.department === filterDepartment);
+  const [localBundles, setLocalBundles] = React.useState<ProtocolBundle[]>([]);
+
+  React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLocalBundles(filteredBundles);
+  }, [filteredBundles]);
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    
+    const items = Array.from(localBundles);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setLocalBundles(items);
+
+    const updates = items.map((item, index) => ({
+      id: item.id,
+      sortOrder: index,
+    }));
+    reorderBundles(updates);
+  };
 
   const handleSave = () => {
     if (!name) return alert('Please enter a bundle name');
@@ -96,40 +123,61 @@ const BundleManager: React.FC = () => {
                    ))}
                  </select>
               </div>
-              <div className="divide-y divide-gray-50 max-h-[70vh] overflow-y-auto">
-                 {filteredBundles.map(b => (
-                   <div 
-                    key={b.id} 
-                    onClick={() => {
-                      setSelectedBundle(b);
-                      setName(b.name);
-                      setDepartment(b.department);
-                      setSelectedFormIds(b.formIds);
-                    }}
-                    className={`p-4 flex items-center justify-between cursor-pointer transition-all group ${selectedBundle?.id === b.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-                   >
-                      <div className="flex-1 min-w-0 mr-2">
-                         <p className={`text-base font-bold truncate ${selectedBundle?.id === b.id ? 'text-[#00468B]' : 'text-gray-700'}`}>{b.name}</p>
-                         <p className="text-base text-gray-400 font-medium uppercase tracking-tighter">{b.department} | {b.formIds.length} forms</p>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm(`Delete bundle "${b.name}"?`)) {
-                              deleteBundle(b.id);
-                              if (selectedBundle?.id === b.id) reset();
-                            }
-                          }}
-                          className="p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                        <ChevronRight size={14} className={selectedBundle?.id === b.id ? 'text-[#00468B]' : 'text-gray-200'} />
-                      </div>
-                   </div>
-                 ))}
-              </div>
+              <DragDropContext onDragEnd={handleDragEnd}>
+                 <Droppable droppableId="bundles-list">
+                   {(provided) => (
+                     <div 
+                       className="divide-y divide-gray-50 max-h-[70vh] overflow-y-auto"
+                       {...provided.droppableProps}
+                       ref={provided.innerRef}
+                     >
+                       {localBundles.map((b, index) => (
+                         <Draggable key={b.id} draggableId={b.id} index={index}>
+                           {(provided, snapshot) => (
+                             <div 
+                               ref={provided.innerRef}
+                               {...provided.draggableProps}
+                               onClick={() => {
+                                 setSelectedBundle(b);
+                                 setName(b.name);
+                                 setDepartment(b.department);
+                                 setSelectedFormIds(b.formIds);
+                               }}
+                               className={`p-4 flex items-center justify-between cursor-pointer transition-all group ${selectedBundle?.id === b.id ? 'bg-blue-50' : 'hover:bg-gray-50'} ${snapshot.isDragging ? 'shadow-lg bg-white relative z-50 rounded-xl border border-blue-100' : ''}`}
+                             >
+                                <div className="flex items-center flex-1 min-w-0 mr-2">
+                                   <div {...provided.dragHandleProps} className="mr-3 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing">
+                                     <GripVertical size={18} />
+                                   </div>
+                                   <div>
+                                     <p className={`text-base font-bold truncate ${selectedBundle?.id === b.id ? 'text-[#00468B]' : 'text-gray-700'}`}>{b.name}</p>
+                                     <p className="text-base text-gray-400 font-medium uppercase tracking-tighter">{b.department} | {b.formIds.length} forms</p>
+                                   </div>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (confirm(`Delete bundle "${b.name}"?`)) {
+                                        deleteBundle(b.id);
+                                        if (selectedBundle?.id === b.id) reset();
+                                      }
+                                    }}
+                                    className="p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                  <ChevronRight size={14} className={selectedBundle?.id === b.id ? 'text-[#00468B]' : 'text-gray-200'} />
+                                </div>
+                             </div>
+                           )}
+                         </Draggable>
+                       ))}
+                       {provided.placeholder}
+                     </div>
+                   )}
+                 </Droppable>
+              </DragDropContext>
            </div>
         </div>
 

@@ -87,7 +87,7 @@ router.post('/change-password', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const reqUser = (req as any).user;
+    const reqUser = (req as { user?: { id: string; role: string } }).user;
     if (reqUser && reqUser.id !== userId && reqUser.role !== 'ADMIN') {
       return res.status(403).json({ error: 'Unauthorized to change this password' });
     }

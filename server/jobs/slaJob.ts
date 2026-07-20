@@ -31,7 +31,6 @@ export const runSLAJob = async () => {
     const sysConfig = await db.select().from(config).limit(1);
     const settings = sysConfig[0]?.settings as Record<string, unknown> | undefined;
     const supervisorEmail = (settings?.supervisorEmail as string | undefined) || process.env.SUPERVISOR_EMAIL;
-    const escalationEmail = (settings?.escalationEmail as string | undefined);
     const slaHoursCfg = (settings?.slaHours as { Morning?: number, Afternoon?: number, Night?: number, NightBeforeMorning?: number }) || {};
     const shiftsConfig = settings?.shifts as { Morning?: string, Afternoon?: string, Night?: string, NightBeforeMorning?: string } | undefined;
 
@@ -50,7 +49,7 @@ export const runSLAJob = async () => {
       }
 
       let end = parseShiftEndHour(current.endStr, current.defaultEnd);
-      let originalStart = current.start % 24;
+      const originalStart = current.start % 24;
       
       if (end <= originalStart) {
         end += 24; // wraps around midnight
@@ -223,11 +222,9 @@ export const runSLAJob = async () => {
            continue;
         }
 
-        const recipients = [supervisorEmail, escalationEmail]
-          .filter(Boolean)
-          .filter(e => isValidEmail(e as string)) as string[];
+        const recipients = (supervisorEmail || '').split(',').map(e => e.trim()).filter(e => isValidEmail(e));
         if (recipients.length === 0) {
-          logger.warn(`[SLA Job] ⚠️ No valid supervisor/escalation email for shift ${shiftTh} — skipping`);
+          logger.warn(`[SLA Job] ⚠️ No valid supervisor email for shift ${shiftTh} — skipping`);
           continue;
         }
         const toList = recipients.join(',');

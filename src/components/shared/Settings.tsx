@@ -215,11 +215,11 @@ const Settings: React.FC = () => {
                 </label>
                 <div className="flex space-x-2">
                   <input 
-                    type="email" 
+                    type="text" 
                     value={localSettings.supervisorEmail}
                     onChange={(e) => setLocalSettings({...localSettings, supervisorEmail: e.target.value})}
                     className="flex-1 border-2 border-gray-50 rounded-xl p-4 bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none transition-all"
-                    placeholder="supervisor@hospital.com"
+                    placeholder="supervisor@hospital.com, director@hospital.com"
                   />
                   <button 
                     type="button"

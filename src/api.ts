@@ -189,6 +189,12 @@ export const api = {
 
     delete: (id: string): Promise<{ success: boolean }> =>
       apiFetch(`/bundles/${id}`, { method: 'DELETE' }).then(r => handleResponse(r)),
+
+    reorder: (updates: { id: string; sortOrder: number }[]): Promise<{ success: boolean }> =>
+      apiFetch(`/bundles/reorder`, {
+        method: 'PUT',
+        body: JSON.stringify({ updates }),
+      }).then(r => handleResponse(r)),
   },
 
   // ─── Alerts ───────────────────────────────────────

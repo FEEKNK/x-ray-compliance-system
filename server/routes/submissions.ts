@@ -98,7 +98,7 @@ router.post('/', async (req, res) => {
   try {
     const { scheduleId, staffId, formId, data, photos } = req.body;
 
-    const reqUser = (req as any).user;
+    const reqUser = (req as { user?: { id: string; role: string } }).user;
     if (reqUser && reqUser.id !== staffId && reqUser.role !== 'ADMIN') {
       return res.status(403).json({ error: 'Unauthorized to submit for this user' });
     }
@@ -159,7 +159,7 @@ router.post('/', async (req, res) => {
         const safeData = typeof data === 'object' && data !== null ? data as Record<string, unknown> : {};
         
         // Log the submission data and form questions for debugging
-        const formQuestions = (form.questions as any[]) || [];
+        const formQuestions = (form.questions as QuestionBlock[]) || [];
         logger.info(`[FailAlert] Form "${form.title}" has ${formQuestions.length} questions`);
         
         // Log each answer for diagnosis
@@ -171,6 +171,7 @@ router.post('/', async (req, res) => {
         }
         
         // Use the exact same logic as the UI to determine failures
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const failedItems = getSubmissionFailures({ data: safeData } as any, form as any) as string[];
         const hasFailures = failedItems.length > 0;
         
@@ -217,7 +218,8 @@ router.post('/', async (req, res) => {
           const configSupervisorEmail = (settings?.supervisorEmail as string | undefined) || process.env.SUPERVISOR_EMAIL;
           
           const adminEmails = (await db.select().from(users).where(eq(users.role, 'ADMIN'))).map(u => u.email).filter(Boolean) as string[];
-          const allRecipients = Array.from(new Set([configSupervisorEmail, ...adminEmails].filter(Boolean) as string[]))
+          const supervisorEmails = (configSupervisorEmail || '').split(',').map(e => e.trim()).filter(Boolean);
+          const allRecipients = Array.from(new Set([...supervisorEmails, ...adminEmails].filter(Boolean) as string[]))
             .filter(isValidEmail);
 
           logger.info(`[FailAlert] Email recipients: ${JSON.stringify(allRecipients)} (supervisorEmail=${configSupervisorEmail}, adminEmails=${JSON.stringify(adminEmails)})`);

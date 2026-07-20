@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { bundles } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 
 const router = Router();
 
 // GET /api/bundles — fetch all bundles
 router.get('/', async (_req, res) => {
   try {
-    const allBundles = await db.select().from(bundles);
+    const allBundles = await db.select().from(bundles).orderBy(asc(bundles.sortOrder));
     const mapped = allBundles.map(b => ({
       id: b.id,
       name: b.name,
@@ -19,6 +19,28 @@ router.get('/', async (_req, res) => {
   } catch (error) {
     console.error('Error fetching bundles:', error);
     res.status(500).json({ error: 'Failed to fetch bundles' });
+  }
+});
+
+// PUT /api/bundles/reorder — bulk update sort order
+router.put('/reorder', async (req, res) => {
+  try {
+    const { updates } = req.body;
+    if (!updates || !Array.isArray(updates)) {
+      return res.status(400).json({ error: 'Invalid updates payload' });
+    }
+    
+    // Process updates sequentially
+    for (const update of updates) {
+      await db.update(bundles)
+        .set({ sortOrder: update.sortOrder })
+        .where(eq(bundles.id, update.id));
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error reordering bundles:', error);
+    res.status(500).json({ error: 'Failed to reorder bundles' });
   }
 });
 
