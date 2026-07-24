@@ -15,7 +15,7 @@ const fetchWithRetry = async (url: string | URL | globalThis.Request, options?: 
     try {
       const response = await fetch(url, {
         ...options,
-        signal: AbortSignal.timeout(10000), // 10s timeout to prevent hanging
+        signal: AbortSignal.timeout(30000), // 30s timeout to allow Neon DB cold start without timing out
       });
       return response;
     } catch (error) {
