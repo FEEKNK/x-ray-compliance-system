@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db';
 import { submissions, schedules, users, forms, config, alerts } from '../db/schema';
 import { eq, desc, and, gte, lte } from 'drizzle-orm';
-import { getTransporter, escapeHtml, isValidEmail } from '../services/email';
+import { sendEmail, escapeHtml, isValidEmail } from '../services/email';
 import { getSubmissionFailures } from '../../src/utils/formUtils';
 import { QuestionBlock } from '../../src/types';
 import { logger } from '../logger';
@@ -226,9 +226,8 @@ router.post('/', async (req, res) => {
 
           if (allRecipients.length > 0) {
             try {
-              getTransporter().sendMail({
-                from: `"Imaging Alert System" <${process.env.GMAIL_USER || 'no-reply@hospital.com'}>`,
-                to: allRecipients.join(','),
+              sendEmail({
+                to: allRecipients,
                 subject: `⚠️ [ด่วน] พบปัญหาจากการตรวจสอบ: ${form.title.replace(/[\r\n]/g, '')} โดย ${staff.name.replace(/[\r\n]/g, '')}`,
                 html: emailHtml
               }).then(() => {

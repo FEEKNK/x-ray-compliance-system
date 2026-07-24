@@ -1,10 +1,9 @@
 import { db } from '../db';
 import { config } from '../db/schema';
 import { logger } from '../logger';
-import { getTransporter } from '../services/email';
+import { sendEmail } from '../services/email';
 import { getFullExportData } from '../utils/exportData';
 import { getBangkokNow, getBangkokDateStr } from '../utils/shiftHelpers';
-
 
 export const runWeeklyBackupJob = async () => {
   try {
@@ -27,9 +26,7 @@ export const runWeeklyBackupJob = async () => {
        const supervisorEmail = (settings?.supervisorEmail as string | undefined) || process.env.SUPERVISOR_EMAIL;
 
        if (supervisorEmail) {
-         const transporter = getTransporter();
-         await transporter.sendMail({
-           from: `"Imaging Backup System" <${process.env.GMAIL_USER}>`,
+         await sendEmail({
            to: supervisorEmail,
            subject: `📦 Weekly System Backup (${todayStr})`,
            html: `<p>Please find attached the weekly automated database backup for the Imaging Compliance System.</p>`,

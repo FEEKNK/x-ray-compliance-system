@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db';
 import { eq, desc } from 'drizzle-orm';
 import { alerts, users, forms } from '../db/schema';
-import { getTransporter, escapeHtml, isValidEmail } from '../services/email';
+import { sendEmail, escapeHtml, isValidEmail } from '../services/email';
 import { logger } from '../logger';
 
 const router = Router();
@@ -57,9 +57,7 @@ router.post('/', async (req, res) => {
         }
 
         if (staff && staff.email && isValidEmail(staff.email)) {
-          const transporter = getTransporter();
-          await transporter.sendMail({
-            from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
+          await sendEmail({
             to: staff.email,
             subject: `🔔 แจ้งเตือน: กรุณาทำรายการ ${escapeHtml(formTitle)}`,
             html: `

@@ -33,7 +33,7 @@ vi.mock('../../middleware/auth', () => ({
 
 // Mock email service
 vi.mock('../../services/email', () => ({
-  getTransporter: vi.fn(),
+  sendEmail: vi.fn(),
   escapeHtml: vi.fn((str) => str),
   isValidEmail: vi.fn(() => true),
 }));

@@ -2,7 +2,7 @@ import { db } from '../db';
 import { schedules, forms, users, config, alerts } from '../db/schema';
 import { eq, and, inArray, isNotNull, gte } from 'drizzle-orm';
 import { logger } from '../logger';
-import { getTransporter, escapeHtml, isValidEmail } from '../services/email';
+import { sendEmail, escapeHtml, isValidEmail } from '../services/email';
 import { getShiftThaiName, parseShiftStartHour, parseShiftEndHour, getBangkokNow, getBangkokDateStr } from '../utils/shiftHelpers';
 
 let isSlaJobRunning = false;
@@ -63,7 +63,6 @@ export const runSLAJob = async () => {
     }
 
     const shiftsMap = new Map(shiftsList.map(s => [s.name, s]));
-    const transporter = getTransporter();
 
     // ==========================================
     // 1. STAFF SLA REMINDER (During Shift)
@@ -123,8 +122,7 @@ export const runSLAJob = async () => {
           
           const listHtml = formTitles.map(t => `<li style="padding: 5px 0;">${escapeHtml(t)}</li>`).join('');
           
-          await transporter.sendMail({
-            from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
+          await sendEmail({
             to: staff.email,
             subject: `⚠️ แจ้งเตือน: คิวงานคงค้าง (เวร${shiftTh})`,
             html: `
@@ -254,8 +252,7 @@ export const runSLAJob = async () => {
             </div>
         `;
 
-        await transporter.sendMail({
-          from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
+        await sendEmail({
           to: toList,
           subject: `📊 สรุปเวร${shiftTh}: พบความผิดปกติหรือลืมทำ`,
           html: finalEmailHtml,

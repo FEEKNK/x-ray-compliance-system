@@ -4,7 +4,7 @@ import { schedules, forms, users, config } from '../db/schema';
 import { eq, and, isNotNull } from 'drizzle-orm';
 import { logger } from '../logger';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
-import { getTransporter, escapeHtml, isValidEmail } from '../services/email';
+import { sendEmail, escapeHtml, isValidEmail } from '../services/email';
 import { getShiftThaiName, getBangkokNow, getBangkokDateStr } from '../utils/shiftHelpers';
 
 
@@ -45,7 +45,6 @@ router.post('/test-sla-now', authenticateToken, requireAdmin, async (_req, res) 
       staffGroup[s.staffId].scheduleIds.push(s.id);
     }
 
-    const transporter = getTransporter();
     const results: string[] = [];
 
     await Promise.all(Object.values(staffGroup).map(async (group) => {
@@ -72,8 +71,7 @@ router.post('/test-sla-now', authenticateToken, requireAdmin, async (_req, res) 
       logger.info(`[Test SLA] 📤 Final toList: "${toList}"`);
 
       try {
-        await transporter.sendMail({
-          from: `"Imaging Alert System (TEST)" <${process.env.GMAIL_USER || 'no-reply@hospital.com'}>`,
+        await sendEmail({
           to: toList,
           subject: `🧪 [ทดสอบ] แจ้งเตือนคิวงานคงค้าง เวร${shiftTh} — ${staff.name}`,
           html: `
@@ -115,9 +113,7 @@ router.post('/test-email', authenticateToken, async (req, res) => {
     const emails = targetEmail.split(',').map((e: string) => e.trim()).filter(Boolean);
     if (emails.some((e: string) => !isValidEmail(e))) throw new Error(`Invalid email format in list: ${targetEmail}`);
 
-    const transporter = getTransporter();
-    const info = await transporter.sendMail({
-      from: `"Imaging Test" <${process.env.GMAIL_USER}>`,
+    const info = await sendEmail({
       to: emails.join(','),
       subject: '🔔 Test Email - Imaging Compliance System (From UI)',
       html: `<h1>ทดสอบส่งอีเมล</h1><p>ระบบส่งอีเมลจากปุ่มในหน้าจอทำงานได้ปกติครับ ✅</p><p>ส่งถึง: ${escapeHtml(targetEmail)}</p>`,
@@ -153,9 +149,7 @@ router.post('/send-reminder-email', authenticateToken, async (req, res) => {
     const toList = [staffEmail, supervisorEmail].filter((e): e is string => Boolean(e)).filter(isValidEmail).join(',');
     if (!toList) throw new Error('No valid email recipients provided');
 
-    const transporter = getTransporter();
-    const info = await transporter.sendMail({
-      from: `"Imaging Alert System" <${process.env.GMAIL_USER}>`,
+    const info = await sendEmail({
       to: toList,
       subject,
       html: `
