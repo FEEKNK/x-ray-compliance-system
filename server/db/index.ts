@@ -15,7 +15,7 @@ const fetchWithRetry = async (url: string | URL | globalThis.Request, options?: 
     try {
       const response = await fetch(url, {
         ...options,
-        // Optional: add a timeout signal if needed, but Neon usually times out on its own or node fetch throws ConnectTimeoutError
+        signal: AbortSignal.timeout(10000), // 10s timeout to prevent hanging
       });
       return response;
     } catch (error) {

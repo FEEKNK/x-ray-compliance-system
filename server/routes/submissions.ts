@@ -114,23 +114,23 @@ router.post('/', async (req, res) => {
       const existing = await db.select().from(submissions).where(eq(submissions.scheduleId, dbScheduleId)).limit(1);
       if (existing.length > 0) {
         isUpdate = true;
-        const [updated] = await db.update(submissions)
+        const updateResult = await db.update(submissions)
           .set({ data, photos: photos || [], submittedAt: new Date().toISOString() })
           .where(eq(submissions.id, existing[0].id))
           .returning();
-        newSubmission = updated;
+        newSubmission = Array.isArray(updateResult) ? updateResult[0] : updateResult;
       }
     }
 
     if (!newSubmission) {
-      const [inserted] = await db.insert(submissions).values({
+      const insertResult = await db.insert(submissions).values({
         scheduleId: dbScheduleId,
         staffId,
         formId,
         data,
         photos: photos || [],
       }).returning();
-      newSubmission = inserted;
+      newSubmission = Array.isArray(insertResult) ? insertResult[0] : insertResult;
     }
 
     // Mark the related schedule as Completed if scheduleId exists and is not a manual/ad-hoc one
