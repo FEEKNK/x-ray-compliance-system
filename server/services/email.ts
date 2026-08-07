@@ -6,6 +6,11 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html, attachments }: SendEmailOptions) {
+  if (process.env.ENABLE_EMAIL === 'false') {
+    console.log(`[GAS Email] ⚠️ Email sending is temporarily disabled (ENABLE_EMAIL=false). Skipping email to ${Array.isArray(to) ? to.join(',') : to}`);
+    return { status: 'disabled', message: 'Email sending is temporarily disabled' };
+  }
+
   const gasUrl = process.env.GAS_EMAIL_URL;
   if (!gasUrl || gasUrl.includes('YOUR_SCRIPT_ID')) {
     throw new Error('GAS_EMAIL_URL is not configured properly in .env');

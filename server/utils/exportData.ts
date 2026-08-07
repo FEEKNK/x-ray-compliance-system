@@ -26,13 +26,22 @@ export async function getFullExportData(startDate?: string, endDate?: string) {
     alertFilters = lte(alerts.timestamp, `${endDate}T23:59:59`);
   }
 
+  const fetchBundles = async () => {
+    try {
+      return await db.select().from(bundles);
+    } catch (err) {
+      console.warn('[ExportData] Warning: Failed to query bundles table:', err);
+      return [];
+    }
+  };
+
   const [allSubmissions, allSchedules, allAlerts, allUsers, allForms, allBundles, allConfig] = await Promise.all([
     submissionFilters ? db.select().from(submissions).where(submissionFilters) : db.select().from(submissions),
     scheduleFilters ? db.select().from(schedules).where(scheduleFilters) : db.select().from(schedules),
     alertFilters ? db.select().from(alerts).where(alertFilters) : db.select().from(alerts),
     db.select().from(users),
     db.select().from(forms),
-    db.select().from(bundles),
+    fetchBundles(),
     db.select().from(config),
   ]);
 

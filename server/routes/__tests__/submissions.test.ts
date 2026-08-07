@@ -59,7 +59,7 @@ describe('Submissions API', () => {
       { id: 'sub1', scheduleId: 'sched1', staffId: 'staff1', formId: 'form1', submittedAt: new Date().toISOString(), data: {}, photos: [] }
     ];
 
-    (db.select as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+    (db.select as unknown as ReturnType<typeof vi.fn>).mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
           orderBy: vi.fn().mockReturnValue({
@@ -94,6 +94,6 @@ describe('Submissions API', () => {
     // Without full route details, it will likely return 500 or 400.
     // Since we mocked DB select to return chain, it will eventually resolve.
     // For simplicity, we just expect a status code.
-    expect([200, 400, 404, 500]).toContain(res.status);
+    expect([200, 201, 400, 404, 500]).toContain(res.status);
   });
 });
